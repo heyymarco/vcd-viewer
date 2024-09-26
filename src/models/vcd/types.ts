@@ -10,13 +10,14 @@ export interface VcdModule {
     name       : string
     submodules : VcdModule[]
     
-    signals    : VcdSignal[]
+    variables  : VcdVariable[]
 }
 
-export interface VcdSignal {
+export interface VcdVariable {
     name       : string
     alias      : string
     
+    type       : string
     size       : number
     msb        : number
     lsb        : number
@@ -24,8 +25,8 @@ export interface VcdSignal {
 }
 
 export interface VcdWave {
-    time       : number
-    value      : number
+    tick       : number
+    value      : number|string
 }
 
 
@@ -34,3 +35,4 @@ export type VcdToken =
     |'VERSION'
     |'TIMESCALE'
     |'MODULE'
+    |'DUMPVARS'

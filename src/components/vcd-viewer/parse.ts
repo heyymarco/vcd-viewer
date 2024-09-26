@@ -2,6 +2,7 @@
 import {
     type Vcd,
     type VcdModule,
+    type VcdVariable,
     type VcdToken,
 }                           from '@/models/vcd'
 import {
@@ -11,10 +12,13 @@ import {
 
 
 export const parseVcdFromFileContent = (content: string): Vcd|null => {
-    const vcd = produce({ rootModule: { name: 'root', submodules: [], signals: [] } } as unknown as Vcd, (draft) => {
-        let prevToken     : VcdToken|null = null;
-        let parentModules : VcdModule[]   = [];
-        let currentModule : VcdModule     = draft.rootModule;
+    const vcd = produce({ rootModule: { name: 'root', submodules: [], variables: [] } } as unknown as Vcd, (draft) => {
+        let prevToken      : VcdToken|null = null;
+        let parentModules  : VcdModule[]   = [];
+        let currentModule  : VcdModule     = draft.rootModule;
+        const variableMap  = new Map<string, VcdVariable[]>();
+        let doReadingVars  = false;
+        let currentTick    = 0;
         for (const lineRaw of content.split(/\r?\n/)) {
             // conditions:
             const line = lineRaw.trim();
@@ -23,17 +27,17 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
             
             
             // parses:
-            const prevTokenValue = prevToken;
+            const prevTokenValue : VcdToken|null = prevToken;
             prevToken = null;
             switch (prevTokenValue) {
                 case 'DATE': {
                     const dateOffset = Date.parse(line);
                     if (!isNaN(dateOffset)) draft.date = new Date(dateOffset);
-                } break;
+                } continue;
                 
                 case 'VERSION': {
                     draft.version = line;
-                } break;
+                } continue;
                 
                 case 'TIMESCALE': {
                     const parsed = (/(\d+)(\w+)/).exec(line);
@@ -43,10 +47,10 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                         if (!isNaN(value)) {
                             let divider : number|null = null;
                             switch (unit) {
-                                case 's': divider  = 10 ** 0; break;
-                                case 'ms': divider = 10 ** 3; break;
-                                case 'us': divider = 10 ** 6; break;
-                                case 'ns': divider = 10 ** 9; break;
+                                case 's': divider  = 10 **  0; break;
+                                case 'ms': divider = 10 **  3; break;
+                                case 'us': divider = 10 **  6; break;
+                                case 'ns': divider = 10 **  9; break;
                                 case 'ps': divider = 10 ** 12; break;
                                 case 'fs': divider = 10 ** 15; break;
                                 case 'as': divider = 10 ** 18; break;
@@ -56,15 +60,23 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                             if (divider !== null) draft.timescale = (value / divider);
                         } // if
                     } // if
-                } break;
+                } continue;
             } // switch
             
             switch (line.trimEnd()) {
                 case '$date'     : prevToken = 'DATE'      ; continue;
                 case '$version'  : prevToken = 'VERSION'   ; continue;
                 case '$timescale': prevToken = 'TIMESCALE' ; continue;
+                case '$dumpvars' :
+                    prevToken = 'DUMPVARS';
+                    doReadingVars = true;
+                    continue;
                 
-                case '$end'      : prevToken = null        ; continue;
+                case '$end'      :
+                    prevToken = null;
+                    if (doReadingVars) doReadingVars = false;
+                    continue;
+                
                 default          : {
                     const module = (/^\$scope\s+module\s+([^\s]+)(?:\s+\$end)?/).exec(line);
                     if (module) {
@@ -72,7 +84,7 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                         const childModule = {
                             name       : module[1],
                             submodules : [],
-                            signals    : [],
+                            variables  : [],
                         };
                         currentModule.submodules.push(childModule);
                         
@@ -100,26 +112,63 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                             '5': msb,
                             '6': lsb,
                         } = variable;
-                        currentModule.signals.push({
+                        const newVariable : VcdVariable = {
                             name    : name,
                             alias   : alias,
                             
+                            type    : type,
                             size    : Number.parseInt(size),
                             msb     : Number.parseInt(msb),
                             lsb     : Number.parseInt(lsb),
                             waves   : [],
-                        });
+                        };
+                        currentModule.variables.push(newVariable);
+                        
+                        const variableCollection = variableMap.get(alias) ?? (() => {
+                            const newVariableCollection : VcdVariable[] = [];
+                            variableMap.set(alias, newVariableCollection);
+                            return newVariableCollection;
+                        })();
+                        variableCollection.push(newVariable);
                         
                         continue;
                     } // if
                     
                     if ((/^\$enddefinitions(?:\s+\$end)?/).test(line)) {
-                        // TODO: reading waves
+                        // do nothing
                         
                         continue;
                     } // if
                 }
             } // switch
+            
+            if (doReadingVars || (line[0] !== '#')) {
+                const variableValue = /^(\w[^\s]*)\s+([^\s]+)/.exec(line) ?? /^(\d+)([^\s]+)/.exec(line);
+                if (variableValue) {
+                    const {
+                        '1': valueRaw,
+                        '2': alias,
+                    } = variableValue;
+                    const valueNum = (valueRaw[0] === 'b') ? Number.parseInt(valueRaw.slice(1), 2) : Number.parseInt(valueRaw);
+                    const value    = isNaN(valueNum) ? valueRaw : valueNum;
+                    
+                    const variableCollection = variableMap.get(alias) ?? (() => {
+                        const newVariableCollection : VcdVariable[] = [];
+                        variableMap.set(alias, newVariableCollection);
+                        return newVariableCollection;
+                    })();
+                    for (const variable of variableCollection) variable.waves.push({
+                        tick  : currentTick,
+                        value : value,
+                    });
+                } // if
+                
+                continue;
+            }
+            else if (line[0] === '#') {
+                const tick = Number.parseInt(line.slice(1));
+                if (!isNaN(tick)) currentTick = tick;
+            } // if
         } // for
     });
     if (vcd.timescale === undefined) return null;

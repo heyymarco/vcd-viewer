@@ -25,7 +25,7 @@ import {
 
 // utilities:
 import {
-    flatMapSignals,
+    flatMapVariables,
 }                           from './utilities'
 
 
@@ -96,9 +96,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <svg className={styles.ruler}>
                 <g ref={rulerRef} transform='translate(0, 20)' />
             </svg>
-            {!!vcd && flatMapSignals(vcd.rootModule).map((signal) =>
-                <div className={styles.signal}>
-                    {signal.name}
+            {!!vcd && flatMapVariables(vcd.rootModule).map((variable, index) =>
+                <div key={index} className={styles.variable}>
+                    {variable.name}
+                    {/* {variable.waves.map(({tick, value}, index) => <span key={index}>&nbsp;{tick}</span>)} */}
                 </div>
             )}
         </div>

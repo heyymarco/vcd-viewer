@@ -1,14 +1,14 @@
 // models:
 import {
     type VcdModule,
-    type VcdSignal,
+    type VcdVariable,
 }                           from '@/models/vcd'
 
 
 
-export const flatMapSignals = (module: VcdModule): VcdSignal[] => {
+export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
     return [
-        ...module.signals,
-        ...module.submodules.flatMap(flatMapSignals),
+        ...module.variables,
+        ...module.submodules.flatMap(flatMapVariables),
     ];
 }
