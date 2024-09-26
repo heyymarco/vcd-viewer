@@ -6,14 +6,14 @@ import { parseVcdFromFileContent, VcdViewer } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 
 export default function Home() {
-    const vcdFile = parseVcdFromFileContent(vcdContent);
+    const vcd = parseVcdFromFileContent(vcdContent);
     return (
         <div>
-            <VcdViewer vcd={vcdContent} />
+            <VcdViewer vcd={vcd} />
             <hr />
             <p>parsed:</p>
             <pre>
-                {JSON.stringify(vcdFile, undefined, 4)}
+                {JSON.stringify(vcd, undefined, 4)}
             </pre>
         </div>
     );

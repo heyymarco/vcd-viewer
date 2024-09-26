@@ -18,6 +18,16 @@ import {
 import cn                   from 'classnames'
 import * as d3              from 'd3'
 
+// models:
+import {
+    type Vcd,
+}                           from '@/models/vcd'
+
+// utilities:
+import {
+    flatMapSignals,
+}                           from './utilities'
+
 
 
 // react components:
@@ -29,13 +39,13 @@ export interface VcdViewerProps
         >
 {
     // data:
-    vcd : string
+    vcd ?: Vcd|null
 }
 const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // props:
     const {
         // data:
-        vcd,
+        vcd = null,
         
         
         
@@ -86,15 +96,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <svg className={styles.ruler}>
                 <g ref={rulerRef} transform='translate(0, 20)' />
             </svg>
-            <div className={styles.signal}>
-                test
-            </div>
-            <div className={styles.signal}>
-                test
-            </div>
-            <div className={styles.signal}>
-                test
-            </div>
+            {!!vcd && flatMapSignals(vcd.rootModule).map((signal) =>
+                <div className={styles.signal}>
+                    {signal.name}
+                </div>
+            )}
         </div>
     );
 };

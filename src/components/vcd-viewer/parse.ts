@@ -1,6 +1,6 @@
 // models:
 import {
-    type VcdFile,
+    type Vcd,
     type VcdModule,
     type VcdToken,
 }                           from '@/models/vcd'
@@ -10,8 +10,8 @@ import {
 
 
 
-export const parseVcdFromFileContent = (content: string): VcdFile|null => {
-    const vcdFile = produce({ rootModule: { name: 'root', submodules: [], signals: [] } } as unknown as VcdFile, (draft) => {
+export const parseVcdFromFileContent = (content: string): Vcd|null => {
+    const vcd = produce({ rootModule: { name: 'root', submodules: [], signals: [] } } as unknown as Vcd, (draft) => {
         let prevToken     : VcdToken|null = null;
         let parentModules : VcdModule[]   = [];
         let currentModule : VcdModule     = draft.rootModule;
@@ -122,6 +122,6 @@ export const parseVcdFromFileContent = (content: string): VcdFile|null => {
             } // switch
         } // for
     });
-    if (vcdFile.timescale === undefined) return null;
-    return vcdFile;
+    if (vcd.timescale === undefined) return null;
+    return vcd;
 }

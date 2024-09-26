@@ -1,4 +1,4 @@
-export interface VcdFile {
+export interface Vcd {
     date      ?: Date
     version   ?: string
     
