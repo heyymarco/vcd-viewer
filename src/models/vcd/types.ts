@@ -3,12 +3,17 @@ export interface VcdFile {
     version   ?: string
     
     timescale  : number
+    rootModule : VcdModule
+}
+
+export interface VcdModule {
+    name       : string
+    submodules : VcdModule[]
+    
     signals    : VcdSignal[]
 }
 
 export interface VcdSignal {
-    modules    : string[]
-    
     name       : string
     alias      : string
     

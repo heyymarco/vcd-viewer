@@ -1,6 +1,7 @@
 // models:
 import {
     type VcdFile,
+    type VcdModule,
     type VcdToken,
 }                           from '@/models/vcd'
 import {
@@ -10,9 +11,10 @@ import {
 
 
 export const parseVcdFromFileContent = (content: string): VcdFile|null => {
-    const vcdFile = produce({ signals: [] } as unknown as VcdFile, (draft) => {
-        let prevToken   : VcdToken|null = null;
-        let prevModules : string[] = [];
+    const vcdFile = produce({ rootModule: { name: 'root', submodules: [], signals: [] } } as unknown as VcdFile, (draft) => {
+        let prevToken     : VcdToken|null = null;
+        let parentModules : VcdModule[]   = [];
+        let currentModule : VcdModule     = draft.rootModule;
         for (const lineRaw of content.split(/\r?\n/)) {
             // conditions:
             const line = lineRaw.trim();
@@ -66,12 +68,25 @@ export const parseVcdFromFileContent = (content: string): VcdFile|null => {
                 default          : {
                     const module = (/^\$scope\s+module\s+([^\s]+)(?:\s+\$end)?/).exec(line);
                     if (module) {
-                        prevModules.push(module[1]);
+                        // add a child module:
+                        const childModule = {
+                            name       : module[1],
+                            submodules : [],
+                            signals    : [],
+                        };
+                        currentModule.submodules.push(childModule);
+                        
+                        // move down:
+                        parentModules.push(currentModule);
+                        currentModule = childModule;
+                        
                         continue;
                     } // if
                     
                     if ((/^\$upscope(?:\s+\$end)?/).test(line)) {
-                        prevModules.pop();
+                        // move up:
+                        currentModule = parentModules.pop() ?? currentModule;
+                        
                         continue;
                     } // if
                     
@@ -85,9 +100,7 @@ export const parseVcdFromFileContent = (content: string): VcdFile|null => {
                             '5': msb,
                             '6': lsb,
                         } = variable;
-                        draft.signals.push({
-                            modules : prevModules.slice(0), // copy
-                            
+                        currentModule.signals.push({
                             name    : name,
                             alias   : alias,
                             
@@ -96,11 +109,13 @@ export const parseVcdFromFileContent = (content: string): VcdFile|null => {
                             lsb     : Number.parseInt(lsb),
                             waves   : [],
                         });
+                        
                         continue;
                     } // if
                     
                     if ((/^\$enddefinitions(?:\s+\$end)?/).test(line)) {
                         // TODO: reading waves
+                        
                         continue;
                     } // if
                 }
