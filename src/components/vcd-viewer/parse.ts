@@ -21,7 +21,9 @@ export const parseVcdFromFileContent = (content: string): VcdFile|null => {
             
             
             // parses:
-            switch (prevToken) {
+            const prevTokenValue = prevToken;
+            prevToken = null;
+            switch (prevTokenValue) {
                 case 'DATE': {
                     const dateOffset = Date.parse(line);
                     if (!isNaN(dateOffset)) draft.date = new Date(dateOffset);
