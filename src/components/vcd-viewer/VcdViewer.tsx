@@ -27,7 +27,6 @@ import {
 import {
     flatMapVariables,
     getVariableMaxTick,
-    baseScale,
 }                           from './utilities'
 
 
@@ -58,9 +57,25 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     
+    // states:
+    const [zoom, setZoom] = useState<number>(1);
+    const baseScale = 2 ** zoom;
+    
+    
+    
     // refs:
     const svgRef   = useRef<SVGSVGElement|null>(null);
     const rulerRef = useRef<SVGGElement|null>(null);
+    
+    
+    
+    // handlers:
+    const handleZoomOut = () => {
+        setZoom((current) => (current - 1));
+    }
+    const handleZoomIn = () => {
+        setZoom((current) => (current + 1));
+    }
     
     
     
@@ -102,7 +117,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         // other props:
-        ...restIndicatorProps
+        ...restDivProps
     } = restVcdViewerProps;
     
     
@@ -111,58 +126,67 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     return (
         <div
             // other props:
-            {...restIndicatorProps}
+            {...restDivProps}
             
             
             
             // classes:
             className={cn(props.className, styles.main)}
         >
-            <svg ref={svgRef} className={styles.ruler}>
-                <g ref={rulerRef} transform='translate(0, 20)' />
-            </svg>
-            {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
-                <div key={index} className={styles.variable}>
-                    <div className={styles.waves}>
-                        {waves.map(({tick, value}, index, waves) => {
-                            const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-                            // if (nextTick === maxTick) return null;
+            <div className={styles.toolbar}>
+                <button onClick={handleZoomOut}>-</button>
+                <button onClick={handleZoomIn}>+</button>
+            </div>
+            <div
+                // classes:
+                className={cn(props.className, styles.body)}
+            >
+                <svg ref={svgRef} className={styles.ruler}>
+                    <g ref={rulerRef} transform='translate(0, 20)' />
+                </svg>
+                {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
+                    <div key={index} className={styles.variable}>
+                        <div className={styles.waves}>
+                            {waves.map(({tick, value}, index, waves) => {
+                                const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                                // if (nextTick === maxTick) return null;
+                                const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                                const isBinary = (size === 1);
+                                
+                                
+                                
+                                // jsx:
+                                const length = (nextTick - tick) * baseScale;
+                                if (length === 0) return;
+                                return (
+                                    <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                        {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        {(() => {
+                            const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+                            if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                            const {
+                                value,
+                            } = lastWave;
+                            
                             const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                             const isBinary = (size === 1);
                             
                             
                             
                             // jsx:
-                            const length = (nextTick - tick) * baseScale;
-                            if (length === 0) return;
                             return (
-                                <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
                                     {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
                                 </span>
                             );
-                        })}
+                        })()}
                     </div>
-                    {(() => {
-                        const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-                        if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-                        const {
-                            value,
-                        } = lastWave;
-                        
-                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                        const isBinary = (size === 1);
-                        
-                        
-                        
-                        // jsx:
-                        return (
-                            <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
-                                {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
-                            </span>
-                        );
-                    })()}
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
