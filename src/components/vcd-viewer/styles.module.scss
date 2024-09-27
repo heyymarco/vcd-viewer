@@ -18,7 +18,8 @@
     
     
     // spacings:
-    row-gap: 0.25rem;
+    // row-gap: 0.25rem;
+    row-gap: 6px;
 }
 
 .ruler {
@@ -39,7 +40,14 @@
     
     
     // sizes:
-    block-size: 24px;
+    block-size: 22px;
+    
+    
+    
+    // typos:
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 @mixin waveLayout {
