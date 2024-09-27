@@ -19,8 +19,8 @@ export interface VcdVariable {
     
     type       : string
     size       : number
-    msb        : number
-    lsb        : number
+    msb        : number|undefined
+    lsb        : number|undefined
     waves      : VcdWave[]
 }
 

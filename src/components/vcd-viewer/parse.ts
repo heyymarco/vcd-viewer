@@ -11,6 +11,10 @@ import {
 
 
 
+const nanFallback = <TNumber extends number, TFallback>(num: TNumber, fallback: TFallback): TNumber|TFallback => {
+    if (isNaN(num)) return fallback;
+    return num;
+}
 export const parseVcdFromFileContent = (content: string): Vcd|null => {
     const vcd = produce({ rootModule: { name: 'root', submodules: [], variables: [] } } as unknown as Vcd, (draft) => {
         let prevToken      : VcdToken|null = null;
@@ -118,8 +122,8 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                             
                             type    : type,
                             size    : Number.parseInt(size),
-                            msb     : Number.parseInt(msb),
-                            lsb     : Number.parseInt(lsb),
+                            msb     : nanFallback(Number.parseInt(msb), undefined),
+                            lsb     : nanFallback(Number.parseInt(lsb), undefined),
                             waves   : [],
                         };
                         currentModule.variables.push(newVariable);
@@ -150,7 +154,7 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                         '2': alias,
                     } = variableValue;
                     const valueNum = (valueRaw[0] === 'b') ? Number.parseInt(valueRaw.slice(1), 2) : Number.parseInt(valueRaw);
-                    const value    = isNaN(valueNum) ? valueRaw : valueNum;
+                    const value    = nanFallback(valueNum, valueRaw);
                     
                     const variableCollection = variableMap.get(alias) ?? (() => {
                         const newVariableCollection : VcdVariable[] = [];

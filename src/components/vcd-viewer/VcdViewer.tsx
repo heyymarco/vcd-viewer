@@ -121,28 +121,39 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <svg ref={svgRef} className={styles.ruler}>
                 <g ref={rulerRef} transform='translate(0, 20)' />
             </svg>
-            {!!vcd && flatMapVariables(vcd.rootModule).map((variable, index) =>
+            {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb }, index) =>
                 <div key={index} className={styles.variable}>
                     <div className={styles.waves}>
-                        {variable.waves.map(({tick, value}, index, waves) => {
-                            const nextTick : number|undefined = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : undefined;
-                            if (nextTick === undefined) return null; // do not render the last wave
+                        {waves.map(({tick, value}, index, waves) => {
+                            const nextTick : number|undefined = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                            const isError = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                             
+                            
+                            
+                            // jsx:
                             const length = (nextTick - tick) * baseScale;
                             return (
-                                <span key={index} style={{ '--length': length } as any}>
-                                    {value}
+                                <span key={index} style={{ '--length': length } as any} className={isError ? 'error' : undefined}>
+                                    {(typeof(value) === 'string') ? value : value.toString(16)}
                                 </span>
                             );
                         })}
                     </div>
                     {(() => {
-                        const lastWave = variable.waves.length ? variable.waves[variable.waves.length - 1] : undefined;
+                        const lastWave = waves.length ? waves[waves.length - 1] : undefined;
                         if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                        const {
+                            value,
+                        } = lastWave;
                         
+                        const isError = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                        
+                        
+                        
+                        // jsx:
                         return (
-                            <span key={index} className={styles.lastWave}>
-                                {lastWave.value}
+                            <span key={index} className={cn(styles.lastWave, isError ? 'error' : undefined)}>
+                                {(typeof(value) === 'string') ? value : value.toString(16)}
                             </span>
                         );
                     })()}
