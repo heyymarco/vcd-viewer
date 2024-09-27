@@ -59,16 +59,38 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // refs:
+    const svgRef   = useRef<SVGSVGElement|null>(null);
     const rulerRef = useRef<SVGGElement|null>(null);
     
     
     
     // effects:
     useEffect(() => {
-        const ruler = d3.scaleLinear([0, maxTick], [0, maxTick * baseScale]);
-        d3.select(rulerRef.current).call(
-            d3.axisTop(ruler) as any
-        );
+        // conditions:
+        const svgElm   = svgRef.current;
+        const rulerElm = rulerRef.current;
+        if (!svgElm || !rulerElm) return;
+        
+        
+        
+        // setups:
+        
+        const resizeObserver = new ResizeObserver(({ '0': { borderBoxSize: { '0': { inlineSize } } }}) => {
+            const extendSize = inlineSize / (maxTick * baseScale);
+            // console.log({inlineSize, extendSize})
+            const ruler = d3.scaleLinear([0, maxTick * extendSize], [0, maxTick * baseScale * extendSize]);
+            d3.select(rulerRef.current).call(
+                d3.axisTop(ruler) as any
+            );
+        });
+        resizeObserver.observe(svgElm, { box: 'border-box' });
+        
+        
+        
+        // cleanups:
+        return () => {
+            resizeObserver.disconnect();
+        }
     }, [maxTick]);
     
     
@@ -96,7 +118,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // classes:
             className={cn(props.className, styles.main)}
         >
-            <svg className={styles.ruler}>
+            <svg ref={svgRef} className={styles.ruler}>
                 <g ref={rulerRef} transform='translate(0, 20)' />
             </svg>
             {!!vcd && flatMapVariables(vcd.rootModule).map((variable, index) =>
