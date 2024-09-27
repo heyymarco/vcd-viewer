@@ -1,14 +1,24 @@
 .main {
-    background-color: pink;
+    // layouts:
     display: grid;
     grid-template:
         "ruler" min-content
         /
         1fr;
     grid-auto-flow: row;
-    grid-auto-columns: min-content;
+    grid-auto-columns: max-content;
     justify-items: stretch;
     // align-items: stretch;
+    
+    
+    
+    // backgrounds:
+    background-color: pink;
+    
+    
+    
+    // spacings:
+    row-gap: 0.25rem;
 }
 
 .ruler {
@@ -18,6 +28,61 @@
 }
 
 .variable {
+    // layouts:
+    display: grid;
+    grid-auto-flow: column;
+    grid-template:
+        "waves lastWave" auto
+        /
+        max-content auto;
+}
+
+@mixin waveLayout {
+    // layouts:
+    display: grid;
+    align-items: center;
+    
+    
+    
+    // sizes:
+    box-sizing: border-box;
+    inline-size: calc(var(--length) * 1px);
+    overflow: hidden;
+    
+    
+    
+    // backgrounds:
+    background-color: green;
+    
+    
+    
+    // typos:
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+.waves {
+    // positions:
+    grid-area: waves;
+    
+    
+    
+    // layouts:
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: max-content;
+    // justify-items: start;
+    justify-content: start;
+    
+    
+    
+    // sizes:
+    block-size: 30px;
+    overflow: hidden;
+    
+    
+    
+    // backgrounds:
     &:nth-child(3n+1) {
         background-color: lightcoral;
     }
@@ -27,5 +92,22 @@
     &:nth-child(3n+3) {
         background-color: lightyellow;
     }
-    block-size: 30px;
+    
+    
+    
+    // children:
+    &>* {
+        // layouts:
+        @include waveLayout;
+    }
+}
+.lastWave {
+    // positions:
+    grid-area: lastWave;
+    
+    
+    
+    // layouts:
+    @include waveLayout;
+    filter: saturate(0.5);
 }
