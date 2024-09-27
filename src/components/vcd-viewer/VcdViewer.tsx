@@ -188,11 +188,12 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const handleClick   = useCallback<React.MouseEventHandler<Element>>((event) => {
         const { x } = event.currentTarget.getBoundingClientRect();
         const relativePosition = event.clientX - x;
+        const valuePosition    = relativePosition / baseScale;
         if (inputLogs.activeKeys.has('altleft') || inputLogs.activeKeys.has('altright')) {
-            setAltSelection(relativePosition);
+            setAltSelection(valuePosition);
         }
         else {
-            setMainSelection(relativePosition);
+            setMainSelection(valuePosition);
         } // if
     }, []);
     
@@ -378,8 +379,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 )}
                 
                 {/* selection */}
-                {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection} as any} />}
-                {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection } as any} />}
+                {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection * baseScale} as any} />}
+                {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection  * baseScale} as any} />}
             </div>
         </div>
     );
