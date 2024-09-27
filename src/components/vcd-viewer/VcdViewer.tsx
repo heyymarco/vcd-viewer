@@ -106,7 +106,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         return () => {
             resizeObserver.disconnect();
         }
-    }, [maxTick]);
+    }, [maxTick, baseScale]);
     
     
     
