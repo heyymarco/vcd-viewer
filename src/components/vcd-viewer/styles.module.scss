@@ -77,6 +77,22 @@
     }
     --hexaCrop: 2px;
     clip-path: polygon(var(--hexaCrop) 0%, calc(100% - var(--hexaCrop)) 0%, 100% 50%, calc(100% - var(--hexaCrop)) 100%, var(--hexaCrop) 100%, 0% 50%);
+    &[class ~= "bin"] {
+        clip-path: unset;
+        border: solid 1px var(--col-wave-primary);
+        // border-inline-width: 0.5px;
+        &:not(:is([class ~= "error"], [class ~= "last"])) {
+            background: transparent;
+        }
+        margin-inline: -0.5px;
+        inline-size: calc((var(--length) * 1px) + 1px);
+        &[class ~= "hi"] {
+            border-bottom-width: 0;
+        }
+        &[class ~= "lo"] {
+            border-top-width: 0;
+        }
+    }
     
     
     

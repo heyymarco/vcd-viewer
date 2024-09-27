@@ -121,20 +121,23 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <svg ref={svgRef} className={styles.ruler}>
                 <g ref={rulerRef} transform='translate(0, 20)' />
             </svg>
-            {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb }, index) =>
+            {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
                 <div key={index} className={styles.variable}>
                     <div className={styles.waves}>
                         {waves.map(({tick, value}, index, waves) => {
-                            const nextTick : number|undefined = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-                            const isError = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                            // if (nextTick === maxTick) return null;
+                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const isBinary = (size === 1);
                             
                             
                             
                             // jsx:
                             const length = (nextTick - tick) * baseScale;
+                            if (length === 0) return;
                             return (
-                                <span key={index} style={{ '--length': length } as any} className={isError ? 'error' : undefined}>
-                                    {(typeof(value) === 'string') ? value : value.toString(16)}
+                                <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                    {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
                                 </span>
                             );
                         })}
@@ -146,14 +149,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                             value,
                         } = lastWave;
                         
-                        const isError = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                        const isBinary = (size === 1);
                         
                         
                         
                         // jsx:
                         return (
-                            <span key={index} className={cn(styles.lastWave, isError ? 'error' : undefined)}>
-                                {(typeof(value) === 'string') ? value : value.toString(16)}
+                            <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
                             </span>
                         );
                     })()}
