@@ -195,7 +195,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         else {
             setMainSelection(valuePosition);
         } // if
-    }, []);
+    }, [baseScale]);
     
     
     
