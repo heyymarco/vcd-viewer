@@ -21,4 +21,4 @@ export const getVariableMaxTick = (module: VcdModule): number => {
 
 
 
-export const baseScale = 2;
+export const actionKeys = ['AltLeft', 'AltRight'];

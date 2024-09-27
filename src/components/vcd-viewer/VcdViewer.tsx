@@ -14,6 +14,7 @@ import {
     useState,
     useEffect,
     useLayoutEffect,
+    useCallback,
 }                           from 'react'
 import cn                   from 'classnames'
 import * as d3              from 'd3'
@@ -27,6 +28,7 @@ import {
 import {
     flatMapVariables,
     getVariableMaxTick,
+    actionKeys,
 }                           from './utilities'
 
 
@@ -61,6 +63,89 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
     
+    const [mainSelection, setMainSelection] = useState<number|null>(null);
+    const [altSelection , setAltSelection ] = useState<number|null>(null);
+    
+    const [inputLogs] = useState(() => ({
+        isMouseActive       : false,
+        isTouchActive       : false,
+        isKeyActive         : false,
+        
+        activeKeys          : new Set<string>(),
+        // performKeyUpActions : false,
+        
+        get isActive(): boolean {
+            return (
+                (
+                    (+this.isMouseActive)
+                    +
+                    (+this.isTouchActive)
+                    +
+                    (+this.isKeyActive)
+                )
+                ===
+                1 // must *exactly one* of actived input, if none -or- two -or- more => deactivated
+            );
+        },
+        
+        logMouseEvent : function(event: MouseEvent, isMouseDown: boolean, actionMouses: number[]|null) {
+            this.isMouseActive = (
+                isMouseDown // the *last* action is pressing mouse, not releasing
+                &&
+                !!event.buttons // one/more buttons are pressed
+                &&
+                (
+                    !actionMouses // null => no constraint
+                    ||
+                    actionMouses.includes(event.buttons) // within constraint
+                )
+            );
+        },
+        logTouchEvent : function(event: TouchEvent, isTouchDown: boolean, actionTouches: number[]|null) {
+            this.isTouchActive = (
+                isTouchDown // the *last* action is touching, not releasing
+                &&
+                !!event.touches.length // one/more fingers are touched
+                &&
+                (
+                    !actionTouches // null => no constraint
+                    ||
+                    actionTouches.includes(event.touches.length) // within constraint
+                )
+            );
+        },
+        logKeyEvent : function(event: KeyboardEvent, isKeyDown: boolean, actionKeys: string[]|null) {
+            // conditions:
+            /* note: the `code` may `undefined` on autoComplete */
+            const keyCode = (event.code as string|undefined)?.toLowerCase();
+            if (!keyCode) return; // ignores [unidentified] key
+            
+            
+            
+            if (isKeyDown) {
+                this.activeKeys.add(keyCode);
+            }
+            else {
+                this.activeKeys.delete(keyCode);
+            } // if
+            
+            
+            
+            this.isKeyActive = (
+                isKeyDown // the *last* action is pressing key, not releasing
+                &&
+                (this.activeKeys.size === 1) // only one key is pressed
+                &&
+                (
+                    !actionKeys // null => no constraint
+                    ||
+                    actionKeys.includes(keyCode) // within constraint
+                )
+            );
+            // console.log({activeKeys: this.activeKeys});
+        },
+    }));
+    
     
     
     // refs:
@@ -70,12 +155,98 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // handlers:
-    const handleZoomOut = () => {
+    const handleZoomOut = useCallback(() => {
         setZoom((current) => (current - 1));
-    }
-    const handleZoomIn = () => {
+    }, []);
+    const handleZoomIn  = useCallback(() => {
         setZoom((current) => (current + 1));
-    }
+    }, []);
+    const handleKeyDown = useCallback<React.KeyboardEventHandler<Element>>((event) => {
+        // conditions:
+        /* note: the `code` may `undefined` on autoComplete */
+        const keyCode = (event.code as string|undefined)?.toLowerCase();
+        if (!keyCode) return; // ignores [unidentified] key
+        
+        
+        
+        // logs:
+        inputLogs.logKeyEvent(event.nativeEvent, true /*key_down*/, actionKeys);
+        if (watchGlobalKey(true) === true) {
+            event.preventDefault();
+            console.log({activeKeys: inputLogs.activeKeys});
+            // TODO: update keydown activated
+        } // if
+        
+        
+        
+        // // actions:
+        // if (inputLogs.isActive) {
+        //     // trigger the onClick event later at `onKeyUp`
+        //     inputLogs.performKeyUpActions = true;
+        // }
+    }, []);
+    const handleClick   = useCallback<React.MouseEventHandler<Element>>((event) => {
+        const { x } = event.currentTarget.getBoundingClientRect();
+        const relativePosition = event.clientX - x;
+        if (inputLogs.activeKeys.has('altleft') || inputLogs.activeKeys.has('altright')) {
+            setAltSelection(relativePosition);
+        }
+        else {
+            setMainSelection(relativePosition);
+        } // if
+    }, []);
+    
+    
+    
+    // global handlers:
+    const watchGlobalKeyStatusRef = useRef<undefined|(() => void)>(undefined);
+    const watchGlobalKey = useCallback((active: boolean): boolean|null => {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!watchGlobalKeyStatusRef.current === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleKeyUp = (event: KeyboardEvent): void => {
+            // conditions:
+            /* note: the `code` may `undefined` on autoComplete */
+            const keyCode = (event.code as string|undefined)?.toLowerCase();
+            if (!keyCode) return; // ignores [unidentified] key
+            
+            
+            
+            // logs:
+            inputLogs.logKeyEvent(event, false /*key_up*/, actionKeys);
+            if (watchGlobalKey(false) === false) {
+                console.log({activeKeys: inputLogs.activeKeys});
+                // TODO: update keydown deactivated
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('keyup', handleKeyUp);
+            
+            
+            
+            // cleanups later:
+            watchGlobalKeyStatusRef.current = () => {
+                window.removeEventListener('keyup', handleKeyUp);
+            };
+        }
+        else {
+            // cleanups:
+            watchGlobalKeyStatusRef.current?.();
+            watchGlobalKeyStatusRef.current = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    }, []);
     
     
     
@@ -112,7 +283,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     // default props:
     const {
-        // TODO
+        // accessibilities:
+        tabIndex = 0, // focusable
         
         
         
@@ -130,8 +302,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             
             
             
+            // accessibilities:
+            tabIndex={tabIndex}
+            
+            
+            
             // classes:
             className={cn(props.className, styles.main)}
+            
+            
+            
+            // handlers:
+            onKeyDown={handleKeyDown}
         >
             <div className={styles.toolbar}>
                 <button onClick={handleZoomOut}>-</button>
@@ -140,10 +322,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <div
                 // classes:
                 className={cn(props.className, styles.body)}
+                
+                
+                
+                // handlers:
+                onClick={handleClick}
             >
+                {/* ruler: */}
                 <svg ref={svgRef} className={styles.ruler}>
                     <g ref={rulerRef} transform='translate(0, 20)' />
                 </svg>
+                
+                {/* body */}
                 {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
                     <div key={index} className={styles.variable}>
                         <div className={styles.waves}>
@@ -186,6 +376,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                         })()}
                     </div>
                 )}
+                
+                {/* selection */}
+                {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection} as any} />}
+                {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection } as any} />}
             </div>
         </div>
     );

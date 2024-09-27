@@ -6,6 +6,11 @@
     
     // spacings:
     gap: 10px;
+    
+    
+    
+    // typos:
+    color: white;
 }
 .toolbar {
     // layouts:
@@ -19,6 +24,11 @@
     gap: 10px;
 }
 .body {
+    // positions:
+    position: relative;
+    
+    
+    
     // variables:
     --col-wave-primary: #B5CEA8;
     --col-wave-error: #F48771;
@@ -49,7 +59,6 @@
 }
 
 .ruler {
-    color: white;
     grid-area: ruler;
     block-size: 30px;
 }
@@ -117,6 +126,7 @@
     
     
     // typos:
+    color: #1F1F1F;
     text-overflow: ellipsis;
     text-align: center;
 }
@@ -160,4 +170,21 @@
     
     // backgrunds:
     background-color: var(--col-wave-error);
+}
+
+.selection {
+    // positions:
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--position) * 1px);
+    
+    
+    
+    // sizes:
+    inline-size: 1px;
+    // borders:
+    border-inline-start: dashed 1px currentColor;
+    &[class ~= "alt"] {
+        border-inline-start-color:  #FFD86D;
+    }
 }
