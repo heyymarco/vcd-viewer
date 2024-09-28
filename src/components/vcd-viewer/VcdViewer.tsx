@@ -12,19 +12,18 @@ import {
     // hooks:
     useRef,
     useState,
-    useEffect,
-    useLayoutEffect,
-    useCallback,
 }                           from 'react'
 import cn                   from 'classnames'
 import * as d3              from 'd3'
 import {
+    useIsomorphicLayoutEffect,
     useEvent,
 }                           from '@reusable-ui/core'
 
 // models:
 import {
     type Vcd,
+    type VcdWave,
 }                           from '@/models/vcd'
 
 // utilities:
@@ -61,6 +60,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     } = props;
     const minTick = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
     const maxTick = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
+    const allVcdVariables = !vcd ? [] : flatMapVariables(vcd.rootModule);
     
     
     
@@ -72,6 +72,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [altSelection   , setAltSelection   ] = useState<number|null>(null);
     
     const [focusedVariable, setFocusedVariable] = useState<number|null>(null);
+    const isBinarySelection = (focusedVariable !== null) && (allVcdVariables?.[focusedVariable]?.size === 1);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -169,7 +170,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // handlers:
-    const handleKeyDown      = useEvent<React.KeyboardEventHandler<Element>>((event) => {
+    const handleKeyDown         = useEvent<React.KeyboardEventHandler<Element>>((event) => {
         // conditions:
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
@@ -193,7 +194,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         //     inputLogs.performKeyUpActions = true;
         // }
     });
-    const handleClick        = useEvent<React.MouseEventHandler<Element>>((event) => {
+    const handleClick           = useEvent<React.MouseEventHandler<Element>>((event) => {
         const { x } = event.currentTarget.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
@@ -205,30 +206,48 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         } // if
     });
     
-    const handleZoomOut      = useEvent(() => {
+    const handleZoomOut         = useEvent(() => {
         setZoom((current) => (current - 1));
     });
-    const handleZoomIn       = useEvent(() => {
+    const handleZoomIn          = useEvent(() => {
         setZoom((current) => (current + 1));
     });
     
-    const handleGotoEdge     = useEvent((gotoNext: boolean) => {
-        if (!vcd) return;
+    const handleGotoEdge        = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean)) => {
         if (focusedVariable === null) return;
-        const waves         = flatMapVariables(vcd.rootModule)[focusedVariable].waves ?? [];
+        const waves         = allVcdVariables[focusedVariable].waves ?? [];
         const isAlt         = isAltPressed();
         const current       = isAlt ? altSelection : mainSelection;
         if (current === null) return;
-        let   target        = waves[gotoNext ? 'find' : 'findLast'](({ tick }) => gotoNext ? (tick > current) : (tick < current));
-        if (target === undefined) target = { tick: gotoNext ? maxTick : minTick, value: 0 };
+        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave)));
+        const dummyEdge     = {
+            ...(gotoNext ? waves[waves.length - 1] : waves[0]),
+            tick: gotoNext ? maxTick : minTick,
+        } satisfies VcdWave;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
         if (target === undefined) return;
         (isAlt ? setAltSelection : setMainSelection)(target.tick);
     });
-    const handleGotoPrevEdge = useEvent(() => {
+    
+    const handleGotoPrevEdgeNeg = useEvent(() => {
+        handleGotoEdge(false, (wave) => (wave.value === 0));
+    });
+    const handleGotoPrevEdgePos = useEvent(() => {
+        handleGotoEdge(false, (wave) => (wave.value === 1));
+    });
+    
+    const handleGotoPrevEdge    = useEvent(() => {
         handleGotoEdge(false);
     });
-    const handleGotoNextEdge = useEvent(() => {
+    const handleGotoNextEdge    = useEvent(() => {
         handleGotoEdge(true);
+    });
+    
+    const handleGotoNextEdgeNeg = useEvent(() => {
+        handleGotoEdge(true, (wave) => (wave.value === 0));
+    });
+    const handleGotoNextEdgePos = useEvent(() => {
+        handleGotoEdge(true, (wave) => (wave.value === 1));
     });
     
     
@@ -286,7 +305,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // effects:
-    useEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         // conditions:
         const svgElm   = svgRef.current;
         const rulerElm = rulerRef.current;
@@ -348,8 +367,14 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button onClick={handleZoomOut}>-</button>
                 <button onClick={handleZoomIn}>+</button>
                 
+                <button onClick={handleGotoPrevEdgeNeg} disabled={!isBinarySelection}>v&lt;=</button>
+                <button onClick={handleGotoPrevEdgePos} disabled={!isBinarySelection}>^&lt;=</button>
+                
                 <button onClick={handleGotoPrevEdge}>&lt;=</button>
                 <button onClick={handleGotoNextEdge}>=&gt;</button>
+                
+                <button onClick={handleGotoNextEdgePos} disabled={!isBinarySelection}>=&gt;^</button>
+                <button onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection}>=&gt;v</button>
             </div>
             <div
                 // classes:
@@ -367,7 +392,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 
                 {/* variables */}
                 <div className={styles.variables}>
-                    {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
+                    {!!vcd && allVcdVariables.map(({ waves, lsb, msb, size, name }, index) =>
                         <div key={index}  className={cn(styles.variable, (focusedVariable === index) ? 'focus' : null)} tabIndex={0} onFocus={() => setFocusedVariable(index)}>
                             <div className={styles.waves}>
                                 {waves.map(({tick, value}, index, waves) => {

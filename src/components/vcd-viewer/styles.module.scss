@@ -90,6 +90,12 @@
     
     
     
+    // spacings:
+    padding-block : 2px; // a padding for boxShadow
+    margin-block  : -2px; // a size compensation of boxShadow's padding
+    
+    
+    
     // typos:
     font-family: monospace;
     font-size: 12px;
@@ -98,6 +104,8 @@
     
     
     // states:
+    transition:
+        box-shadow 300ms;
     &:is(:focus, [class ~= "focus"]) {
         box-shadow: 0 0 0 2px var(--col-wave-selection);
     }
@@ -113,7 +121,7 @@
     // sizes:
     box-sizing: border-box;
     inline-size: calc(var(--length) * 1px);
-    overflow: hidden;
+    overflow: hidden; // hides overflowing text
     
     
     
@@ -165,7 +173,7 @@
     
     
     // sizes:
-    overflow: hidden;
+    // overflow: hidden;
     
     
     
