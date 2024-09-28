@@ -1,4 +1,13 @@
 .main {
+    // variables:
+    --col-wave-primary: #B5CEA8;
+    --col-wave-error: #F48771;
+    --col-wave-selection: #ddddddcc;
+    --col-wave-selection-range: #75BEFF88;
+    --col-btn-active: #75BEFF;
+    
+    
+    
     // layouts:
     display: grid;
     
@@ -22,18 +31,20 @@
     
     // spacings:
     gap: 10px;
+    
+    
+    
+    // children:
+    &>button {
+        appearance: none;
+        &[class ~= "active"] {
+            background-color: var(--col-btn-active);
+        }
+    }
 }
 .body {
     // positions:
     position: relative;
-    
-    
-    
-    // variables:
-    --col-wave-primary: #B5CEA8;
-    --col-wave-error: #F48771;
-    --col-wave-selection: #ddddddcc;
-    --col-wave-selection-range: #0078D488;
     
     
     

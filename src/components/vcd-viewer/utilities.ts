@@ -16,7 +16,7 @@ export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
 export const getVariableMinTick = (module: VcdModule): number => {
     return Math.min(
         ...flatMapVariables(module)
-        .map(({ waves }) => waves[waves.length - 1].tick)
+        .map(({ waves }) => waves[0].tick)
     );
 }
 export const getVariableMaxTick = (module: VcdModule): number => {

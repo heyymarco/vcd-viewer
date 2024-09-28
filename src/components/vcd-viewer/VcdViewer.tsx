@@ -83,6 +83,14 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [enableTouchScroll, setEnableTouchScroll] = useState<boolean>(false);
     const touchStartRef = useRef<number>(0);
     
+    const [search           , setSearch           ] = useState<string>('');
+    
+    enum SearchType {
+        TIME,
+        HEX,
+    }
+    const [searchType       , setSearchType       ] = useState<SearchType>(SearchType.HEX);
+    
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
         isTouchActive       : false,
@@ -182,6 +190,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     // handlers:
     const handleKeyDown           = useEvent<React.KeyboardEventHandler<Element>>((event) => {
+        // conditions:
+        if ((event.target as Element)?.tagName === 'INPUT') return; // do not intercept <input>
+        
+        
+        
         // actions:
         event.preventDefault();
         
@@ -415,12 +428,27 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setZoom((current) => Math.round(current + 1));
     });
     
-    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean)) => {
-        if (focusedVariable === null) return;
-        const waves         = allVcdVariables[focusedVariable].waves ?? [];
-        const isAlt         = isAltPressed();
-        const current       = isAlt ? altSelection : mainSelection;
-        if (current === null) return;
+    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean), allVariables: boolean = false) => {
+        if (!allVariables && (focusedVariable === null)) return;
+        const waves         = (
+            (
+                !allVariables
+                ? allVcdVariables[focusedVariable ?? 0].waves
+                : (
+                    allVcdVariables
+                    .flatMap(({ waves }) => waves)
+                    .sort((a, b) => a.tick - b.tick)
+                )
+            )
+            ??
+            []
+        );
+        const isAlt         = !allVariables ? isAltPressed() : false;
+        let   current       = isAlt ? altSelection : mainSelection;
+        if (current === null) {
+            if (!allVariables) return;
+            current = minTick;
+        } // if
         let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave)));
         const dummyEdge     = {
             ...(gotoNext ? waves[waves.length - 1] : waves[0]),
@@ -436,6 +464,31 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     const handleGotoPrevEdgePos   = useEvent(() => {
         handleGotoEdge(false, (wave) => (wave.value === 1));
+    });
+    
+    const handleGotoPrevSearch    = useEvent(() => {
+        switch (searchType) {
+            case SearchType.TIME :
+                const searchNum = Number.parseFloat(search);
+                if (isNaN(searchNum)) return;
+                setMainSelection(searchNum);
+                break;
+            case SearchType.HEX  :
+                handleGotoEdge(false, (wave) => (wave.value.toString(16).toLowerCase().includes(search.toLowerCase())), true);
+                break;
+        } // switch
+    });
+    const handleGotoNextSearch    = useEvent(() => {
+        switch (searchType) {
+            case SearchType.TIME :
+                const searchNum = Number.parseFloat(search);
+                if (isNaN(searchNum)) return;
+                setMainSelection(searchNum);
+                break;
+            case SearchType.HEX  :
+                handleGotoEdge(true, (wave) => (wave.value.toString(16).toLowerCase().includes(search.toLowerCase())), true);
+                break;
+        } // switch
     });
     
     const handleGotoPrevEdge      = useEvent(() => {
@@ -686,7 +739,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button onClick={handleGotoNextEdgePos} disabled={!isBinarySelection}>=&gt;^</button>
                 <button onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection}>=&gt;v</button>
                 
-                <button onClick={handleToggleTouchScroll}>touch scroll ({enableTouchScroll ? 'e' : 'd'})</button>
+                <input type='search' placeholder='Search' value={search} onChange={({currentTarget: { value }}) => setSearch(value)} />
+                <button onClick={() => setSearchType(SearchType.TIME)} className={(searchType === SearchType.TIME) ? 'active' : ''}>by time</button>
+                <button onClick={() => setSearchType(SearchType.HEX)} className={(searchType === SearchType.HEX) ? 'active' : ''}>by hex</button>
+                <button onClick={handleGotoPrevSearch} disabled={searchType !== SearchType.HEX}>prev search</button>
+                <button onClick={handleGotoNextSearch}>next search</button>
+                
+                <button onClick={handleToggleTouchScroll} className={enableTouchScroll ? 'active' : ''}>touch scroll</button>
             </div>
             <div
                 // refs:
