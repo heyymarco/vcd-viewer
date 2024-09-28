@@ -55,8 +55,10 @@
     
     
     
-    // scrolls:
+    // behaviors:
     touch-action: pinch-zoom;  // prevents scrolling by touch, but allows to zoom_in/out
+    -webkit-user-select: none; // no selection
+    user-select: none;         // no selection
     
     
     
