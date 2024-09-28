@@ -354,12 +354,14 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     const handlePointerUp         = useEvent((event: MouseEvent): void => {
         // conditions:
+        if ((selectionStart === null) || (selectionEnd === null)) return; // no selectionRange => ignore
+        
         const bodyElm = bodyRef.current;
         if (!bodyElm) return;
         
         
         
-        const viewRange    = Math.abs((selectionStart ?? 0) - (selectionEnd ?? 0)) * baseScale;
+        const viewRange    = Math.abs(selectionStart - selectionEnd) * baseScale;
         const clientArea   = bodyElm.getBoundingClientRect().width;
         const targetScale  = clientArea / viewRange;
         const reZoom       = Math.log10(targetScale) / Math.log10(2);
@@ -369,12 +371,14 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     const handleScrollToSelection = useEvent(() => {
         // conditions:
+        if ((selectionStart === null) || (selectionEnd === null)) return; // no selectionRange => ignore
+        
         const bodyElm = bodyRef.current;
         if (!bodyElm) return;
         
         
         
-        const scrollTo = (Math.min((selectionStart ?? 0), (selectionEnd ?? 0)) * baseScale);
+        const scrollTo = (Math.min(selectionStart, selectionEnd) * baseScale);
         bodyElm.scrollLeft = scrollTo;
         
         setSelectionStart(null);
