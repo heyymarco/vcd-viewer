@@ -18,6 +18,9 @@ import {
 }                           from 'react'
 import cn                   from 'classnames'
 import * as d3              from 'd3'
+import {
+    useEvent,
+}                           from '@reusable-ui/core'
 
 // models:
 import {
@@ -27,6 +30,7 @@ import {
 // utilities:
 import {
     flatMapVariables,
+    getVariableMinTick,
     getVariableMaxTick,
     actionKeys,
 }                           from './utilities'
@@ -55,6 +59,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         // other props:
         ...restVcdViewerProps
     } = props;
+    const minTick = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
     const maxTick = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
     
     
@@ -63,8 +68,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
     
-    const [mainSelection, setMainSelection] = useState<number|null>(null);
-    const [altSelection , setAltSelection ] = useState<number|null>(null);
+    const [mainSelection  , setMainSelection  ] = useState<number|null>(null);
+    const [altSelection   , setAltSelection   ] = useState<number|null>(null);
+    
+    const [focusedVariable, setFocusedVariable] = useState<number|null>(null);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -154,14 +161,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     
+    // utilities:
+    const isAltPressed = useEvent((): boolean => {
+        return inputLogs.activeKeys.has('altleft') || inputLogs.activeKeys.has('altright')
+    });
+    
+    
+    
     // handlers:
-    const handleZoomOut = useCallback(() => {
-        setZoom((current) => (current - 1));
-    }, []);
-    const handleZoomIn  = useCallback(() => {
-        setZoom((current) => (current + 1));
-    }, []);
-    const handleKeyDown = useCallback<React.KeyboardEventHandler<Element>>((event) => {
+    const handleKeyDown      = useEvent<React.KeyboardEventHandler<Element>>((event) => {
         // conditions:
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
@@ -184,24 +192,50 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         //     // trigger the onClick event later at `onKeyUp`
         //     inputLogs.performKeyUpActions = true;
         // }
-    }, []);
-    const handleClick   = useCallback<React.MouseEventHandler<Element>>((event) => {
+    });
+    const handleClick        = useEvent<React.MouseEventHandler<Element>>((event) => {
         const { x } = event.currentTarget.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
-        if (inputLogs.activeKeys.has('altleft') || inputLogs.activeKeys.has('altright')) {
+        if (isAltPressed()) {
             setAltSelection(valuePosition);
         }
         else {
             setMainSelection(valuePosition);
         } // if
-    }, [baseScale]);
+    });
+    
+    const handleZoomOut      = useEvent(() => {
+        setZoom((current) => (current - 1));
+    });
+    const handleZoomIn       = useEvent(() => {
+        setZoom((current) => (current + 1));
+    });
+    
+    const handleGotoEdge     = useEvent((gotoNext: boolean) => {
+        if (!vcd) return;
+        if (focusedVariable === null) return;
+        const waves         = flatMapVariables(vcd.rootModule)[focusedVariable].waves ?? [];
+        const isAlt         = isAltPressed();
+        const current       = isAlt ? altSelection : mainSelection;
+        if (current === null) return;
+        let   target        = waves[gotoNext ? 'find' : 'findLast'](({ tick }) => gotoNext ? (tick > current) : (tick < current));
+        if (target === undefined) target = { tick: gotoNext ? maxTick : minTick, value: 0 };
+        if (target === undefined) return;
+        (isAlt ? setAltSelection : setMainSelection)(target.tick);
+    });
+    const handleGotoPrevEdge = useEvent(() => {
+        handleGotoEdge(false);
+    });
+    const handleGotoNextEdge = useEvent(() => {
+        handleGotoEdge(true);
+    });
     
     
     
     // global handlers:
     const watchGlobalKeyStatusRef = useRef<undefined|(() => void)>(undefined);
-    const watchGlobalKey = useCallback((active: boolean): boolean|null => {
+    const watchGlobalKey = useEvent((active: boolean): boolean|null => {
         // conditions:
         const shouldActive = active /* && enabled */;
         if (!!watchGlobalKeyStatusRef.current === shouldActive) return null; // already activated|deactivated => nothing to do
@@ -247,7 +281,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         return shouldActive;
-    }, []);
+    });
     
     
     
@@ -284,8 +318,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     // default props:
     const {
-        // accessibilities:
-        tabIndex = 0, // focusable
+        // reserved for future defaults
         
         
         
@@ -303,11 +336,6 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             
             
             
-            // accessibilities:
-            tabIndex={tabIndex}
-            
-            
-            
             // classes:
             className={cn(props.className, styles.main)}
             
@@ -319,6 +347,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <div className={styles.toolbar}>
                 <button onClick={handleZoomOut}>-</button>
                 <button onClick={handleZoomIn}>+</button>
+                
+                <button onClick={handleGotoPrevEdge}>&lt;=</button>
+                <button onClick={handleGotoNextEdge}>=&gt;</button>
             </div>
             <div
                 // classes:
@@ -334,49 +365,51 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     <g ref={rulerRef} transform='translate(0, 20)' />
                 </svg>
                 
-                {/* body */}
-                {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
-                    <div key={index} className={styles.variable}>
-                        <div className={styles.waves}>
-                            {waves.map(({tick, value}, index, waves) => {
-                                const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-                                // if (nextTick === maxTick) return null;
+                {/* variables */}
+                <div className={styles.variables}>
+                    {!!vcd && flatMapVariables(vcd.rootModule).map(({ waves, lsb, msb, size, name }, index) =>
+                        <div key={index}  className={cn(styles.variable, (focusedVariable === index) ? 'focus' : null)} tabIndex={0} onFocus={() => setFocusedVariable(index)}>
+                            <div className={styles.waves}>
+                                {waves.map(({tick, value}, index, waves) => {
+                                    const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                                    // if (nextTick === maxTick) return null;
+                                    const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                                    const isBinary = (size === 1);
+                                    
+                                    
+                                    
+                                    // jsx:
+                                    const length = (nextTick - tick) * baseScale;
+                                    if (length === 0) return;
+                                    return (
+                                        <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                            {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                            {(() => {
+                                const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+                                if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                                const {
+                                    value,
+                                } = lastWave;
+                                
                                 const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                                 const isBinary = (size === 1);
                                 
                                 
                                 
                                 // jsx:
-                                const length = (nextTick - tick) * baseScale;
-                                if (length === 0) return;
                                 return (
-                                    <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                    <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
                                         {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
                                     </span>
                                 );
-                            })}
+                            })()}
                         </div>
-                        {(() => {
-                            const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-                            if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-                            const {
-                                value,
-                            } = lastWave;
-                            
-                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                            const isBinary = (size === 1);
-                            
-                            
-                            
-                            // jsx:
-                            return (
-                                <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
-                                    {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
-                                </span>
-                            );
-                        })()}
-                    </div>
-                )}
+                    )}
+                </div>
                 
                 {/* selection */}
                 {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection * baseScale} as any} />}
