@@ -368,7 +368,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         const { x } = bodyElm.getBoundingClientRect();
-        const relativePosition = event.clientX - x;
+        const relativePosition = event.clientX - x + bodyElm.scrollLeft;
         const valuePosition    = relativePosition / baseScale;
         
         
