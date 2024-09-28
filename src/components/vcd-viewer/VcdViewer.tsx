@@ -238,7 +238,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 const touchX = (event.touches.length === 1 /* no multi touch for scrolling */) ? event.touches[0].clientX : undefined;
                 if (touchX !== undefined) touchStartRef.current = touchX;
             }
-            if (!enableTouchScroll) {
+            else {
                 // simulates the Touch(Start|End|Cancel) as Mouse(Down|Up):
                 handlePointerDown(
                     new MouseEvent((event?.type === 'touchstart') ? 'mousedown' : 'mouseup', {
