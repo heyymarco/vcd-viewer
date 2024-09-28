@@ -277,8 +277,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         const { x } = variablesElm.getBoundingClientRect();
-        const paddingLeft = getComputedStyle(bodyElm).paddingLeft;
-        const relativePosition = event.clientX - x + (Number.parseFloat(paddingLeft) || 0);
+        const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
         
         
@@ -341,21 +340,45 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         const variablesElm = variablesRef.current;
         if (!variablesElm) return;
         
-        const bodyElm = bodyRef.current;
-        if (!bodyElm) return;
-        
         if (!inputLogs.isMouseActive && !inputLogs.isTouchActive) return; // no active pointer => ignore
         
         
         
         const { x } = variablesElm.getBoundingClientRect();
-        const paddingLeft = getComputedStyle(bodyElm).paddingLeft;
-        const relativePosition = event.clientX - x + (Number.parseFloat(paddingLeft) || 0);
+        const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
         
         
         
         setSelectionEnd(valuePosition);
+    });
+    const handlePointerUp         = useEvent((event: MouseEvent): void => {
+        // conditions:
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
+        
+        
+        const viewRange    = Math.abs((selectionStart ?? 0) - (selectionEnd ?? 0)) * baseScale;
+        const clientArea   = bodyElm.getBoundingClientRect().width;
+        const targetScale  = clientArea / viewRange;
+        const reZoom       = Math.log10(targetScale) / Math.log10(2);
+        setZoom((current) => current + reZoom);
+        
+        setTimeout(handleScrollToSelection, 0); // scroll to the beginning of selection after the new zoom is completed:
+    });
+    const handleScrollToSelection = useEvent(() => {
+        // conditions:
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
+        
+        
+        const scrollTo = (Math.min((selectionStart ?? 0), (selectionEnd ?? 0)) * baseScale);
+        bodyElm.scrollLeft = scrollTo;
+        
+        setSelectionStart(null);
+        setSelectionEnd(null);
     });
     
     const handleClick             = useEvent<React.MouseEventHandler<Element>>((event) => {
@@ -382,10 +405,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     
     const handleZoomOut           = useEvent(() => {
-        setZoom((current) => (current - 1));
+        setZoom((current) => Math.round(current - 1));
     });
     const handleZoomIn            = useEvent(() => {
-        setZoom((current) => (current + 1));
+        setZoom((current) => Math.round(current + 1));
     });
     
     const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean)) => {
@@ -493,8 +516,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // logs:
             inputLogs.logMouseEvent(event, false /*mouse_up*/, actionMouses);
             if (watchGlobalMouse(false) === false) {
-            //     console.log({activeKeys: inputLogs.activeKeys});
-            //     // TODO: update keydown deactivated
+                // console.log({activeKeys: inputLogs.activeKeys});
+                handlePointerUp(event);
             } // if
         };
         
@@ -534,8 +557,30 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // logs:
             inputLogs.logTouchEvent(event, false /*touch_up*/, actionTouches);
             if (watchGlobalTouch(false) === false) {
-            //     console.log({activeKeys: inputLogs.activeKeys});
-            //     // TODO: update keydown deactivated
+                // console.log({activeKeys: inputLogs.activeKeys});
+                
+                // simulates the TouchEnd as MouseUp:
+                handlePointerUp(
+                    new MouseEvent('mouseup', {
+                        ...event,
+                        ...(() => {
+                            const touch = event?.touches?.[0];
+                            return {
+                                clientX : touch?.clientX ?? 0,
+                                clientY : touch?.clientY ?? 0,
+                                
+                                screenX : touch?.screenX ?? 0,
+                                screenY : touch?.screenY ?? 0,
+                                
+                                pageX   : touch?.pageX   ?? 0,
+                                pageY   : touch?.pageY   ?? 0,
+                                
+                                button  : 0, // simulates no button pressed
+                                buttons : 0, // simulates no button pressed
+                            };
+                        })(),
+                    }),
+                );
             } // if
         };
         

@@ -51,7 +51,7 @@
     
     // sizes:
     overflow-x : auto;
-    overflow-y : visible;
+    overflow-y : hidden;
     
     
     
@@ -59,11 +59,6 @@
     touch-action: pinch-zoom;  // prevents scrolling by touch, but allows to zoom_in/out
     -webkit-user-select: none; // no selection
     user-select: none;         // no selection
-    
-    
-    
-    // spacings:
-    padding: 10px;
     
     
     
@@ -232,7 +227,7 @@
     // positions:
     position: absolute;
     inset-block: 0;
-    inset-inline-start: calc(var(--position) * 1px);
+    inset-inline-start: calc((var(--position) * 1px) + 1.5px);
     
     
     
@@ -256,7 +251,7 @@
     // positions:
     position: absolute;
     inset-block: 0;
-    inset-inline-start: calc(var(--selStart) * 1px);
+    inset-inline-start: calc((var(--selStart) * 1px) + 1.5px);
     
     
     
