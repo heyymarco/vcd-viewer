@@ -759,89 +759,98 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 
                 <button onClick={handleToggleTouchScroll} className={enableTouchScroll ? 'active' : ''}>touch scroll</button>
             </div>
-            <div
-                // refs:
-                ref={bodyRef}
-                
-                
-                
-                // classes:
-                className={cn(props.className, styles.body)}
-            >
-                {/* ruler: */}
-                <svg ref={svgRef} className={styles.ruler}>
-                    <g ref={rulerRef} transform='translate(0, 20)' />
-                </svg>
-                
-                {/* variables */}
+            <div className={styles.bodyOuter}>
+                <div className={styles.labels}>
+                    {!!vcd && allVcdVariables.map(({ name, modules }, index) =>
+                        <div key={index} className={styles.label}>
+                            {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
+                        </div>
+                    )}
+                </div>
                 <div
                     // refs:
-                    ref={variablesRef}
+                    ref={bodyRef}
                     
                     
                     
                     // classes:
-                    className={styles.variables}
-                    
-                    
-                    
-                    // handlers:
-                    onClick={handleClick}
-                    
-                    onMouseDown={handleMouseDown}
-                    onTouchStart={handleTouchStart}
-                    
-                    onMouseMove={handleMouseMove}
-                    onTouchMove={handleTouchMove}
+                    className={cn(props.className, styles.body)}
                 >
-                    {!!vcd && allVcdVariables.map(({ waves, lsb, msb, size, name }, index) =>
-                        <div key={index}  className={cn(styles.variable, (focusedVariable === index) ? 'focus' : null)} tabIndex={0} onFocus={() => setFocusedVariable(index)}>
-                            <div className={styles.waves}>
-                                {waves.map(({tick, value}, index, waves) => {
-                                    const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-                                    // if (nextTick === maxTick) return null;
+                    {/* ruler: */}
+                    <svg ref={svgRef} className={styles.ruler}>
+                        <g ref={rulerRef} transform='translate(0, 20)' />
+                    </svg>
+                    
+                    {/* variables */}
+                    <div
+                        // refs:
+                        ref={variablesRef}
+                        
+                        
+                        
+                        // classes:
+                        className={styles.variables}
+                        
+                        
+                        
+                        // handlers:
+                        onClick={handleClick}
+                        
+                        onMouseDown={handleMouseDown}
+                        onTouchStart={handleTouchStart}
+                        
+                        onMouseMove={handleMouseMove}
+                        onTouchMove={handleTouchMove}
+                    >
+                        {!!vcd && allVcdVariables.map(({ waves, size }, index) =>
+                            <div key={index}  className={cn(styles.variable, (focusedVariable === index) ? 'focus' : null)} tabIndex={0} onFocus={() => setFocusedVariable(index)}>
+                                <div className={styles.waves}>
+                                    {waves.map(({tick, value}, index, waves) => {
+                                        const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                                        // if (nextTick === maxTick) return null;
+                                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                                        const isBinary = (size === 1);
+                                        
+                                        
+                                        
+                                        // jsx:
+                                        const length = (nextTick - tick) * baseScale;
+                                        if (length === 0) return;
+                                        return (
+                                            <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                                {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                                {(() => {
+                                    const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+                                    if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                                    const {
+                                        value,
+                                    } = lastWave;
+                                    
                                     const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                                     const isBinary = (size === 1);
                                     
                                     
                                     
                                     // jsx:
-                                    const length = (nextTick - tick) * baseScale;
-                                    if (length === 0) return;
                                     return (
-                                        <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
+                                        <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
                                             {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
                                         </span>
                                     );
-                                })}
+                                })()}
                             </div>
-                            {(() => {
-                                const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-                                if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-                                const {
-                                    value,
-                                } = lastWave;
-                                
-                                const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                                const isBinary = (size === 1);
-                                
-                                
-                                
-                                // jsx:
-                                return (
-                                    <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
-                                        {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
-                                    </span>
-                                );
-                            })()}
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    
+                    {/* selection */}
+                    {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection * baseScale} as any} />}
+                    {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection  * baseScale} as any} />}
+                    {(selectionStart !== null) && (selectionEnd !== null) && <div className={styles.selectionRange} style={{'--selStart': Math.min(selectionStart, selectionEnd)  * baseScale, '--selEnd': Math.max(selectionStart, selectionEnd) * baseScale} as any} />}
                 </div>
-                
-                {/* selection */}
-                {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection * baseScale} as any} />}
-                {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection  * baseScale} as any} />}
-                {(selectionStart !== null) && (selectionEnd !== null) && <div className={styles.selectionRange} style={{'--selStart': Math.min(selectionStart, selectionEnd)  * baseScale, '--selEnd': Math.max(selectionStart, selectionEnd) * baseScale} as any} />}
             </div>
         </div>
     );

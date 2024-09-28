@@ -2,14 +2,15 @@
 import {
     type VcdModule,
     type VcdVariable,
+    type FlattenedVcdVariable,
 }                           from '@/models/vcd'
 
 
 
-export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
+export const flatMapVariables = (module: VcdModule, index: number = -1, array: VcdModule[] = [], parentModules: VcdModule[] = []): FlattenedVcdVariable[] => {
     return [
-        ...module.variables,
-        ...module.submodules.flatMap(flatMapVariables),
+        ...module.variables.map((variable) => ({ ...variable, modules: [module, ...parentModules] }) satisfies FlattenedVcdVariable),
+        ...module.submodules.flatMap((subModule, index, array) => flatMapVariables(subModule, index, array, [module, ...parentModules])),
     ];
 }
 

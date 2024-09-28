@@ -20,6 +20,9 @@
     
     // typos:
     color: white;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
 }
 .toolbar {
     // layouts:
@@ -42,8 +45,49 @@
         }
     }
 }
+.bodyOuter {
+    display: grid;
+    grid-template:
+        "labels body" max-content
+        /
+        min-content 1fr;
+    
+    
+    
+    // backgrounds:
+    background-color: black;
+}
+.labels {
+    // layouts:
+    display: grid;
+    align-content: end;
+    
+    
+    
+    // sizes:
+    overflow-x : scroll;
+    overflow-y : hidden;
+    // scrollbar-gutter: stable both-edges;
+    
+    
+    
+    // spacings:
+    row-gap: 6px;
+    padding-inline: 10px;
+    padding-block: 10px;
+}
+.label {
+    // sizes:
+    block-size: 22px;
+    
+    
+    
+    // typos:
+    text-align: end;
+}
 .body {
     // positions:
+    grid-area: body;
     position: relative;
     
     
@@ -61,8 +105,9 @@
     
     
     // sizes:
-    overflow-x : auto;
+    overflow-x : scroll;
     overflow-y : hidden;
+    // scrollbar-gutter: stable both-edges;
     
     
     
@@ -73,13 +118,9 @@
     
     
     
-    // backgrounds:
-    background-color: black;
-    
-    
-    
     // spacings:
     row-gap: 6px;
+    padding-block: 10px;
 }
 
 .ruler {
@@ -124,13 +165,6 @@
     // spacings:
     padding-block : 2px; // a padding for boxShadow
     margin-block  : -2px; // a size compensation of boxShadow's padding
-    
-    
-    
-    // typos:
-    font-family: monospace;
-    font-size: 12px;
-    font-weight: 600;
     
     
     
