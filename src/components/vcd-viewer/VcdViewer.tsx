@@ -456,7 +456,19 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         } satisfies VcdWave;
         if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
         if (target === undefined) return;
-        (isAlt ? setAltSelection : setMainSelection)(target.tick);
+        const selectionPos = target.tick;
+        (isAlt ? setAltSelection : setMainSelection)(selectionPos);
+        
+        
+        
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        const scrollPosStart = bodyElm.scrollLeft / baseScale;
+        const clientArea     = bodyElm.getBoundingClientRect().width;
+        const scrollPosEnd   = scrollPosStart + (clientArea / baseScale);
+        if ((selectionPos <= scrollPosStart) || (selectionPos >= scrollPosEnd)) { // if out of view
+            bodyElm.scrollLeft = (selectionPos * baseScale) - (clientArea / 2);
+        } // if
     });
     
     const handleGotoPrevEdgeNeg   = useEvent(() => {
