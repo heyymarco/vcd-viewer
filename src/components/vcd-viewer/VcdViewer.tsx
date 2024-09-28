@@ -71,14 +71,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
     
-    const [mainSelection  , setMainSelection  ] = useState<number|null>(null);
-    const [altSelection   , setAltSelection   ] = useState<number|null>(null);
+    const [mainSelection    , setMainSelection    ] = useState<number|null>(null);
+    const [altSelection     , setAltSelection     ] = useState<number|null>(null);
     
-    const [focusedVariable, setFocusedVariable] = useState<number|null>(null);
+    const [focusedVariable  , setFocusedVariable  ] = useState<number|null>(null);
     const isBinarySelection = (focusedVariable !== null) && (allVcdVariables?.[focusedVariable]?.size === 1);
     
-    const [selectionStart , setSelectionStart ] = useState<number|null>(null);
-    const [selectionEnd   , setSelectionEnd   ] = useState<number|null>(null);
+    const [selectionStart   , setSelectionStart   ] = useState<number|null>(null);
+    const [selectionEnd     , setSelectionEnd     ] = useState<number|null>(null);
+    
+    const [enableTouchScroll, setEnableTouchScroll] = useState<boolean>(false);
+    const touchStartRef = useRef<number>(0);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -164,6 +167,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     // refs:
     const svgRef       = useRef<SVGSVGElement|null>(null);
+    const bodyRef      = useRef<HTMLDivElement|null>(null);
     const rulerRef     = useRef<SVGGElement|null>(null);
     const variablesRef = useRef<HTMLDivElement|null>(null);
     
@@ -177,7 +181,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // handlers:
-    const handleKeyDown         = useEvent<React.KeyboardEventHandler<Element>>((event) => {
+    const handleKeyDown           = useEvent<React.KeyboardEventHandler<Element>>((event) => {
         // actions:
         event.preventDefault();
         
@@ -206,7 +210,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         // }
     });
     
-    const handleMouseDown       = useEvent<React.MouseEventHandler<Element>>((event) => {
+    const handleMouseDown         = useEvent<React.MouseEventHandler<Element>>((event) => {
         // actions:
         // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
         
@@ -219,7 +223,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             handlePointerDown(event.nativeEvent);
         } // if
     });
-    const handleTouchStart      = useEvent<React.TouchEventHandler<Element>>((event) => {
+    const handleTouchStart        = useEvent<React.TouchEventHandler<Element>>((event) => {
         // actions:
         // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
         
@@ -230,41 +234,51 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         if (watchGlobalTouch(true) === true) {
             // console.log({activeKeys: inputLogs.activeKeys});
             
-            // simulates the Touch(Start|End|Cancel) as Mouse(Down|Up):
-            handlePointerDown(
-                new MouseEvent((event?.type === 'touchstart') ? 'mousedown' : 'mouseup', {
-                    // simulates for `onPointerCaptureCancel(event)` & `onPointerCaptureEnd(event)`:
-                    ...event.nativeEvent,
-                    ...(() => {
-                        const isTouchStart = event?.type === 'touchstart';
-                        const touch        = isTouchStart ? event?.touches?.[0] : event?.changedTouches?.[0];
-                        return {
-                            clientX : touch?.clientX ?? 0,
-                            clientY : touch?.clientY ?? 0,
-                            
-                            screenX : touch?.screenX ?? 0,
-                            screenY : touch?.screenY ?? 0,
-                            
-                            pageX   : touch?.pageX   ?? 0,
-                            pageY   : touch?.pageY   ?? 0,
-                            
-                            button  : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
-                            buttons : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
-                        };
-                    })(),
-                }),
-            );
+            if (enableTouchScroll) {
+                const touchX = (event.touches.length === 1 /* no multi touch for scrolling */) ? event.touches[0].clientX : undefined;
+                if (touchX !== undefined) touchStartRef.current = touchX;
+            }
+            if (!enableTouchScroll) {
+                // simulates the Touch(Start|End|Cancel) as Mouse(Down|Up):
+                handlePointerDown(
+                    new MouseEvent((event?.type === 'touchstart') ? 'mousedown' : 'mouseup', {
+                        // simulates for `onPointerCaptureCancel(event)` & `onPointerCaptureEnd(event)`:
+                        ...event.nativeEvent,
+                        ...(() => {
+                            const isTouchStart = event?.type === 'touchstart';
+                            const touch        = isTouchStart ? event?.touches?.[0] : event?.changedTouches?.[0];
+                            return {
+                                clientX : touch?.clientX ?? 0,
+                                clientY : touch?.clientY ?? 0,
+                                
+                                screenX : touch?.screenX ?? 0,
+                                screenY : touch?.screenY ?? 0,
+                                
+                                pageX   : touch?.pageX   ?? 0,
+                                pageY   : touch?.pageY   ?? 0,
+                                
+                                button  : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                                buttons : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                            };
+                        })(),
+                    }),
+                );
+            } // if
         } // if
     });
-    const handlePointerDown     = useEvent((event: MouseEvent): void => {
+    const handlePointerDown       = useEvent((event: MouseEvent): void => {
         // conditions:
         const variablesElm = variablesRef.current;
         if (!variablesElm) return;
         
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
         
         
         const { x } = variablesElm.getBoundingClientRect();
-        const relativePosition = event.clientX - x;
+        const paddingLeft = getComputedStyle(bodyElm).paddingLeft;
+        const relativePosition = event.clientX - x + (Number.parseFloat(paddingLeft) || 0);
         const valuePosition    = relativePosition / baseScale;
         
         
@@ -273,10 +287,31 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setSelectionEnd(null);
     });
     
-    const handleMouseMove       = useEvent<React.MouseEventHandler<Element>>((event) => {
+    const handleMouseMove         = useEvent<React.MouseEventHandler<Element>>((event) => {
         handlePointerMove(event.nativeEvent);
     });
-    const handleTouchMove       = useEvent<React.TouchEventHandler<Element>>((event) => {
+    const handleTouchMove         = useEvent<React.TouchEventHandler<Element>>((event) => {
+        if (enableTouchScroll) {
+            // conditions:
+            const bodyElm = bodyRef.current;
+            if (!bodyElm) return;
+            
+            
+            
+            // actions:
+            const touchX = (event.touches.length === 1 /* no multi touch for scrolling */) ? event.touches[0].clientX : undefined;
+            if (touchX !== undefined) {
+                bodyElm.scrollLeft += (touchStartRef.current - touchX);
+                touchStartRef.current = touchX; // restart the pos
+            } // if
+            
+            
+            
+            return; // handled => done
+        } // if
+        
+        
+        
         // simulates the TouchMove as MouseMove:
         handlePointerMove(
             new MouseEvent('mousemove', {
@@ -301,16 +336,21 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             }),
         );
     });
-    const handlePointerMove     = useEvent((event: MouseEvent): void => {
+    const handlePointerMove       = useEvent((event: MouseEvent): void => {
         // conditions:
         const variablesElm = variablesRef.current;
         if (!variablesElm) return;
+        
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
         if (!inputLogs.isMouseActive && !inputLogs.isTouchActive) return; // no active pointer => ignore
         
         
         
         const { x } = variablesElm.getBoundingClientRect();
-        const relativePosition = event.clientX - x;
+        const paddingLeft = getComputedStyle(bodyElm).paddingLeft;
+        const relativePosition = event.clientX - x + (Number.parseFloat(paddingLeft) || 0);
         const valuePosition    = relativePosition / baseScale;
         
         
@@ -318,13 +358,16 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setSelectionEnd(valuePosition);
     });
     
-    const handleClick           = useEvent<React.MouseEventHandler<Element>>((event) => {
+    const handleClick             = useEvent<React.MouseEventHandler<Element>>((event) => {
         // conditions:
         if ((selectionStart !== null) && (selectionEnd !== null)) return; // ignore if selectionRange is active
         
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
         
         
-        const { x } = event.currentTarget.getBoundingClientRect();
+        
+        const { x } = bodyElm.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
         
@@ -338,14 +381,14 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         } // if
     });
     
-    const handleZoomOut         = useEvent(() => {
+    const handleZoomOut           = useEvent(() => {
         setZoom((current) => (current - 1));
     });
-    const handleZoomIn          = useEvent(() => {
+    const handleZoomIn            = useEvent(() => {
         setZoom((current) => (current + 1));
     });
     
-    const handleGotoEdge        = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean)) => {
+    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean)) => {
         if (focusedVariable === null) return;
         const waves         = allVcdVariables[focusedVariable].waves ?? [];
         const isAlt         = isAltPressed();
@@ -361,25 +404,29 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         (isAlt ? setAltSelection : setMainSelection)(target.tick);
     });
     
-    const handleGotoPrevEdgeNeg = useEvent(() => {
+    const handleGotoPrevEdgeNeg   = useEvent(() => {
         handleGotoEdge(false, (wave) => (wave.value === 0));
     });
-    const handleGotoPrevEdgePos = useEvent(() => {
+    const handleGotoPrevEdgePos   = useEvent(() => {
         handleGotoEdge(false, (wave) => (wave.value === 1));
     });
     
-    const handleGotoPrevEdge    = useEvent(() => {
+    const handleGotoPrevEdge      = useEvent(() => {
         handleGotoEdge(false);
     });
-    const handleGotoNextEdge    = useEvent(() => {
+    const handleGotoNextEdge      = useEvent(() => {
         handleGotoEdge(true);
     });
     
-    const handleGotoNextEdgeNeg = useEvent(() => {
+    const handleGotoNextEdgeNeg   = useEvent(() => {
         handleGotoEdge(true, (wave) => (wave.value === 0));
     });
-    const handleGotoNextEdgePos = useEvent(() => {
+    const handleGotoNextEdgePos   = useEvent(() => {
         handleGotoEdge(true, (wave) => (wave.value === 1));
+    });
+    
+    const handleToggleTouchScroll = useEvent(() => {
+        setEnableTouchScroll((current) => !current);
     });
     
     
@@ -589,8 +636,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 
                 <button onClick={handleGotoNextEdgePos} disabled={!isBinarySelection}>=&gt;^</button>
                 <button onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection}>=&gt;v</button>
+                
+                <button onClick={handleToggleTouchScroll}>touch scroll ({enableTouchScroll ? 'e' : 'd'})</button>
             </div>
             <div
+                // refs:
+                ref={bodyRef}
+                
+                
+                
                 // classes:
                 className={cn(props.className, styles.body)}
             >

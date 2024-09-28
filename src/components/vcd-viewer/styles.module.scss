@@ -49,6 +49,22 @@
     
     
     
+    // sizes:
+    overflow-x : auto;
+    overflow-y : visible;
+    
+    
+    
+    // scrolls:
+    touch-action: pinch-zoom;  // prevents scrolling by touch, but allows to zoom_in/out
+    
+    
+    
+    // spacings:
+    padding: 10px;
+    
+    
+    
     // backgrounds:
     background-color: black;
     
@@ -59,8 +75,14 @@
 }
 
 .ruler {
+    // positions:
     grid-area: ruler;
+    
+    
+    
+    // sizes:
     block-size: 30px;
+    overflow: visible;
 }
 
 .variables {
@@ -192,6 +214,11 @@
     
     // layouts:
     @include waveLayout;
+    
+    
+    
+    // sizes:
+    min-inline-size: 40px;
     
     
     
