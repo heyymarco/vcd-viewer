@@ -28,4 +28,6 @@ export const getVariableMaxTick = (module: VcdModule): number => {
 
 
 
-export const actionKeys = ['AltLeft', 'AltRight'];
+export const actionKeys    = ['AltLeft', 'AltRight'];
+export const actionMouses  = [1]; // [only_left_click]
+export const actionTouches = []; // [only_single_touch]

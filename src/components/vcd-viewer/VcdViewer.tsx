@@ -31,7 +31,10 @@ import {
     flatMapVariables,
     getVariableMinTick,
     getVariableMaxTick,
+    
     actionKeys,
+    actionMouses,
+    actionTouches,
 }                           from './utilities'
 
 
@@ -73,6 +76,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     const [focusedVariable, setFocusedVariable] = useState<number|null>(null);
     const isBinarySelection = (focusedVariable !== null) && (allVcdVariables?.[focusedVariable]?.size === 1);
+    
+    const [selectionStart , setSelectionStart ] = useState<number|null>(null);
+    const [selectionEnd   , setSelectionEnd   ] = useState<number|null>(null);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -157,8 +163,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // refs:
-    const svgRef   = useRef<SVGSVGElement|null>(null);
-    const rulerRef = useRef<SVGGElement|null>(null);
+    const svgRef       = useRef<SVGSVGElement|null>(null);
+    const rulerRef     = useRef<SVGGElement|null>(null);
+    const variablesRef = useRef<HTMLDivElement|null>(null);
     
     
     
@@ -171,6 +178,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     // handlers:
     const handleKeyDown         = useEvent<React.KeyboardEventHandler<Element>>((event) => {
+        // actions:
+        event.preventDefault();
+        
+        
+        
         // conditions:
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
@@ -181,8 +193,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         // logs:
         inputLogs.logKeyEvent(event.nativeEvent, true /*key_down*/, actionKeys);
         if (watchGlobalKey(true) === true) {
-            event.preventDefault();
-            console.log({activeKeys: inputLogs.activeKeys});
+            // console.log({activeKeys: inputLogs.activeKeys});
             // TODO: update keydown activated
         } // if
         
@@ -194,10 +205,131 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         //     inputLogs.performKeyUpActions = true;
         // }
     });
+    
+    const handleMouseDown       = useEvent<React.MouseEventHandler<Element>>((event) => {
+        // actions:
+        // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
+        
+        
+        
+        // logs:
+        inputLogs.logMouseEvent(event.nativeEvent, true /*mouse_down*/, actionMouses);
+        if (watchGlobalMouse(true) === true) {
+            // console.log({activeKeys: inputLogs.activeKeys});
+            handlePointerDown(event.nativeEvent);
+        } // if
+    });
+    const handleTouchStart      = useEvent<React.TouchEventHandler<Element>>((event) => {
+        // actions:
+        // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
+        
+        
+        
+        // logs:
+        inputLogs.logTouchEvent(event.nativeEvent, true /*touch_down*/, actionTouches);
+        if (watchGlobalTouch(true) === true) {
+            // console.log({activeKeys: inputLogs.activeKeys});
+            
+            // simulates the Touch(Start|End|Cancel) as Mouse(Down|Up):
+            handlePointerDown(
+                new MouseEvent((event?.type === 'touchstart') ? 'mousedown' : 'mouseup', {
+                    // simulates for `onPointerCaptureCancel(event)` & `onPointerCaptureEnd(event)`:
+                    ...event.nativeEvent,
+                    ...(() => {
+                        const isTouchStart = event?.type === 'touchstart';
+                        const touch        = isTouchStart ? event?.touches?.[0] : event?.changedTouches?.[0];
+                        return {
+                            clientX : touch?.clientX ?? 0,
+                            clientY : touch?.clientY ?? 0,
+                            
+                            screenX : touch?.screenX ?? 0,
+                            screenY : touch?.screenY ?? 0,
+                            
+                            pageX   : touch?.pageX   ?? 0,
+                            pageY   : touch?.pageY   ?? 0,
+                            
+                            button  : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                            buttons : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                        };
+                    })(),
+                }),
+            );
+        } // if
+    });
+    const handlePointerDown     = useEvent((event: MouseEvent): void => {
+        // conditions:
+        const variablesElm = variablesRef.current;
+        if (!variablesElm) return;
+        
+        
+        
+        const { x } = variablesElm.getBoundingClientRect();
+        const relativePosition = event.clientX - x;
+        const valuePosition    = relativePosition / baseScale;
+        
+        
+        
+        setSelectionStart(valuePosition);
+        setSelectionEnd(null);
+    });
+    
+    const handleMouseMove       = useEvent<React.MouseEventHandler<Element>>((event) => {
+        handlePointerMove(event.nativeEvent);
+    });
+    const handleTouchMove       = useEvent<React.TouchEventHandler<Element>>((event) => {
+        // simulates the TouchMove as MouseMove:
+        handlePointerMove(
+            new MouseEvent('mousemove', {
+                // simulates for `onPointerCaptureStart(event)` & `onPointerCaptureMove(event)`:
+                ...event.nativeEvent,
+                ...(() => {
+                    const touch = event?.touches?.[0];
+                    return {
+                        clientX : touch?.clientX ?? 0,
+                        clientY : touch?.clientY ?? 0,
+                        
+                        screenX : touch?.screenX ?? 0,
+                        screenY : touch?.screenY ?? 0,
+                        
+                        pageX   : touch?.pageX   ?? 0,
+                        pageY   : touch?.pageY   ?? 0,
+                        
+                        button  : 1, // primary button (usually the left button)
+                        buttons : 1, // primary button (usually the left button)
+                    };
+                })(),
+            }),
+        );
+    });
+    const handlePointerMove     = useEvent((event: MouseEvent): void => {
+        // conditions:
+        const variablesElm = variablesRef.current;
+        if (!variablesElm) return;
+        if (!inputLogs.isMouseActive && !inputLogs.isTouchActive) return; // no active pointer => ignore
+        
+        
+        
+        const { x } = variablesElm.getBoundingClientRect();
+        const relativePosition = event.clientX - x;
+        const valuePosition    = relativePosition / baseScale;
+        
+        
+        
+        setSelectionEnd(valuePosition);
+    });
+    
     const handleClick           = useEvent<React.MouseEventHandler<Element>>((event) => {
+        // conditions:
+        if ((selectionStart !== null) && (selectionEnd !== null)) return; // ignore if selectionRange is active
+        
+        
+        
         const { x } = event.currentTarget.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
+        
+        
+        
         if (isAltPressed()) {
             setAltSelection(valuePosition);
         }
@@ -274,7 +406,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             inputLogs.logKeyEvent(event, false /*key_up*/, actionKeys);
             if (watchGlobalKey(false) === false) {
                 console.log({activeKeys: inputLogs.activeKeys});
-                // TODO: update keydown deactivated
+            //     // TODO: update keydown deactivated
             } // if
         };
         
@@ -282,19 +414,101 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         // actions:
         if (shouldActive) {
-            window.addEventListener('keyup', handleKeyUp);
+            window.addEventListener('keyup'   , handleKeyUp);
             
             
             
             // cleanups later:
             watchGlobalKeyStatusRef.current = () => {
-                window.removeEventListener('keyup', handleKeyUp);
+                window.removeEventListener('keyup'   , handleKeyUp);
             };
         }
         else {
             // cleanups:
             watchGlobalKeyStatusRef.current?.();
             watchGlobalKeyStatusRef.current = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    });
+    const watchGlobalMouseStatusRef = useRef<undefined|(() => void)>(undefined);
+    const watchGlobalMouse = useEvent((active: boolean): boolean|null => {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!watchGlobalMouseStatusRef.current === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleMouseUp = (event: MouseEvent): void => {
+            // logs:
+            inputLogs.logMouseEvent(event, false /*mouse_up*/, actionMouses);
+            if (watchGlobalMouse(false) === false) {
+            //     console.log({activeKeys: inputLogs.activeKeys});
+            //     // TODO: update keydown deactivated
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('mouseup' , handleMouseUp);
+            
+            
+            
+            // cleanups later:
+            watchGlobalMouseStatusRef.current = () => {
+                window.removeEventListener('mouseup' , handleMouseUp);
+            };
+        }
+        else {
+            // cleanups:
+            watchGlobalMouseStatusRef.current?.();
+            watchGlobalMouseStatusRef.current = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    });
+    const watchGlobalTouchStatusRef = useRef<undefined|(() => void)>(undefined);
+    const watchGlobalTouch = useEvent((active: boolean): boolean|null => {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!watchGlobalTouchStatusRef.current === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleTouchEnd = (event: TouchEvent): void => {
+            // logs:
+            inputLogs.logTouchEvent(event, false /*touch_up*/, actionTouches);
+            if (watchGlobalTouch(false) === false) {
+            //     console.log({activeKeys: inputLogs.activeKeys});
+            //     // TODO: update keydown deactivated
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('touchend', handleTouchEnd);
+            
+            
+            
+            // cleanups later:
+            watchGlobalTouchStatusRef.current = () => {
+                window.removeEventListener('touchend', handleTouchEnd);
+            };
+        }
+        else {
+            // cleanups:
+            watchGlobalTouchStatusRef.current?.();
+            watchGlobalTouchStatusRef.current = undefined;
         } // if
         
         
@@ -379,11 +593,6 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             <div
                 // classes:
                 className={cn(props.className, styles.body)}
-                
-                
-                
-                // handlers:
-                onClick={handleClick}
             >
                 {/* ruler: */}
                 <svg ref={svgRef} className={styles.ruler}>
@@ -391,7 +600,26 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 </svg>
                 
                 {/* variables */}
-                <div className={styles.variables}>
+                <div
+                    // refs:
+                    ref={variablesRef}
+                    
+                    
+                    
+                    // classes:
+                    className={styles.variables}
+                    
+                    
+                    
+                    // handlers:
+                    onClick={handleClick}
+                    
+                    onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
+                    
+                    onMouseMove={handleMouseMove}
+                    onTouchMove={handleTouchMove}
+                >
                     {!!vcd && allVcdVariables.map(({ waves, lsb, msb, size, name }, index) =>
                         <div key={index}  className={cn(styles.variable, (focusedVariable === index) ? 'focus' : null)} tabIndex={0} onFocus={() => setFocusedVariable(index)}>
                             <div className={styles.waves}>
@@ -439,6 +667,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 {/* selection */}
                 {(mainSelection !== null) && <div className={cn(styles.selection, 'main')} style={{'--position': mainSelection * baseScale} as any} />}
                 {(altSelection  !== null) && <div className={cn(styles.selection, 'alt' )} style={{'--position': altSelection  * baseScale} as any} />}
+                {(selectionStart !== null) && (selectionEnd !== null) && <div className={styles.selectionRange} style={{'--selStart': Math.min(selectionStart, selectionEnd)  * baseScale, '--selEnd': Math.max(selectionStart, selectionEnd) * baseScale} as any} />}
             </div>
         </div>
     );

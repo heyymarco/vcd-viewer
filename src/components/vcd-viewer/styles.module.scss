@@ -33,6 +33,7 @@
     --col-wave-primary: #B5CEA8;
     --col-wave-error: #F48771;
     --col-wave-selection: #ddddddcc;
+    --col-wave-selection-range: #0078D488;
     
     
     
@@ -208,9 +209,43 @@
     
     // sizes:
     inline-size: 1px;
+    
+    
+    
+    // accessibilities:
+    pointer-events: none; // a ghost element
+    
+    
+    
     // borders:
     border-inline-start: dashed 1px currentColor;
     &[class ~= "alt"] {
         border-inline-start-color:  #FFD86D;
     }
+}
+.selectionRange {
+    // positions:
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--selStart) * 1px);
+    
+    
+    
+    // sizes:
+    inline-size: calc((var(--selEnd) - var(--selStart)) * 1px);
+    
+    
+    
+    // accessibilities:
+    pointer-events: none; // a ghost element
+    
+    
+    
+    // backgrounds:
+    background-color: var(--col-wave-selection-range);
+    
+    
+    
+    // borders:
+    // border-inline: solid 1px currentColor;
 }
