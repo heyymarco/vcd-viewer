@@ -152,8 +152,13 @@
     
     
     // accessibilities:
-    -webkit-user-select: none;
-    user-select: none;
+    touch-action: pinch-zoom;      // prevents native_page_scroll_by_touch, but allows to zoom_in/out, avoids user confusion between custom_drag_n_drop_implementation vs native_page_scroll_by_touch
+    & * {
+        touch-action: pinch-zoom;  // prevents native_page_scroll_by_touch, but allows to zoom_in/out, avoids user confusion between custom_drag_n_drop_implementation vs native_page_scroll_by_touch
+    }
+    -webkit-user-select: none;     // prevents native_select_implementation, avoids user confusion between custom_drag_n_drop_implementation vs native_select_implementation
+    user-select: none;             // prevents native_select_implementation, avoids user confusion between custom_drag_n_drop_implementation vs native_select_implementation
+    
     cursor: grab;
     &:active {
         cursor: grabbing;
@@ -206,13 +211,6 @@
     
     
     
-    // behaviors:
-    touch-action: pinch-zoom;  // prevents scrolling by touch, but allows to zoom_in/out
-    -webkit-user-select: none; // no selection
-    user-select: none;         // no selection
-    
-    
-    
     // spacings:
     row-gap: 6px;
     padding-block: 10px;
@@ -235,6 +233,16 @@
     grid-auto-flow: row;
     grid-auto-rows: max-content;
     justify-items: stretch;
+    
+    
+    
+    // accessibilities:
+    touch-action: pinch-zoom;      // prevents native_page_scroll_by_touch, but allows to zoom_in/out, avoids user confusion between custom_scroll_implementation vs custom_select_implementation vs native_page_scroll_by_touch
+    & * {
+        touch-action: pinch-zoom;  // prevents native_page_scroll_by_touch, but allows to zoom_in/out, avoids user confusion between custom_scroll_implementation vs custom_select_implementation vs native_page_scroll_by_touch
+    }
+    -webkit-user-select: none;     // prevents native_select_implementation, avoids user confusion between custom_select_implementation vs native_select_implementation
+    user-select: none;             // prevents native_select_implementation, avoids user confusion between custom_select_implementation vs native_select_implementation
     
     
     
