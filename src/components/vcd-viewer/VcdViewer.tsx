@@ -197,11 +197,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             setMovePosRelative(movePosOriginRef.current);
         },
         onPointerCaptureCancel(event) {
+            console.log('CAPUTRE CANCEL');
             // cleanups:
             setMoveFromIndex(null);
             setMoveToIndex(null);
         },
         onPointerCaptureEnd(event) {
+            console.log('CAPUTRE END');
             // apply changes:
             if ((moveFromIndex !== null) && (moveToIndex !== null)) {
                 setAllVcdVariables(
@@ -221,7 +223,27 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 x : (event.screenX - movePosOriginRef.current.x),
                 y : (event.screenY - movePosOriginRef.current.y),
             });
+            
+            
+            
+            // test droppable target:
+            const droppableElms = document.elementsFromPoint(event.clientX, event.clientY);
+            const newMoveToIndex  = (
+                droppableElms
+                .map((droppableElm) => {
+                    const droppableData = droppableElm ? (droppableElm as HTMLElement)?.dataset?.droppable : undefined;
+                    if (!droppableData) return undefined;
+                    const newMoveToIndex = Number.parseInt(droppableData);
+                    if (isNaN(newMoveToIndex)) return undefined;
+                    return newMoveToIndex;
+                })
+                .find((newMoveToIndex): newMoveToIndex is Exclude<typeof newMoveToIndex, undefined> => (newMoveToIndex !== undefined))
+            );
+            if (newMoveToIndex !== undefined) handleDropMove(newMoveToIndex);
         },
+    });
+    const handleDropMove = useEvent((newMoveToIndex: number) => {
+        if (newMoveToIndex !== moveToIndex) setMoveToIndex(newMoveToIndex);
     });
     
     
@@ -901,8 +923,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     onTouchStart={pointerCapturable.handleTouchStart}
                 >
                     {moveVcdVariableData(moveableLabels, moveFromIndex, moveToIndex).map((movedLabel, index) =>
-                        <li key={index} className={styles.labelWrapper}
-                            onMouseEnter={() => setMoveToIndex(index)}
+                        <li
+                            key={index}
+                            className={styles.labelWrapper}
+                            data-droppable={index}
+                            // onMouseEnter={() => setMoveToIndex(index)} // works on mouse but doesn't on touch, so we use `elementsFromPoint()` strategy on `onPointerCaptureMove()`
                         >
                             {movedLabel}
                         </li>
