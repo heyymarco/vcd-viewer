@@ -85,12 +85,24 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                     const module = (/^\$scope\s+module\s+([^\s]+)(?:\s+\$end)?/).exec(line);
                     if (module) {
                         // add a child module:
-                        const childModule = {
-                            name       : module[1],
-                            submodules : [],
-                            variables  : [],
-                        };
-                        currentModule.submodules.push(childModule);
+                        const moduleName = module[1];
+                        const childModule : VcdModule =(
+                            // find existing module by name (if any):
+                            currentModule.submodules.find(({ name: searchName }) => (searchName === moduleName))
+                            
+                            ??
+                            
+                            // create a new module
+                            (() => {
+                                const newModule : VcdModule = {
+                                    name       : moduleName,
+                                    submodules : [],
+                                    variables  : [],
+                                };
+                                currentModule.submodules.push(newModule);
+                                return newModule;
+                            })()
+                        );
                         
                         // move down:
                         parentModules.push(currentModule);

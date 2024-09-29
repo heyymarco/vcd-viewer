@@ -20,10 +20,17 @@ import {
     useEvent,
     usePointerCapturable,
 }                           from '@reusable-ui/core'
+import {
+    useControllableAndUncontrollable,
+}                           from '@heymarco/events'
+import {
+    produce,
+}                           from 'immer'
 
 // models:
 import {
     type Vcd,
+    type VcdModule,
     type VcdWave,
 }                           from '@/models/vcd'
 
@@ -46,30 +53,46 @@ export interface VcdViewerProps
     extends
         // bases:
         Omit<React.HTMLAttributes<HTMLDivElement>,
-            |'children' // no nested children
+            |'defaultValue' // replaced with a more specific type
+            |'value'        // replaced with a more specific type
+            |'onChange'     // renamed to `onValueChange`
+            |'children'     // no nested children
         >
 {
-    // data:
-    vcd ?: Vcd|null
+    // values:
+    defaultValue  ?: Vcd|null
+    value         ?: Vcd|null
+    onValueChange ?: ((newValue: Vcd|null) => void)
 }
 const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // props:
     const {
-        // data:
-        vcd = null,
+        // values:
+        defaultValue   : defaultUncontrollableValue = null,
+        value          : controllableValue,
+        onValueChange  : onControllableValueChange,
         
         
         
         // other props:
         ...restVcdViewerProps
     } = props;
-    const minTick = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
-    const maxTick = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
-    const allVcdVariables = !vcd ? [] : flatMapVariables(vcd.rootModule);
     
     
     
     // states:
+    const {
+        value              : vcd,
+        triggerValueChange : triggerValueChange,
+    } = useControllableAndUncontrollable<Vcd|null>({
+        defaultValue       : defaultUncontrollableValue,
+        value              : controllableValue,
+        onValueChange      : onControllableValueChange,
+    });
+    const minTick = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
+    const maxTick = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
+    const allVcdVariables = !vcd ? [] : flatMapVariables(vcd.rootModule);
+    
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
     
@@ -183,17 +206,56 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [movePosRelative, setMovePosRelative] = useState({ x: 0, y: 0 });
     const pointerCapturable = usePointerCapturable({
         onPointerCaptureStart(event) {
+            // updates:
             movePosOriginRef.current.x = event.screenX;
             movePosOriginRef.current.y = event.screenY;
             setMovePosRelative(movePosOriginRef.current);
         },
         onPointerCaptureCancel(event) {
+            // cleanups:
             setMoveFromIndex(null);
+            setMoveToIndex(null);
         },
         onPointerCaptureEnd(event) {
+            // apply changes:
+            if ((moveFromIndex !== null) && (moveToIndex !== null)) {
+                triggerValueChange(!vcd ? vcd : produce(vcd, (draft) => {
+                    const variableA   = allVcdVariables[moveFromIndex];
+                    const variableB   = allVcdVariables[moveToIndex];
+                    
+                    const modulesA    = (getModulesOfVariable(vcd, variableA) ?? []);
+                    const modulesB    = (getModulesOfVariable(vcd, variableB) ?? []);
+                    
+                    const indexA      = modulesA[modulesA.length - 1].variables.findIndex((searchVariable) => (searchVariable === variableA));
+                    const indexB      = modulesB[modulesB.length - 1].variables.findIndex((searchVariable) => (searchVariable === variableB));
+                    
+                    const subModulesA = modulesA.slice(1).map(({ name }) => name);
+                    const subModulesB = modulesB.slice(1).map(({ name }) => name);
+                    
+                    // swap A => B:
+                    let module : VcdModule|undefined = draft.rootModule;
+                    for (const subModuleName of subModulesA) {
+                        module = module?.submodules.find(({ name }) => (name === subModuleName));
+                        if (!module) continue;
+                    } // for
+                    if (module) module.variables[indexA] = variableB;
+                    
+                    // swap B => A:
+                    module = draft.rootModule;
+                    for (const subModuleName of subModulesB) {
+                        module = module?.submodules.find(({ name }) => (name === subModuleName));
+                        if (!module) continue;
+                    } // for
+                    if (module) module.variables[indexB] = variableA;
+                }), { triggerAt: 'immediately' });
+            } // if
+            
+            // cleanups:
             setMoveFromIndex(null);
+            setMoveToIndex(null);
         },
         onPointerCaptureMove(event) {
+            // updates:
             setMovePosRelative({
                 x : (event.screenX - movePosOriginRef.current.x),
                 y : (event.screenY - movePosOriginRef.current.y),

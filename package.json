@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heymarco/events": "^6.7.1",
     "@reusable-ui/core": "^6.11.0",
     "classnames": "^2.5.1",
     "d3": "^7.9.0",
