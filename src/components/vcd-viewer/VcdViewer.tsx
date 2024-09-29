@@ -40,6 +40,7 @@ import {
     getVariableMinTick,
     getVariableMaxTick,
     getModulesOfVariable,
+    moveVcdVariableData,
     
     actionKeys,
     actionMouses,
@@ -838,16 +839,6 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         )
         : []
     );
-    const movedLabels : React.ReactNode[] = (
-        ((moveFromIndex !== null) && (moveToIndex !== null) && (moveFromIndex !== moveToIndex))
-        ? (() => {
-            const clonedItems = moveableLabels.slice(0);
-            const movedItems  = clonedItems.splice(moveFromIndex, 1);
-            clonedItems.splice(moveToIndex, 0, ...movedItems);
-            return clonedItems;
-        })()
-        : moveableLabels
-    );
     return (
         <div
             // other props:
@@ -889,7 +880,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     onMouseDown={pointerCapturable.handleMouseDown}
                     onTouchStart={pointerCapturable.handleTouchStart}
                 >
-                    {movedLabels.map((movedLabel, index) =>
+                    {moveVcdVariableData(moveableLabels, moveFromIndex, moveToIndex).map((movedLabel, index) =>
                         <li key={index} className={styles.labelItem}
                             onMouseEnter={() => setMoveToIndex(index)}
                         >

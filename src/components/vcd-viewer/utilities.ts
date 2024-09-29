@@ -41,6 +41,21 @@ const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule
 
 
 
+export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex: number|null, moveToIndex: number|null): TData[] => {
+    return (
+        ((moveFromIndex !== null) && (moveToIndex !== null) && (moveFromIndex !== moveToIndex))
+        ? (() => {
+            const clonedItems = originalData.slice(0);
+            const movedItems  = clonedItems.splice(moveFromIndex, 1);
+            clonedItems.splice(moveToIndex, 0, ...movedItems);
+            return clonedItems;
+        })()
+        : originalData
+    );
+}
+
+
+
 export const actionKeys    = ['AltLeft', 'AltRight'];
 export const actionMouses  = [1]; // [only_left_click]
 export const actionTouches = [1]; // [only_single_touch]
