@@ -42,16 +42,17 @@ const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule
 
 
 export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex: number|null, moveToIndex: number|null): TData[] => {
-    return (
-        ((moveFromIndex !== null) && (moveToIndex !== null) && (moveFromIndex !== moveToIndex))
-        ? (() => {
-            const clonedItems = originalData.slice(0);
-            const movedItems  = clonedItems.splice(moveFromIndex, 1);
-            clonedItems.splice(moveToIndex, 0, ...movedItems);
-            return clonedItems;
-        })()
-        : originalData
-    );
+    // conditions:
+    if (moveFromIndex === null       ) return originalData;
+    if (moveToIndex   === null       ) return originalData;
+    if (moveFromIndex === moveToIndex) return originalData;
+    
+    
+    
+    const clonedItems = originalData.slice(0);
+    const movedItems  = clonedItems.splice(moveFromIndex, 1);
+    clonedItems.splice(moveToIndex, 0, ...movedItems);
+    return clonedItems;
 }
 
 
