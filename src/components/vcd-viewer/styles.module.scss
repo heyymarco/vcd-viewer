@@ -1,5 +1,8 @@
 .main {
     // variables:
+    --col-main-backg: black;
+    --col-main-foreg: white;
+    --col-toolbar-border: #ddddddcc;
     --col-handler: currentColor;
     --col-handler-active: #75BEFF;
     --col-wave-primary: #B5CEA8;
@@ -7,6 +10,7 @@
     --col-wave-selection: #ddddddcc;
     --col-wave-selection-range: #75BEFF88;
     --col-btn-active: #75BEFF;
+    --col-btn-forg: #ddddddcc;
     --variable-height: 22px;
     --variable-gap   : 6px;
     
@@ -17,13 +21,17 @@
     
     
     
-    // spacings:
-    gap: 10px;
+    // backgrounds:
+    background-color: var(--col-main-backg);
+    
+    
+    
+    // foregrounds:
+    color: var(--col-main-foreg);
     
     
     
     // typos:
-    color: white;
     font-family: monospace;
     font-size: 12px;
     font-weight: 600;
@@ -38,14 +46,62 @@
     
     // spacings:
     gap: 10px;
+    padding: 10px;
+    
+    
+    
+    // borders:
+    border-block-end: solid 1px var(--col-toolbar-border);
     
     
     
     // children:
     &>button {
+        // appearances:
         appearance: none;
         &[class ~= "active"] {
             background-color: var(--col-btn-active);
+        }
+        
+        
+        
+        // accessibilities:
+        cursor: pointer;
+        
+        
+        
+        // sizes:
+        inline-size: 24px;
+        block-size: 24px;
+        
+        
+        
+        // icons:
+        background-color: var(--col-btn-forg);
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        mask-repeat: no-repeat;
+        mask-size: contain;
+        &[class ~= "zoom-in"        ] { -webkit-mask-image: url(./assets/zoom-in.svg);         mask-image: url(./assets/zoom-in.svg);         }
+        &[class ~= "zoom-out"       ] { -webkit-mask-image: url(./assets/zoom-out.svg);        mask-image: url(./assets/zoom-out.svg);        }
+        &[class ~= "prev-neg-edge"  ] { -webkit-mask-image: url(./assets/prev-neg-edge.svg);   mask-image: url(./assets/prev-neg-edge.svg);   }
+        &[class ~= "prev-pos-edge"  ] { -webkit-mask-image: url(./assets/prev-pos-edge.svg);   mask-image: url(./assets/prev-pos-edge.svg);   }
+        &[class ~= "prev-transition"] { -webkit-mask-image: url(./assets/prev-transition.svg); mask-image: url(./assets/prev-transition.svg); }
+        &[class ~= "next-transition"] { -webkit-mask-image: url(./assets/next-transition.svg); mask-image: url(./assets/next-transition.svg); }
+        &[class ~= "next-neg-edge"  ] { -webkit-mask-image: url(./assets/next-neg-edge.svg);   mask-image: url(./assets/next-neg-edge.svg);   }
+        &[class ~= "next-pos-edge"  ] { -webkit-mask-image: url(./assets/next-pos-edge.svg);   mask-image: url(./assets/next-pos-edge.svg);   }
+        &[class ~= "prev"           ] { -webkit-mask-image: url(./assets/prev.svg);            mask-image: url(./assets/prev.svg);            }
+        &[class ~= "next"           ] { -webkit-mask-image: url(./assets/next.svg);            mask-image: url(./assets/next.svg);            }
+        &[class ~= "touch"          ] { -webkit-mask-image: url(./assets/touch.svg);           mask-image: url(./assets/touch.svg);           }
+        
+        
+        
+        // animations:
+        filter: contrast(50%);
+        transition:
+            filter 300ms;
+        &:hover {
+            filter: contrast(100%);
         }
     }
 }
@@ -56,11 +112,6 @@
         "labels body" max-content
         /
         min-content 1fr;
-    
-    
-    
-    // backgrounds:
-    background-color: black;
 }
 .labels {
     // layouts:

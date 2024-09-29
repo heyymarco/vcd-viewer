@@ -895,25 +895,25 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             onKeyDown={handleKeyDown}
         >
             <div className={styles.toolbar}>
-                <button onClick={handleZoomOut}>-</button>
-                <button onClick={handleZoomIn}>+</button>
+                <button type='button' className='zoom-in'  onClick={handleZoomOut} />
+                <button type='button' className='zoom-out' onClick={handleZoomIn} />
                 
-                <button onClick={handleGotoPrevEdgeNeg} disabled={!isBinarySelection}>v&lt;=</button>
-                <button onClick={handleGotoPrevEdgePos} disabled={!isBinarySelection}>^&lt;=</button>
+                <button type='button' className='prev-neg-edge' onClick={handleGotoPrevEdgeNeg} disabled={!isBinarySelection} />
+                <button type='button' className='prev-pos-edge' onClick={handleGotoPrevEdgePos} disabled={!isBinarySelection} />
                 
-                <button onClick={handleGotoPrevEdge}>&lt;=</button>
-                <button onClick={handleGotoNextEdge}>=&gt;</button>
+                <button type='button' className='prev-transition' onClick={handleGotoPrevEdge} />
+                <button type='button' className='next-transition' onClick={handleGotoNextEdge} />
                 
-                <button onClick={handleGotoNextEdgePos} disabled={!isBinarySelection}>=&gt;^</button>
-                <button onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection}>=&gt;v</button>
+                <button type='button' className='next-neg-edge' onClick={handleGotoNextEdgePos} disabled={!isBinarySelection} />
+                <button type='button' className='next-pos-edge' onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection} />
                 
                 <input type='search' placeholder='Search' value={search} onChange={({currentTarget: { value }}) => setSearch(value)} />
                 <button onClick={() => setSearchType(SearchType.TIME)} className={(searchType === SearchType.TIME) ? 'active' : ''}>by time</button>
                 <button onClick={() => setSearchType(SearchType.HEX)} className={(searchType === SearchType.HEX) ? 'active' : ''}>by hex</button>
-                <button onClick={handleGotoPrevSearch} disabled={searchType !== SearchType.HEX}>prev search</button>
-                <button onClick={handleGotoNextSearch}>next search</button>
+                <button type='button' className='prev' onClick={handleGotoPrevSearch} disabled={searchType !== SearchType.HEX} />
+                <button type='button' className='next' onClick={handleGotoNextSearch} />
                 
-                <button onClick={handleToggleTouchScroll} className={enableTouchScroll ? 'active' : ''}>touch scroll</button>
+                <button type='button' className={cn('touch', (enableTouchScroll ? 'active' : null))} onClick={handleToggleTouchScroll} />
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
