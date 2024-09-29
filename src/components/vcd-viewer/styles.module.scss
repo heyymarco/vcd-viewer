@@ -1,5 +1,7 @@
 .main {
     // variables:
+    --col-handler: currentColor;
+    --col-handler-active: #75BEFF;
     --col-wave-primary: #B5CEA8;
     --col-wave-error: #F48771;
     --col-wave-selection: #ddddddcc;
@@ -46,6 +48,7 @@
     }
 }
 .bodyOuter {
+    // layouts:
     display: grid;
     grid-template:
         "labels body" max-content
@@ -62,6 +65,8 @@
     display: grid;
     align-content: end;
     
+    list-style-type: none;
+    
     
     
     // sizes:
@@ -75,10 +80,19 @@
     row-gap: 6px;
     padding-inline: 10px;
     padding-block: 10px;
+    margin: unset;
+}
+.labelItem {
+    // layouts:
+    display: grid;
 }
 .label {
     // layouts:
     display: grid;
+    grid-template:
+        "handler label" 1fr
+        /
+        min-content 1fr;
     align-items: center;
     
     
@@ -88,9 +102,58 @@
     
     
     
+    // spacings:
+    gap: 8px;
+    
+    
+    
     // typos:
     text-align: end;
 }
+.labelItemHandler {
+    // positions:
+    align-self: stretch;
+    
+    
+    
+    // layouts:
+    display: grid;
+    align-content: center;
+    
+    
+    
+    // sizes:
+    min-inline-size: 16px;
+    
+    
+    
+    // accessibilities:
+    cursor: grab;
+    &:active {
+        cursor: grabbing;
+    }
+    
+    
+    
+    // spacings:
+    gap: 3px;
+    
+    
+    
+    // children:
+    &::before, &::after {
+        content: "";
+        border-top: solid 2px var(--col-handler);
+        transition:
+            border-top 300ms;
+    }
+    &:hover {
+        &::before, &::after {
+            border-top-color: var(--col-handler-active);
+        }
+    }
+}
+
 .body {
     // positions:
     grid-area: body;

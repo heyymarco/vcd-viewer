@@ -18,6 +18,7 @@ import * as d3              from 'd3'
 import {
     useIsomorphicLayoutEffect,
     useEvent,
+    usePointerCapturable,
 }                           from '@reusable-ui/core'
 
 // models:
@@ -760,13 +761,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button onClick={handleToggleTouchScroll} className={enableTouchScroll ? 'active' : ''}>touch scroll</button>
             </div>
             <div className={styles.bodyOuter}>
-                <div className={styles.labels}>
+                <ul className={styles.labels}>
                     {!!vcd && allVcdVariables.map(({ name, modules }, index) =>
-                        <div key={index} className={styles.label}>
-                            {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
-                        </div>
+                        <li key={index} className={styles.labelItem}>
+                            <span className={styles.label}>
+                                <span className={styles.labelItemHandler}></span>
+                                <span>
+                                    {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
+                                </span>
+                            </span>
+                        </li>
                     )}
-                </div>
+                </ul>
                 <div
                     // refs:
                     ref={bodyRef}
