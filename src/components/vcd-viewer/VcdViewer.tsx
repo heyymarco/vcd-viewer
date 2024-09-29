@@ -197,13 +197,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             setMovePosRelative(movePosOriginRef.current);
         },
         onPointerCaptureCancel(event) {
-            console.log('CAPUTRE CANCEL');
             // cleanups:
             setMoveFromIndex(null);
             setMoveToIndex(null);
         },
         onPointerCaptureEnd(event) {
-            console.log('CAPUTRE END');
             // apply changes:
             if ((moveFromIndex !== null) && (moveToIndex !== null)) {
                 setAllVcdVariables(
