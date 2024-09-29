@@ -895,8 +895,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             onKeyDown={handleKeyDown}
         >
             <div className={styles.toolbar}>
-                <button type='button' className='zoom-in'  onClick={handleZoomOut} />
-                <button type='button' className='zoom-out' onClick={handleZoomIn} />
+                <button type='button' className='zoom-out'  onClick={handleZoomOut} />
+                <button type='button' className='zoom-in' onClick={handleZoomIn} />
                 
                 <button type='button' className='prev-neg-edge' onClick={handleGotoPrevEdgeNeg} disabled={!isBinarySelection} />
                 <button type='button' className='prev-pos-edge' onClick={handleGotoPrevEdgePos} disabled={!isBinarySelection} />
