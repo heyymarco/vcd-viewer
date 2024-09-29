@@ -174,6 +174,34 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     
+    // capabilities:
+    const [moveFromIndex, setMoveFromIndex] = useState<number|null>(null);
+    const [moveToIndex  , setMoveToIndex  ] = useState<number|null>(null);
+    
+    const movePosOriginRef  = useRef({ x: 0, y: 0 });
+    const [movePosRelative, setMovePosRelative] = useState({ x: 0, y: 0 });
+    const pointerCapturable = usePointerCapturable({
+        onPointerCaptureStart(event) {
+            movePosOriginRef.current.x = event.screenX;
+            movePosOriginRef.current.y = event.screenY;
+            setMovePosRelative(movePosOriginRef.current);
+        },
+        onPointerCaptureCancel(event) {
+            setMoveFromIndex(null);
+        },
+        onPointerCaptureEnd(event) {
+            setMoveFromIndex(null);
+        },
+        onPointerCaptureMove(event) {
+            setMovePosRelative({
+                x : (event.screenX - movePosOriginRef.current.x),
+                y : (event.screenY - movePosOriginRef.current.y),
+            });
+        },
+    });
+    
+    
+    
     // refs:
     const svgRef       = useRef<SVGSVGElement|null>(null);
     const bodyRef      = useRef<HTMLDivElement|null>(null);
@@ -724,6 +752,39 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // jsx:
+    const moveableLabels : React.ReactNode[] = (
+        vcd
+        ?
+        allVcdVariables.map(({ name, modules }, index) =>
+            <span
+                className={cn(
+                    styles.label,
+                    ((moveFromIndex !== null) ? ((moveFromIndex === index) ? 'dragging' : 'dropZone') : null),
+                )}
+                style={(moveFromIndex === index) ?{
+                    '--posX': movePosRelative.x,
+                    '--posY': movePosRelative.y,
+                    '--moveRelative': (moveToIndex ?? index) - index,
+                } as any : undefined}
+            >
+                <span className={styles.labelItemHandler} onPointerDown={() => setMoveFromIndex(index)} />
+                <span>
+                    {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
+                </span>
+            </span>
+        )
+        : []
+    );
+    const movedLabels : React.ReactNode[] = (
+        ((moveFromIndex !== null) && (moveToIndex !== null) && (moveFromIndex !== moveToIndex))
+        ? (() => {
+            const clonedItems = moveableLabels.slice(0);
+            const movedItems  = clonedItems.splice(moveFromIndex, 1);
+            clonedItems.splice(moveToIndex, 0, ...movedItems);
+            return clonedItems;
+        })()
+        : moveableLabels
+    );
     return (
         <div
             // other props:
@@ -761,15 +822,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button onClick={handleToggleTouchScroll} className={enableTouchScroll ? 'active' : ''}>touch scroll</button>
             </div>
             <div className={styles.bodyOuter}>
-                <ul className={styles.labels}>
-                    {!!vcd && allVcdVariables.map(({ name, modules }, index) =>
-                        <li key={index} className={styles.labelItem}>
-                            <span className={styles.label}>
-                                <span className={styles.labelItemHandler}></span>
-                                <span>
-                                    {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
-                                </span>
-                            </span>
+                <ul className={styles.labels}
+                    onMouseDown={pointerCapturable.handleMouseDown}
+                    onTouchStart={pointerCapturable.handleTouchStart}
+                >
+                    {movedLabels.map((movedLabel, index) =>
+                        <li key={index} className={styles.labelItem}
+                            onMouseEnter={() => setMoveToIndex(index)}
+                        >
+                            {movedLabel}
                         </li>
                     )}
                 </ul>

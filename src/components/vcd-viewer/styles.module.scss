@@ -7,6 +7,8 @@
     --col-wave-selection: #ddddddcc;
     --col-wave-selection-range: #75BEFF88;
     --col-btn-active: #75BEFF;
+    --variable-height: 22px;
+    --variable-gap   : 6px;
     
     
     
@@ -77,7 +79,7 @@
     
     
     // spacings:
-    row-gap: 6px;
+    row-gap: var(--variable-gap);
     padding-inline: 10px;
     padding-block: 10px;
     margin: unset;
@@ -98,17 +100,39 @@
     
     
     // sizes:
-    block-size: 22px;
+    block-size: var(--variable-height);
     
     
     
     // spacings:
-    gap: 8px;
+    gap: 6px;
     
     
     
     // typos:
     text-align: end;
+    
+    
+    
+    // states:
+    &:is([class ~= "dragging"], [class ~= "dropZone"]) {
+        &>* {
+            pointer-events: none;
+        }
+    }
+    &[class ~= "dragging"] {
+        position: relative;
+        left : calc((var(--posX) * 1px));
+        top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
+        pointer-events: none;
+    }
+    &[class ~= "dropZone"] {
+        cursor: move;
+        
+        &:hover {
+            color: var(--col-handler-active);
+        }
+    }
 }
 .labelItemHandler {
     // positions:
@@ -128,6 +152,8 @@
     
     
     // accessibilities:
+    -webkit-user-select: none;
+    user-select: none;
     cursor: grab;
     &:active {
         cursor: grabbing;
@@ -213,7 +239,7 @@
     
     
     // spacings:
-    row-gap: 6px;
+    row-gap: var(--variable-gap);
 }
 .variable {
     // layouts:
@@ -227,7 +253,7 @@
     
     
     // sizes:
-    block-size: 22px;
+    block-size: var(--variable-height);
     
     
     
