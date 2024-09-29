@@ -23,9 +23,6 @@ export interface VcdVariable {
     lsb        : number|undefined
     waves      : VcdWave[]
 }
-export interface FlattenedVcdVariable extends VcdVariable {
-    modules    : VcdModule[]
-}
 
 export interface VcdWave {
     tick       : number

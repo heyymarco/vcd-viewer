@@ -1,16 +1,16 @@
 // models:
 import {
+    type Vcd,
     type VcdModule,
     type VcdVariable,
-    type FlattenedVcdVariable,
 }                           from '@/models/vcd'
 
 
 
-export const flatMapVariables = (module: VcdModule, index: number = -1, array: VcdModule[] = [], parentModules: VcdModule[] = []): FlattenedVcdVariable[] => {
+export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
     return [
-        ...module.variables.map((variable) => ({ ...variable, modules: [module, ...parentModules] }) satisfies FlattenedVcdVariable),
-        ...module.submodules.flatMap((subModule, index, array) => flatMapVariables(subModule, index, array, [module, ...parentModules])),
+        ...module.variables,
+        ...module.submodules.flatMap(flatMapVariables),
     ];
 }
 
@@ -25,6 +25,18 @@ export const getVariableMaxTick = (module: VcdModule): number => {
         ...flatMapVariables(module)
         .map(({ waves }) => waves[waves.length - 1].tick)
     );
+}
+
+export const getModulesOfVariable = (vcd: Vcd, variable: VcdVariable): VcdModule[]|null => {
+    return getRecursiveModulesOfVariable([], vcd.rootModule, variable);
+}
+const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule: VcdModule, variable: VcdVariable): VcdModule[]|null => {
+    if (currentModule.variables.includes(variable)) return [...parentModules, currentModule];
+    for (const subModule of currentModule.submodules) {
+        const found = getRecursiveModulesOfVariable([...parentModules, currentModule], subModule, variable);
+        if (found) return found;
+    } // for
+    return null
 }
 
 

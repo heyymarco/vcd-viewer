@@ -32,6 +32,7 @@ import {
     flatMapVariables,
     getVariableMinTick,
     getVariableMaxTick,
+    getModulesOfVariable,
     
     actionKeys,
     actionMouses,
@@ -755,7 +756,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const moveableLabels : React.ReactNode[] = (
         vcd
         ?
-        allVcdVariables.map(({ name, modules }, index) =>
+        allVcdVariables.map((variable, index) =>
             <span
                 className={cn(
                     styles.label,
@@ -769,7 +770,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             >
                 <span className={styles.labelItemHandler} onPointerDown={() => setMoveFromIndex(index)} />
                 <span>
-                    {modules.toReversed().slice(1).map(({name}) => name).join('.')}.{name}
+                    {getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.{variable.name}
                 </span>
             </span>
         )
