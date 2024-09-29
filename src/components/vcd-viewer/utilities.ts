@@ -50,8 +50,8 @@ export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex:
     
     
     const clonedItems = originalData.slice(0);
-    const movedItems  = clonedItems.splice(moveFromIndex, 1 /* delete one item */);
-    clonedItems.splice(moveToIndex, 0 /* nothing to delete */, ...movedItems);
+    const movedItems  = clonedItems.splice(moveFromIndex, 1 /* delete one item */); // cut one, then
+    clonedItems.splice(moveToIndex, 0 /* nothing to delete */, ...movedItems);      // insert cutted one
     return clonedItems;
 }
 

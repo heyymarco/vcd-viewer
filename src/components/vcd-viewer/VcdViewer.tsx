@@ -239,7 +239,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                         module = module?.submodules.find(({ name }) => (name === subModuleName));
                         if (!module) continue;
                     } // for
-                    if (module) module.variables[indexA] = variableB;
+                    const movedItems = !module ? [] : module.variables.splice(indexA, 1 /* delete one item */); // cut one, then
                     
                     // swap B => A:
                     module = draft.rootModule;
@@ -247,9 +247,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                         module = module?.submodules.find(({ name }) => (name === subModuleName));
                         if (!module) continue;
                     } // for
-                    if (module) module.variables[indexB] = variableA;
+                    if (module) module.variables.splice(indexB, 0 /* nothing to delete */, ...movedItems); // insert cutted one
                 }), { triggerAt: 'immediately' });
             } // if
+            
+            
             
             // cleanups:
             setMoveFromIndex(null);
