@@ -1,17 +1,18 @@
 'use client'
 
-import Image from "next/image";
-// import styles from "./page.module.css";
+import { useMemo } from "react";
 import { parseVcdFromFileContent, VcdViewer } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
-import { useState } from "react";
-import { Vcd } from "@/models";
+
+
 
 export default function Home() {
-    const [vcd, setVcd] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent))
+    // important: always memorize the vcd (json) object to make sure it always the same object reference,
+    // otherwise the <VcdViewer> resets the order state and the user's changes lost
+    const vcd = useMemo(() => parseVcdFromFileContent(vcdContent), []);
     return (
         <div>
-            <VcdViewer value={vcd} onValueChange={setVcd} />
+            <VcdViewer vcd={vcd} />
             <hr />
             <p>parsed:</p>
             <pre>
