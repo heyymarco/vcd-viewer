@@ -436,6 +436,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         
+        if ((selectionStart === null) || Math.abs(valuePosition - selectionStart) < 2) return; // ignore very small selection
         setSelectionEnd(valuePosition);
     });
     const handlePointerUp         = useEvent((event: MouseEvent): void => {
