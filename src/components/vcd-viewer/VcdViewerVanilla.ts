@@ -347,7 +347,8 @@ export class VcdViewerVanilla {
         
         
         
-        this._react();
+        this._refreshVcd();
+        this._refreshState();
     }
     _createMain() {
         const main = document.createElement('div');
@@ -553,9 +554,7 @@ export class VcdViewerVanilla {
         
         variableItem.tabIndex = 0;
         variableItem.addEventListener('focus', () => {
-            setTimeout(() => {
-                this._setFocusedVariable(index);
-            }, 200); // do not re-render before mouse_up released by user
+            this._setFocusedVariable(index);
         });
         
         variableItem.append(
@@ -640,7 +639,7 @@ export class VcdViewerVanilla {
         return wrapper;
     }
     
-    _react() {
+    _refreshVcd() {
         this._isBinarySelection = (this._focusedVariable !== null) && (this._allVcdVariables?.[this._focusedVariable]?.size === 1);
         
         this._moveableLabels = (
@@ -678,7 +677,8 @@ export class VcdViewerVanilla {
                 this._reactCrateVariableWrapper(movedVariable)
             )
         );
-        
+    }
+    _refreshState() {
         this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
         this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
         this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
@@ -688,16 +688,6 @@ export class VcdViewerVanilla {
         if (this._altSelection   !== null) this._altSelectionRef?.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
         if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selStart', `${Math.min(this._selectionStart, this._selectionEnd)  * this._baseScale}`);
         if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selEnd', `${Math.max(this._selectionStart, this._selectionEnd) * this._baseScale}`);
-    }
-    _cancelRender: ReturnType<typeof setTimeout>|undefined = undefined;
-    _reactRender() {
-        clearTimeout(this._cancelRender);
-        this._cancelRender = setTimeout(() => {
-            this._react();
-            // console.log('RENDER');
-        }, 0);
-        // setTimeout(() => this._react(), 0);
-        // Promise.resolve().then(() => this._react());
     }
     
     
@@ -711,7 +701,8 @@ export class VcdViewerVanilla {
         this._maxTick         = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
         this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule) : [];
         
-        this._reactRender();
+        this._refreshVcd();
+        this._refreshState();
         if (this._rulerRef) {
             const inlineSize = Number.parseFloat(getComputedStyle(this._rulerRef).inlineSize);
             if (!isNaN(inlineSize)) {
@@ -734,26 +725,26 @@ export class VcdViewerVanilla {
     _setZoom(zoom: number) {
         this._zoom      = zoom;
         this._baseScale = 2 ** zoom;
-        this._reactRender();
+        this._refreshState();
     }
     _setMainSelection(mainSelection: number|null) {
         this._mainSelection = mainSelection;
-        this._reactRender();
+        this._refreshState();
     }
     _setAltSelection(altSelection: number|null) {
         this._altSelection = altSelection;
-        this._reactRender();
+        this._refreshState();
     }
     _setFocusedVariable(focusedVariable: number) {
         this._focusedVariable = focusedVariable;
-        this._reactRender();
+        this._refreshState();
     }
     _setEnableTouchScroll(enableTouchScroll: boolean) {
         this._enableTouchScroll = enableTouchScroll;
-        this._reactRender();
+        this._refreshState();
     }
     _setSearchType(searchType: SearchType) {
         this._searchType = searchType;
-        this._reactRender();
+        this._refreshState();
     }
 }
