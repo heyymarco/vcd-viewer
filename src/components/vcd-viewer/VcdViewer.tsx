@@ -783,7 +783,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // console.log({inlineSize, extendSize})
             const ruler = d3.scaleLinear([0, maxTick * extendSize], [0, maxTick * baseScale * extendSize]);
             d3.select(rulerRef.current).call(
-                d3.axisTop(ruler) as any
+                d3.axisTop(ruler).ticks(50) as any
             );
         });
         resizeObserver.observe(svgElm, { box: 'border-box' });
