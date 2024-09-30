@@ -1,4 +1,7 @@
 import styles from './styles.module.scss'
+
+import * as d3              from 'd3'
+
 // models:
 import {
     type VcdVariable,
@@ -170,11 +173,12 @@ export class VcdViewerVanilla {
     
     
     // refs:
-    _labelsRef    : HTMLUListElement|null = null;
-    _svgRef       : SVGSVGElement|null    = null;
-    _bodyRef      : HTMLDivElement|null   = null;
-    _rulerRef     : SVGGElement|null      = null;
-    _variablesRef : HTMLDivElement|null   = null;
+    _labelsRef      : HTMLUListElement|null = null;
+    // _svgRef         : SVGSVGElement|null    = null;
+    _bodyRef        : HTMLDivElement|null   = null;
+    _rulerRef       : SVGGElement|null      = null;
+    _variablesRef   : HTMLDivElement|null   = null;
+    _resizeObserver : ResizeObserver|null   = null;
     
     
     
@@ -192,6 +196,14 @@ export class VcdViewerVanilla {
     
     
     // handlers:
+    _handleResize({ '0': { borderBoxSize: { '0': { inlineSize } } }}: ResizeObserverEntry[]) {
+        const extendSize = inlineSize / (this._maxTick * this._baseScale);
+        // console.log({inlineSize, extendSize})
+        const ruler = d3.scaleLinear([0, this._maxTick * extendSize], [0, this._maxTick * this._baseScale * extendSize]);
+        d3.select(this._rulerRef).call(
+            d3.axisTop(ruler).ticks(50) as any
+        );
+    }
     
     
     
@@ -289,6 +301,19 @@ export class VcdViewerVanilla {
     _createRuler() {
         const svg = document.createElementNS(xmlns, 'svg');
         svg.classList.add(styles.ruler);
+        
+        const ruler = document.createElementNS(xmlns, 'g');
+        ruler.setAttribute('transform', 'translate(0, 20)');
+        this._rulerRef = ruler;
+        
+        svg.append(
+            ruler
+        );
+        
+        const resizeObserver = new ResizeObserver((entries) => this._handleResize(entries));
+        resizeObserver.observe(svg, { box: 'border-box' });
+        this._resizeObserver = resizeObserver;
+        
         return svg;
     }
     _createVariables() {
@@ -317,6 +342,9 @@ export class VcdViewerVanilla {
     destroy() {
         this._cleanup?.();
         this._cleanup = null;
+        
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
     }
     
     
@@ -523,6 +551,21 @@ export class VcdViewerVanilla {
         this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule) : [];
         
         this._react();
+        if (this._rulerRef) {
+            const inlineSize = Number.parseFloat(getComputedStyle(this._rulerRef).inlineSize);
+            if (!isNaN(inlineSize)) {
+                this._handleResize([{
+                    borderBoxSize: [{
+                        inlineSize,
+                        blockSize  : undefined as any,
+                    }],
+                    contentBoxSize            : undefined as any,
+                    devicePixelContentBoxSize : undefined as any,
+                    contentRect               : undefined as any,
+                    target                    : undefined as any,
+                }]);
+            } // if
+        } // if
     }
     _getZoom() {
         return this._zoom;
