@@ -58,6 +58,8 @@ export class VcdViewerVanilla {
     _enableTouchScroll : boolean       = false;
     _touchStartRef     : number        = 0;
     
+    _search            : string        = '';
+    
     _searchType        : SearchType    = SearchType.HEX;
     
     _inputLogs         = {
@@ -173,12 +175,14 @@ export class VcdViewerVanilla {
     
     
     // refs:
-    _labelsRef      : HTMLUListElement|null = null;
-    // _svgRef         : SVGSVGElement|null    = null;
-    _bodyRef        : HTMLDivElement|null   = null;
-    _rulerRef       : SVGGElement|null      = null;
-    _variablesRef   : HTMLDivElement|null   = null;
-    _resizeObserver : ResizeObserver|null   = null;
+    _labelsRef        : HTMLUListElement|null  = null;
+    _bodyRef          : HTMLDivElement|null    = null;
+    _rulerRef         : SVGGElement|null       = null;
+    _variablesRef     : HTMLDivElement|null    = null;
+    _resizeObserver   : ResizeObserver|null    = null;
+    _btnTouchRef      : HTMLButtonElement|null = null;
+    _btnSearchTimeRef : HTMLButtonElement|null = null;
+    _btnSearchHexRef  : HTMLButtonElement|null = null;
     
     
     
@@ -205,6 +209,106 @@ export class VcdViewerVanilla {
         );
     }
     
+    _handleZoomOut() {
+        this._setZoom(Math.round(this._zoom - 1));
+    }
+    _handleZoomIn() {
+        this._setZoom(Math.round(this._zoom + 1));
+    }
+    
+    _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean), allVariables: boolean = false) {
+        if (!allVariables && (this._focusedVariable === null)) return;
+        const waves         = (
+            (
+                !allVariables
+                ? this._allVcdVariables[this._focusedVariable ?? 0].waves
+                : (
+                    this._allVcdVariables
+                    .flatMap(({ waves }) => waves)
+                    .sort((a, b) => a.tick - b.tick)
+                )
+            )
+            ??
+            []
+        );
+        const isAlt         = !allVariables ? this._isAltPressed() : false;
+        let   current       = isAlt ? this._altSelection : this._mainSelection;
+        if (current === null) {
+            if (!allVariables) return;
+            current = this._minTick;
+        } // if
+        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave)));
+        const dummyEdge     = {
+            ...(gotoNext ? waves[waves.length - 1] : waves[0]),
+            tick: gotoNext ? this._maxTick : this._minTick,
+        } satisfies VcdWave;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
+        if (target === undefined) return;
+        const selectionPos = target.tick;
+        (isAlt ? this._setAltSelection : this._setMainSelection)(selectionPos);
+        
+        
+        
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        const scrollPosStart = bodyElm.scrollLeft / this._baseScale;
+        const clientArea     = bodyElm.getBoundingClientRect().width;
+        const scrollPosEnd   = scrollPosStart + (clientArea / this._baseScale);
+        if ((selectionPos <= scrollPosStart) || (selectionPos >= scrollPosEnd)) { // if out of view
+            bodyElm.scrollLeft = (selectionPos * this._baseScale) - (clientArea / 2);
+        } // if
+    }
+    
+    _handleGotoPrevEdgeNeg() {
+        this._handleGotoEdge(false, (wave) => (wave.value === 0));
+    }
+    _handleGotoPrevEdgePos() {
+        this._handleGotoEdge(false, (wave) => (wave.value === 1));
+    }
+    
+    _handleGotoPrevSearch() {
+        switch (this._searchType) {
+            case SearchType.TIME :
+                const searchNum = Number.parseFloat(this._search);
+                if (isNaN(searchNum)) return;
+                this._setMainSelection(searchNum);
+                break;
+            case SearchType.HEX  :
+                this._handleGotoEdge(false, (wave) => (wave.value.toString(16).toLowerCase().includes(this._search.toLowerCase())), true);
+                break;
+        } // switch
+    }
+    _handleGotoNextSearch() {
+        switch (this._searchType) {
+            case SearchType.TIME :
+                const searchNum = Number.parseFloat(this._search);
+                if (isNaN(searchNum)) return;
+                this._setMainSelection(searchNum);
+                break;
+            case SearchType.HEX  :
+                this._handleGotoEdge(true, (wave) => (wave.value.toString(16).toLowerCase().includes(this._search.toLowerCase())), true);
+                break;
+        } // switch
+    }
+    
+    _handleGotoPrevEdge() {
+        this._handleGotoEdge(false);
+    }
+    _handleGotoNextEdge() {
+        this._handleGotoEdge(true);
+    }
+    
+    _handleGotoNextEdgeNeg() {
+        this._handleGotoEdge(true, (wave) => (wave.value === 0));
+    }
+    _handleGotoNextEdgePos() {
+        this._handleGotoEdge(true, (wave) => (wave.value === 1));
+    }
+    
+    _handleToggleTouchScroll() {
+        this._setEnableTouchScroll(!this._enableTouchScroll);
+    }
+    
     
     
     constructor(placeholder: Element) {
@@ -229,24 +333,25 @@ export class VcdViewerVanilla {
         const toolbar = document.createElement('div');
         toolbar.classList.add(styles.toolbar);
         
-        toolbar.appendChild(this._createButton('zoom-out'));
-        toolbar.appendChild(this._createButton('zoom-in'));
+        toolbar.appendChild(this._createButton('zoom-out', { onClick: () => this._handleZoomOut() }));
+        toolbar.appendChild(this._createButton('zoom-in' , { onClick: () => this._handleZoomIn()  }));
         
-        toolbar.appendChild(this._createButton('prev-neg-edge'));
-        toolbar.appendChild(this._createButton('prev-pos-edge'));
+        toolbar.appendChild(this._createButton('prev-neg-edge', { onClick: () => this._handleGotoPrevEdgeNeg() }));
+        toolbar.appendChild(this._createButton('prev-pos-edge', { onClick: () => this._handleGotoPrevEdgePos() }));
         
-        toolbar.appendChild(this._createButton('prev-transition'));
-        toolbar.appendChild(this._createButton('next-transition'));
+        toolbar.appendChild(this._createButton('prev-transition', { onClick: () => this._handleGotoPrevEdge() }));
+        toolbar.appendChild(this._createButton('next-transition', { onClick: () => this._handleGotoNextEdge() }));
         
-        toolbar.appendChild(this._createButton('next-neg-edge'));
-        toolbar.appendChild(this._createButton('next-pos-edge'));
+        toolbar.appendChild(this._createButton('next-neg-edge', { onClick: () => this._handleGotoNextEdgePos() }));
+        toolbar.appendChild(this._createButton('next-pos-edge', { onClick: () => this._handleGotoNextEdgeNeg() }));
         
         toolbar.appendChild(this._createComboInput());
         
-        toolbar.appendChild(this._createButton('prev'));
-        toolbar.appendChild(this._createButton('next'));
+        toolbar.appendChild(this._createButton('prev', { onClick: () => this._handleGotoPrevSearch() }));
+        toolbar.appendChild(this._createButton('next', { onClick: () => this._handleGotoNextSearch() }));
         
-        toolbar.appendChild(this._createButton('touch'));
+        this._btnTouchRef = toolbar.appendChild(this._createButton('touch', { onClick: () => this._handleToggleTouchScroll() }));
+        
         return toolbar;
     }
     _createButton(className: string, props?: { onClick?: () => void, text?: string }) {
@@ -264,9 +369,9 @@ export class VcdViewerVanilla {
     _createComboInput() {
         const combo = document.createElement('div');
         combo.classList.add(styles.comboInput);
-        combo.appendChild(this._createSearchInput());
-        combo.appendChild(this._createButton('text', { text: 't=' }));
-        combo.appendChild(this._createButton('text', { text: 'hex' }));
+        combo.appendChild(this._createSearchInput()).addEventListener('change', (event) => { this._search = (event.currentTarget as HTMLInputElement).value });
+        this._btnSearchTimeRef = combo.appendChild(this._createButton('text', { text: 't=' , onClick: () => this._setSearchType(SearchType.TIME) }));
+        this._btnSearchHexRef  = combo.appendChild(this._createButton('text', { text: 'hex', onClick: () => this._setSearchType(SearchType.HEX ) }));
         return combo;
     }
     _createSearchInput() {
@@ -537,6 +642,10 @@ export class VcdViewerVanilla {
                 this._reactCrateVariableWrapper(movedVariable)
             )
         );
+        
+        this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
+        this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
+        this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
     }
     
     
@@ -573,5 +682,22 @@ export class VcdViewerVanilla {
     _setZoom(zoom: number) {
         this._zoom      = zoom;
         this._baseScale = 2 ** zoom;
+        this._react();
+    }
+    _setAltSelection(altSelection: number|null) {
+        this._altSelection = altSelection;
+        this._react();
+    }
+    _setMainSelection(mainSelection: number|null) {
+        this._mainSelection = mainSelection;
+        this._react();
+    }
+    _setEnableTouchScroll(enableTouchScroll: boolean) {
+        this._enableTouchScroll = enableTouchScroll;
+        this._react();
+    }
+    _setSearchType(searchType: SearchType) {
+        this._searchType = searchType;
+        this._react();
     }
 }
