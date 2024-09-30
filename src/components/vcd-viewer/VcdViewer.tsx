@@ -268,15 +268,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         
-        // actions:
-        event.preventDefault();
-        
-        
-        
         // conditions:
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
+        
+        
+        
+        // actions:
+        if (!['tab'].includes(keyCode)) event.preventDefault();
         
         
         
@@ -907,9 +907,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button type='button' className='next-neg-edge' onClick={handleGotoNextEdgePos} disabled={!isBinarySelection} />
                 <button type='button' className='next-pos-edge' onClick={handleGotoNextEdgeNeg} disabled={!isBinarySelection} />
                 
-                <input type='search' placeholder='Search' value={search} onChange={({currentTarget: { value }}) => setSearch(value)} />
-                <button onClick={() => setSearchType(SearchType.TIME)} className={(searchType === SearchType.TIME) ? 'active' : ''}>by time</button>
-                <button onClick={() => setSearchType(SearchType.HEX)} className={(searchType === SearchType.HEX) ? 'active' : ''}>by hex</button>
+                <div className={styles.comboInput}>
+                    <input type='search' placeholder='Search' value={search} onChange={({currentTarget: { value }}) => setSearch(value)} />
+                    <button type='button' className={cn('text', (searchType === SearchType.TIME) ? 'active' : '')} onClick={() => setSearchType(SearchType.TIME)}>t=</button>
+                    <button type='button' className={cn('text', (searchType === SearchType.HEX)  ? 'active' : '')} onClick={() => setSearchType(SearchType.HEX)} >hex</button>
+                </div>
                 <button type='button' className='prev' onClick={handleGotoPrevSearch} disabled={searchType !== SearchType.HEX} />
                 <button type='button' className='next' onClick={handleGotoNextSearch} />
                 
