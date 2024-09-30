@@ -725,6 +725,8 @@ export class VcdViewerVanilla {
     _setZoom(zoom: number) {
         this._zoom      = zoom;
         this._baseScale = 2 ** zoom;
+        
+        this._refreshVcd();
         this._refreshState();
     }
     _setMainSelection(mainSelection: number|null) {
