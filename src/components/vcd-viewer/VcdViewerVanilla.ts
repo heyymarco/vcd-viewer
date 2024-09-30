@@ -186,7 +186,8 @@ export class VcdViewerVanilla {
     
     
     // react:
-    _moveableLabels: HTMLElement[] = [];
+    _moveableLabels    : HTMLElement[] = [];
+    _moveableVariables : HTMLElement[] = [];
     
     
     
@@ -362,6 +363,104 @@ export class VcdViewerVanilla {
         )
         return label;
     }
+    _reactVariableItem(index: number, variable: VcdVariable) {
+        const variableItem = document.createElement('div');
+        variableItem.classList.add(styles.variable);
+        const classFocusState = ((this._focusedVariable === index) ? 'focus' : null);
+        const classDragState  = (((this._moveFromIndex !== null) && (this._moveFromIndex === index)) ? 'dragging' : null);
+        if (classFocusState) variableItem.classList.add(classFocusState);
+        if (classDragState ) variableItem.classList.add(classDragState );
+        
+        const style = variableItem.style;
+        if (this._moveFromIndex === index) {
+            style.setProperty('--posX'        , `${this._movePosRelative.x}`             );
+            style.setProperty('--posY'        , `${this._movePosRelative.y}`             );
+            style.setProperty('--moveRelative', `${(this._moveToIndex ?? index) - index}`);
+        }
+        else {
+            style.setProperty('--posX'        , null);
+            style.setProperty('--posY'        , null);
+            style.setProperty('--moveRelative', null);
+        } // if
+        
+        variableItem.tabIndex = 0;
+        variableItem.addEventListener('focus', () => {
+            this._focusedVariable = index;
+            this._react();
+        });
+        
+        variableItem.appendChild(
+            this._reactVariableWaves(variable),
+        );
+        
+        return variableItem;
+    }
+    _reactVariableWaves(variable: VcdVariable) {
+        const wavesElm = document.createElement('div');
+        wavesElm.classList.add(styles.waves);
+        
+        wavesElm.append(
+            ...
+            variable.waves.map((wave, index) =>
+                this._reactVariableWave(index, variable, wave)
+            )
+            .filter((wave): wave is Exclude<typeof wave, null> => (wave !== null))
+        );
+        
+        return wavesElm;
+    }
+    _reactVariableWave(index: number, {waves, size}: VcdVariable, {tick, value}: VcdWave) {
+        const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : this._maxTick;
+        // if (nextTick === maxTick) return null;
+        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+        const isBinary = (size === 1);
+        
+        
+        
+        const length = (nextTick - tick) * this._baseScale;
+        if (length === 0) return null;
+        
+        
+        
+        const wave = document.createElement('span');
+        const classErrorState = isError ? 'error' : null;
+        const classBinaryState = isBinary ? `bin ${value ? 'hi':'lo'}` : null;
+        if (classErrorState ) wave.classList.add(classErrorState );
+        if (classBinaryState) wave.classList.add(classBinaryState);
+        wave.style.setProperty('--length', `${length}`);
+        
+        wave.append(
+            `${!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}`
+        );
+        
+        return wave;
+    }
+    _reactVariableWaveLast({waves, size}: VcdVariable) {
+        const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+        if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+        const {
+            value,
+        } = lastWave;
+        
+        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+        const isBinary = (size === 1);
+        
+        
+        
+        const wave = document.createElement('span');
+        wave.classList.add(styles.lastWave);
+        wave.classList.add('last');
+        const classErrorState = isError ? 'error' : null;
+        const classBinaryState = isBinary ? `bin ${value ? 'hi':'lo'}` : null;
+        if (classErrorState ) wave.classList.add(classErrorState );
+        if (classBinaryState) wave.classList.add(classBinaryState);
+        
+        wave.append(
+            `${!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}`
+        );
+        
+        return wave;
+    }
     _react() {
         this._moveableLabels = (
             this._vcd
@@ -379,68 +478,16 @@ export class VcdViewerVanilla {
                 this._crateLabelWrapper(index, movedLabel)
             )
         );
-        // debugger;
         
-        // const moveableVariables : React.ReactNode[] = (
-        //     this._vcd
-        //     ? this._allVcdVariables.map(({ waves, size }, index) =>
-        //         <div
-        //             key={index}
-        //             className={cn(
-        //                 styles.variable,
-        //                 ((focusedVariable === index) ? 'focus' : null),
-        //                 (((this._moveFromIndex !== null) && (this._moveFromIndex === index)) ? 'dragging' : null),
-        //             )}
-        //             style={(this._moveFromIndex === index) ?{
-        //                 '--posX'         : this._movePosRelative.x,
-        //                 '--posY'         : this._movePosRelative.y,
-        //                 '--moveRelative' : (this._moveToIndex ?? index) - index,
-        //             } as any : undefined}
-        //             tabIndex={0}
-        //             onFocus={() => this._setFocusedVariable(index)}
-        //         >
-        //             <div className={styles.waves}>
-        //                 {waves.map(({tick, value}, index, waves) => {
-        //                     const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-        //                     // if (nextTick === maxTick) return null;
-        //                     const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-        //                     const isBinary = (size === 1);
-        //                     
-        //                     
-        //                     
-        //                     // jsx:
-        //                     const length = (nextTick - tick) * baseScale;
-        //                     if (length === 0) return;
-        //                     return (
-        //                         <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
-        //                             {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
-        //                         </span>
-        //                     );
-        //                 })}
-        //             </div>
-        //             {(() => {
-        //                 const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-        //                 if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-        //                 const {
-        //                     value,
-        //                 } = lastWave;
-        //                 
-        //                 const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-        //                 const isBinary = (size === 1);
-        //                 
-        //                 
-        //                 
-        //                 // jsx:
-        //                 return (
-        //                     <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : undefined, isBinary ? `bin ${value ? 'hi':'lo'}` : undefined)}>
-        //                         {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
-        //                     </span>
-        //                 );
-        //             })()}
-        //         </div>
-        //     )
-        //     : []
-        // );
+        
+        
+        this._moveableVariables = (
+            this._vcd
+            ? this._allVcdVariables.map((variable, index) =>
+                this._reactVariableItem(index, variable)
+            )
+            : []
+        );
     }
     
     
