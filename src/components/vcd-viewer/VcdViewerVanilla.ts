@@ -171,10 +171,10 @@ export class VcdViewerVanilla {
     
     // refs:
     _labelsRef    : HTMLUListElement|null = null;
-    _svgRef       : SVGSVGElement|null  = null;
-    _bodyRef      : HTMLDivElement|null = null;
-    _rulerRef     : SVGGElement|null    = null;
-    _variablesRef : HTMLDivElement|null = null;
+    _svgRef       : SVGSVGElement|null    = null;
+    _bodyRef      : HTMLDivElement|null   = null;
+    _rulerRef     : SVGGElement|null      = null;
+    _variablesRef : HTMLDivElement|null   = null;
     
     
     
@@ -276,13 +276,6 @@ export class VcdViewerVanilla {
         this._labelsRef = labels;
         return labels;
     }
-    _crateLabelWrapper(index: number, movedLabel: HTMLElement) {
-        const wrapper = document.createElement('li');
-        wrapper.classList.add(styles.labelWrapper);
-        wrapper.dataset.droppable = `${index}`;
-        wrapper.appendChild(movedLabel);
-        return wrapper;
-    }
     _createBody() {
         const body = document.createElement('div');
         body.classList.add(styles.body);
@@ -301,6 +294,7 @@ export class VcdViewerVanilla {
     _createVariables() {
         const variables = document.createElement('div');
         variables.classList.add(styles.variables);
+        this._variablesRef = variables;
         return variables;
     }
     _createMainSelection() {
@@ -363,6 +357,14 @@ export class VcdViewerVanilla {
         )
         return label;
     }
+    _reactCrateLabelWrapper(index: number, movedLabel: HTMLElement) {
+        const wrapper = document.createElement('li');
+        wrapper.classList.add(styles.labelWrapper);
+        wrapper.dataset.droppable = `${index}`;
+        wrapper.appendChild(movedLabel);
+        return wrapper;
+    }
+    
     _reactVariableItem(index: number, variable: VcdVariable) {
         const variableItem = document.createElement('div');
         variableItem.classList.add(styles.variable);
@@ -389,8 +391,11 @@ export class VcdViewerVanilla {
             this._react();
         });
         
-        variableItem.appendChild(
-            this._reactVariableWaves(variable),
+        variableItem.append(
+            ...[
+                this._reactVariableWaves(variable),
+                this._reactVariableWaveLast(variable),
+            ].filter((child): child is Exclude<typeof child, null> => (child !== null))
         );
         
         return variableItem;
@@ -424,13 +429,13 @@ export class VcdViewerVanilla {
         
         const wave = document.createElement('span');
         const classErrorState = isError ? 'error' : null;
-        const classBinaryState = isBinary ? `bin ${value ? 'hi':'lo'}` : null;
+        const classBinaryState = isBinary ? ['bin', value ? 'hi':'lo'] : null;
         if (classErrorState ) wave.classList.add(classErrorState );
-        if (classBinaryState) wave.classList.add(classBinaryState);
+        if (classBinaryState) wave.classList.add(...classBinaryState);
         wave.style.setProperty('--length', `${length}`);
         
-        wave.append(
-            `${!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}`
+        if (!isBinary) wave.append(
+            `${((typeof(value) === 'string') ? value : value.toString(16))}`
         );
         
         return wave;
@@ -451,16 +456,23 @@ export class VcdViewerVanilla {
         wave.classList.add(styles.lastWave);
         wave.classList.add('last');
         const classErrorState = isError ? 'error' : null;
-        const classBinaryState = isBinary ? `bin ${value ? 'hi':'lo'}` : null;
+        const classBinaryState = isBinary ? ['bin', value ? 'hi':'lo'] : null;
         if (classErrorState ) wave.classList.add(classErrorState );
-        if (classBinaryState) wave.classList.add(classBinaryState);
+        if (classBinaryState) wave.classList.add(...classBinaryState);
         
-        wave.append(
-            `${!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}`
+        if (!isBinary) wave.append(
+            `${((typeof(value) === 'string') ? value : value.toString(16))}`
         );
         
         return wave;
     }
+    _reactCrateVariableWrapper(movedVariable: HTMLElement) {
+        const wrapper = document.createElement('li');
+        wrapper.classList.add(styles.variableWrapper);
+        wrapper.appendChild(movedVariable);
+        return wrapper;
+    }
+    
     _react() {
         this._moveableLabels = (
             this._vcd
@@ -475,7 +487,7 @@ export class VcdViewerVanilla {
             ...
             moveVcdVariableData(this._moveableLabels, this._moveFromIndex, this._moveToIndex)
             .map((movedLabel, index) =>
-                this._crateLabelWrapper(index, movedLabel)
+                this._reactCrateLabelWrapper(index, movedLabel)
             )
         );
         
@@ -487,6 +499,15 @@ export class VcdViewerVanilla {
                 this._reactVariableItem(index, variable)
             )
             : []
+        );
+        
+        this._variablesRef?.replaceChildren();
+        this._variablesRef?.append(
+            ...
+            moveVcdVariableData(this._moveableVariables, this._moveFromIndex, this._moveToIndex)
+            .map((movedVariable, index) =>
+                this._reactCrateVariableWrapper(movedVariable)
+            )
         );
     }
     
