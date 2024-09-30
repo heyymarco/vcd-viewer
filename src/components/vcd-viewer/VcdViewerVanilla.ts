@@ -180,8 +180,12 @@ export class VcdViewerVanilla {
     _rulerRef          : SVGGElement|null       = null;
     _variablesRef      : HTMLDivElement|null    = null;
     _resizeObserver    : ResizeObserver|null    = null;
-    _btnTouchRef       : HTMLButtonElement|null = null;
+    _btnPrevEdgeNeg    : HTMLButtonElement|null = null;
+    _btnPrevEdgePos    : HTMLButtonElement|null = null;
+    _btnNextEdgePos    : HTMLButtonElement|null = null;
+    _btnNextEdgeNeg    : HTMLButtonElement|null = null;
     _btnPrevRef        : HTMLButtonElement|null = null;
+    _btnTouchRef       : HTMLButtonElement|null = null;
     _btnSearchTimeRef  : HTMLButtonElement|null = null;
     _btnSearchHexRef   : HTMLButtonElement|null = null;
     _mainSelectionRef  : HTMLDivElement|null    = null;
@@ -364,14 +368,14 @@ export class VcdViewerVanilla {
         toolbar.appendChild(this._createButton('zoom-out', { onClick: () => this._handleZoomOut() }));
         toolbar.appendChild(this._createButton('zoom-in' , { onClick: () => this._handleZoomIn()  }));
         
-        toolbar.appendChild(this._createButton('prev-neg-edge', { onClick: () => this._handleGotoPrevEdgeNeg() }));
-        toolbar.appendChild(this._createButton('prev-pos-edge', { onClick: () => this._handleGotoPrevEdgePos() }));
+        this._btnPrevEdgeNeg = toolbar.appendChild(this._createButton('prev-neg-edge', { onClick: () => this._handleGotoPrevEdgeNeg() }));
+        this._btnPrevEdgePos = toolbar.appendChild(this._createButton('prev-pos-edge', { onClick: () => this._handleGotoPrevEdgePos() }));
         
         toolbar.appendChild(this._createButton('prev-transition', { onClick: () => this._handleGotoPrevEdge() }));
         toolbar.appendChild(this._createButton('next-transition', { onClick: () => this._handleGotoNextEdge() }));
         
-        toolbar.appendChild(this._createButton('next-neg-edge', { onClick: () => this._handleGotoNextEdgePos() }));
-        toolbar.appendChild(this._createButton('next-pos-edge', { onClick: () => this._handleGotoNextEdgeNeg() }));
+        this._btnNextEdgePos = toolbar.appendChild(this._createButton('next-neg-edge', { onClick: () => this._handleGotoNextEdgePos() }));
+        this._btnNextEdgeNeg = toolbar.appendChild(this._createButton('next-pos-edge', { onClick: () => this._handleGotoNextEdgeNeg() }));
         
         toolbar.appendChild(this._createComboInput());
         
@@ -682,7 +686,11 @@ export class VcdViewerVanilla {
         this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
         this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
         this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
-        if (this._btnPrevRef) this._btnPrevRef.disabled = (this._searchType !== SearchType.HEX);
+        if (this._btnPrevEdgeNeg) this._btnPrevEdgeNeg.disabled = !this._isBinarySelection;
+        if (this._btnPrevEdgePos) this._btnPrevEdgePos.disabled = !this._isBinarySelection;
+        if (this._btnNextEdgePos) this._btnNextEdgePos.disabled = !this._isBinarySelection;
+        if (this._btnNextEdgeNeg) this._btnNextEdgeNeg.disabled = !this._isBinarySelection;
+        if (this._btnPrevRef    ) this._btnPrevRef.disabled = (this._searchType !== SearchType.HEX);
         
         if (this._mainSelection  !== null) this._mainSelectionRef?.style.setProperty('--position', `${this._mainSelection * this._baseScale}`);
         if (this._altSelection   !== null) this._altSelectionRef?.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
