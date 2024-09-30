@@ -23,6 +23,7 @@ export default function Home() {
         
         // setups:
         const vcdViewer = new VcdViewerVanilla(placeholderElm);
+        vcdViewer.setVcd(vcd);
         
         
         
