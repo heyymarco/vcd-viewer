@@ -258,14 +258,14 @@
     
     
     // sizes:
-    overflow-x : scroll;
-    overflow-y : hidden;
+    // overflow-x : scroll; // hides, use `.scrollbarHack` instead
+    // overflow-y : hidden; // hides, use `.scrollbarHack` instead
     // scrollbar-gutter: stable both-edges;
     
     
     
     // spacings:
-    row-gap: var(--variable-gap);
+    // row-gap: var(--variable-gap); // moved to `.labelWrapper` spacings
     padding-inline: 10px;
     padding-block: 10px;
     margin: unset;
@@ -273,6 +273,13 @@
 .labelWrapper {
     // layouts:
     display: grid;
+    
+    
+    
+    // spacings:
+    &:not(:first-child) {
+        margin-block-start: var(--variable-gap);
+    }
 }
 .label {
     // layouts:
@@ -362,6 +369,29 @@
             border-top-color: var(--col-handler-active);
         }
     }
+}
+.scrollbarHack {
+    // appearances:
+    visibility: hidden;
+    
+    
+    
+    // accessibilities:
+    pointer-events: none;
+    
+    
+    
+    // sizes:
+    box-sizing: content-box;
+    // block-size: 0.02px;
+    overflow-x : scroll;
+    overflow-y : hidden;
+    
+    
+    
+    // spacings:
+    margin: 0;
+    padding: 0;
 }
 
 .body {

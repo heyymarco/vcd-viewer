@@ -947,6 +947,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                             {movedLabel}
                         </li>
                     )}
+                    <li className={styles.scrollbarHack} />
                 </ul>
                 <div
                     // refs:
