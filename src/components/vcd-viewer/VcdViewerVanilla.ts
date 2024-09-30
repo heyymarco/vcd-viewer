@@ -748,6 +748,7 @@ export class VcdViewerVanilla {
     _setFocusedVariable(focusedVariable: number) {
         this._focusedVariable = focusedVariable;
         this._refreshState();
+        // TODO: apply|remove .focus class without calling `_refreshVcd()` to avoid onFocus() onClick() issue
     }
     _setEnableTouchScroll(enableTouchScroll: boolean) {
         this._enableTouchScroll = enableTouchScroll;
