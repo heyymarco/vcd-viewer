@@ -202,12 +202,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             setMoveToIndex(null);
         },
         onPointerCaptureEnd(event) {
-            // apply changes:
-            if ((moveFromIndex !== null) && (moveToIndex !== null)) {
-                setAllVcdVariables(
-                    moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex)
-                );
-            } // if
+            handleApplyDrop();
             
             
             
@@ -237,11 +232,30 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 })
                 .find((newMoveToIndex): newMoveToIndex is Exclude<typeof newMoveToIndex, undefined> => (newMoveToIndex !== undefined))
             );
-            if (newMoveToIndex !== undefined) handleDropMove(newMoveToIndex);
+            if (newMoveToIndex !== undefined) handlePreviewMove(newMoveToIndex);
         },
     });
-    const handleDropMove = useEvent((newMoveToIndex: number) => {
+    const handlePreviewMove = useEvent((newMoveToIndex: number) => {
         if (newMoveToIndex !== moveToIndex) setMoveToIndex(newMoveToIndex);
+    });
+    const handleApplyDrop   = useEvent(() => {
+        // apply changes:
+        if ((moveFromIndex !== null) && (moveToIndex !== null)) {
+            setAllVcdVariables(
+                moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex)
+            );
+        } // if
+        
+        
+        
+        // restore focus:
+        if (focusedVariable !== null) {
+            const focusMap = new Array<undefined|true>(allVcdVariables.length);
+            focusMap[focusedVariable] = true;
+            const newFocusMap = moveVcdVariableData(focusMap, moveFromIndex, moveToIndex);
+            const newFocusedVariable = newFocusMap.findIndex((val) => (val === true))
+            setFocusedVariable(newFocusedVariable);
+        } // if
     });
     
     
