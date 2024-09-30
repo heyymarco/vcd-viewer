@@ -181,6 +181,7 @@ export class VcdViewerVanilla {
     _variablesRef      : HTMLDivElement|null    = null;
     _resizeObserver    : ResizeObserver|null    = null;
     _btnTouchRef       : HTMLButtonElement|null = null;
+    _btnPrevRef        : HTMLButtonElement|null = null;
     _btnSearchTimeRef  : HTMLButtonElement|null = null;
     _btnSearchHexRef   : HTMLButtonElement|null = null;
     _mainSelectionRef  : HTMLDivElement|null    = null;
@@ -373,7 +374,7 @@ export class VcdViewerVanilla {
         
         toolbar.appendChild(this._createComboInput());
         
-        toolbar.appendChild(this._createButton('prev', { onClick: () => this._handleGotoPrevSearch() }));
+        this._btnPrevRef = toolbar.appendChild(this._createButton('prev', { onClick: () => this._handleGotoPrevSearch() }));
         toolbar.appendChild(this._createButton('next', { onClick: () => this._handleGotoNextSearch() }));
         
         this._btnTouchRef = toolbar.appendChild(this._createButton('touch', { onClick: () => this._handleToggleTouchScroll() }));
@@ -427,6 +428,8 @@ export class VcdViewerVanilla {
         this._mainSelectionRef  = body.appendChild(this._createMainSelection());
         this._altSelectionRef   = body.appendChild(this._createAltSelection());
         this._rangeSelectionRef = body.appendChild(this._createRangeSelection());
+        
+        this._bodyRef = body;
         return body;
     }
     _createRuler() {
@@ -550,7 +553,9 @@ export class VcdViewerVanilla {
         
         variableItem.tabIndex = 0;
         variableItem.addEventListener('focus', () => {
-            this._setFocusedVariable(index);
+            setTimeout(() => {
+                this._setFocusedVariable(index);
+            }, 200); // do not re-render before mouse_up released by user
         });
         
         variableItem.append(
@@ -677,14 +682,21 @@ export class VcdViewerVanilla {
         this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
         this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
         this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
+        if (this._btnPrevRef) this._btnPrevRef.disabled = (this._searchType !== SearchType.HEX);
         
         if (this._mainSelection  !== null) this._mainSelectionRef?.style.setProperty('--position', `${this._mainSelection * this._baseScale}`);
         if (this._altSelection   !== null) this._altSelectionRef?.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
         if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selStart', `${Math.min(this._selectionStart, this._selectionEnd)  * this._baseScale}`);
         if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selEnd', `${Math.max(this._selectionStart, this._selectionEnd) * this._baseScale}`);
     }
+    _cancelRender: ReturnType<typeof setTimeout>|undefined = undefined;
     _reactRender() {
-        setTimeout(() => this._react(), 100);
+        clearTimeout(this._cancelRender);
+        this._cancelRender = setTimeout(() => {
+            this._react();
+            // console.log('RENDER');
+        }, 0);
+        // setTimeout(() => this._react(), 0);
         // Promise.resolve().then(() => this._react());
     }
     
