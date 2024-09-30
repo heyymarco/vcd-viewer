@@ -168,21 +168,24 @@ export class VcdViewerVanilla {
             focusMap[this._focusedVariable] = true;
             const newFocusMap = moveVcdVariableData(focusMap, this._moveFromIndex, this._moveToIndex);
             const newFocusedVariable = newFocusMap.findIndex((val) => (val === true))
-            this._focusedVariable = newFocusedVariable;
+            this._setFocusedVariable(newFocusedVariable);
         } // if
     }
     
     
     
     // refs:
-    _labelsRef        : HTMLUListElement|null  = null;
-    _bodyRef          : HTMLDivElement|null    = null;
-    _rulerRef         : SVGGElement|null       = null;
-    _variablesRef     : HTMLDivElement|null    = null;
-    _resizeObserver   : ResizeObserver|null    = null;
-    _btnTouchRef      : HTMLButtonElement|null = null;
-    _btnSearchTimeRef : HTMLButtonElement|null = null;
-    _btnSearchHexRef  : HTMLButtonElement|null = null;
+    _labelsRef         : HTMLUListElement|null  = null;
+    _bodyRef           : HTMLDivElement|null    = null;
+    _rulerRef          : SVGGElement|null       = null;
+    _variablesRef      : HTMLDivElement|null    = null;
+    _resizeObserver    : ResizeObserver|null    = null;
+    _btnTouchRef       : HTMLButtonElement|null = null;
+    _btnSearchTimeRef  : HTMLButtonElement|null = null;
+    _btnSearchHexRef   : HTMLButtonElement|null = null;
+    _mainSelectionRef  : HTMLDivElement|null    = null;
+    _altSelectionRef   : HTMLDivElement|null    = null;
+    _rangeSelectionRef : HTMLDivElement|null    = null;
     
     
     
@@ -207,6 +210,29 @@ export class VcdViewerVanilla {
         d3.select(this._rulerRef).call(
             d3.axisTop(ruler).ticks(50) as any
         );
+    }
+    
+    _handleClick(event: MouseEvent) {
+        // conditions:
+        if ((this._selectionStart !== null) && (this._selectionEnd !== null)) return; // ignore if selectionRange is active
+        
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const { x } = bodyElm.getBoundingClientRect();
+        const relativePosition = event.clientX - x + bodyElm.scrollLeft;
+        const valuePosition    = relativePosition / this._baseScale;
+        
+        
+        
+        if (this._isAltPressed()) {
+            this._setAltSelection(valuePosition);
+        }
+        else {
+            this._setMainSelection(valuePosition);
+        } // if
     }
     
     _handleZoomOut() {
@@ -398,9 +424,9 @@ export class VcdViewerVanilla {
         body.classList.add(styles.body);
         body.appendChild(this._createRuler());
         body.appendChild(this._createVariables());
-        body.appendChild(this._createMainSelection());
-        body.appendChild(this._createAltSelection());
-        body.appendChild(this._createRangeSelection());
+        this._mainSelectionRef  = body.appendChild(this._createMainSelection());
+        this._altSelectionRef   = body.appendChild(this._createAltSelection());
+        this._rangeSelectionRef = body.appendChild(this._createRangeSelection());
         return body;
     }
     _createRuler() {
@@ -424,7 +450,11 @@ export class VcdViewerVanilla {
     _createVariables() {
         const variables = document.createElement('div');
         variables.classList.add(styles.variables);
+        
+        variables.addEventListener('click', (event) => this._handleClick(event));
+        
         this._variablesRef = variables;
+        
         return variables;
     }
     _createMainSelection() {
@@ -520,8 +550,7 @@ export class VcdViewerVanilla {
         
         variableItem.tabIndex = 0;
         variableItem.addEventListener('focus', () => {
-            this._focusedVariable = index;
-            this._react();
+            this._setFocusedVariable(index);
         });
         
         variableItem.append(
@@ -600,13 +629,15 @@ export class VcdViewerVanilla {
         return wave;
     }
     _reactCrateVariableWrapper(movedVariable: HTMLElement) {
-        const wrapper = document.createElement('li');
+        const wrapper = document.createElement('div');
         wrapper.classList.add(styles.variableWrapper);
         wrapper.appendChild(movedVariable);
         return wrapper;
     }
     
     _react() {
+        this._isBinarySelection = (this._focusedVariable !== null) && (this._allVcdVariables?.[this._focusedVariable]?.size === 1);
+        
         this._moveableLabels = (
             this._vcd
             ? this._allVcdVariables.map((variable, index) =>
@@ -646,6 +677,15 @@ export class VcdViewerVanilla {
         this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
         this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
         this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
+        
+        if (this._mainSelection  !== null) this._mainSelectionRef?.style.setProperty('--position', `${this._mainSelection * this._baseScale}`);
+        if (this._altSelection   !== null) this._altSelectionRef?.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
+        if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selStart', `${Math.min(this._selectionStart, this._selectionEnd)  * this._baseScale}`);
+        if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selEnd', `${Math.max(this._selectionStart, this._selectionEnd) * this._baseScale}`);
+    }
+    _reactRender() {
+        setTimeout(() => this._react(), 100);
+        // Promise.resolve().then(() => this._react());
     }
     
     
@@ -659,7 +699,7 @@ export class VcdViewerVanilla {
         this._maxTick         = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
         this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule) : [];
         
-        this._react();
+        this._reactRender();
         if (this._rulerRef) {
             const inlineSize = Number.parseFloat(getComputedStyle(this._rulerRef).inlineSize);
             if (!isNaN(inlineSize)) {
@@ -682,22 +722,26 @@ export class VcdViewerVanilla {
     _setZoom(zoom: number) {
         this._zoom      = zoom;
         this._baseScale = 2 ** zoom;
-        this._react();
-    }
-    _setAltSelection(altSelection: number|null) {
-        this._altSelection = altSelection;
-        this._react();
+        this._reactRender();
     }
     _setMainSelection(mainSelection: number|null) {
         this._mainSelection = mainSelection;
-        this._react();
+        this._reactRender();
+    }
+    _setAltSelection(altSelection: number|null) {
+        this._altSelection = altSelection;
+        this._reactRender();
+    }
+    _setFocusedVariable(focusedVariable: number) {
+        this._focusedVariable = focusedVariable;
+        this._reactRender();
     }
     _setEnableTouchScroll(enableTouchScroll: boolean) {
         this._enableTouchScroll = enableTouchScroll;
-        this._react();
+        this._reactRender();
     }
     _setSearchType(searchType: SearchType) {
         this._searchType = searchType;
-        this._react();
+        this._reactRender();
     }
 }
