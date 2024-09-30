@@ -117,8 +117,6 @@
         
         
         // backgrounds:
-        transition:
-            background-color 300ms;
         background: transparent;
         &[class ~= "active"] {
             background-color: var(--col-ctrl-active);
@@ -135,6 +133,13 @@
         &[class ~= "active"] {
             border-color: var(--col-ctrl-border-active);
         }
+        
+        
+        
+        // animations:
+        transition:
+            background-color 300ms,
+            box-shadow       300ms;
         
         
         
@@ -177,6 +182,13 @@
     // spacings:
     gap: 4px;
     padding: var(--ctrl-padding);
+    
+    
+    
+    // animations:
+    transition:
+        background-color 300ms,
+        box-shadow       300ms;
     
     
     
