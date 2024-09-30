@@ -490,6 +490,10 @@
     &:is(:focus, [class ~= "focus"]) {
         box-shadow: 0 0 0 2px var(--col-wave-selection);
     }
+    &:is(:focus, :focus-visible) {
+        outline: unset;
+        outline-offset: unset;
+    }
     
     &[class ~= "dragging"] {
         position: relative;
