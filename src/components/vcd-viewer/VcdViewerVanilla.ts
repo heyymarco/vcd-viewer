@@ -245,7 +245,7 @@ export class VcdViewerVanilla {
         if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
         if (target === undefined) return;
         const selectionPos = target.tick;
-        (isAlt ? this._setAltSelection : this._setMainSelection)(selectionPos);
+        (isAlt ? this._setAltSelection : this._setMainSelection).call(this, selectionPos);
         
         
         
