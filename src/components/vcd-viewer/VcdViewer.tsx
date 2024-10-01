@@ -102,6 +102,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     }
     const [searchType       , setSearchType       ] = useState<SearchType>(SearchType.HEX);
     
+    const [showMenu         , setShowMenu         ] = useState<{ x: number, y: number}|null>(null);
+    const [showMenuValues   , setShowMenuValues   ] = useState<{ x: number, y: number}|null>(null);
+    
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
         isTouchActive       : false,
@@ -262,11 +265,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // refs:
-    const mainRef      = useRef<HTMLDivElement|null>(null);
-    const svgRef       = useRef<SVGSVGElement|null>(null);
-    const bodyRef      = useRef<HTMLDivElement|null>(null);
-    const rulerRef     = useRef<SVGGElement|null>(null);
-    const variablesRef = useRef<HTMLDivElement|null>(null);
+    const mainRef       = useRef<HTMLDivElement|null>(null);
+    const svgRef        = useRef<SVGSVGElement|null>(null);
+    const bodyRef       = useRef<HTMLDivElement|null>(null);
+    const rulerRef      = useRef<SVGGElement|null>(null);
+    const variablesRef  = useRef<HTMLDivElement|null>(null);
+    const menuRef       = useRef<HTMLUListElement|null>(null);
+    const menuValuesRef = useRef<HTMLUListElement|null>(null);
     
     
     
@@ -291,7 +296,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (['controlleft', 'controlright'].includes(keyCode)) return; // ignore [ctrl] key, we handle it globally
+        if (['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // ignore [ctrl][escape] key, we handle it globally
         
         
         
@@ -321,7 +326,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (!['controlleft', 'controlright'].includes(keyCode)) return; // only interested of [ctrl] key
+        if (!['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
         
         
         
@@ -330,6 +335,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         if (watchGlobalKey(true) === true) {
             // console.log({activeKeys: inputLogs.activeKeys});
             // TODO: update keydown activated
+            if (keyCode === 'escape') {
+                if (showMenu) setShowMenu(null);
+                if (showMenuValues) setShowMenuValues(null);
+            } // if
         } // if
     });
     const globalHandleWheel       = useEvent((event: WheelEvent) => {
@@ -347,6 +356,20 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         else {
             handleZoomOut();
         }
+    });
+    const globalHandleMouseDown   = useEvent((event: MouseEvent) => {
+        // conditions:
+        const targetElm = event.target as Element|null;
+        if (targetElm) {
+            if (menuRef.current && menuRef.current.contains(targetElm)) return;
+            if (menuValuesRef.current && menuValuesRef.current.contains(targetElm)) return;
+        } // if
+        
+        
+        
+        // actions:
+        if (showMenu) setShowMenu(null);
+        if (showMenuValues) setShowMenuValues(null);
     });
     
     const handleMouseDown         = useEvent<React.MouseEventHandler<Element>>((event) => {
@@ -648,6 +671,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setEnableTouchScroll((current) => !current);
     });
     
+    const handleContextMenu       = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
+        event.preventDefault(); // handled
+        
+        
+        
+        setShowMenu({
+            x : event.clientX,
+            y : event.clientY,
+        });
+    });
+    
     
     
     // global handlers:
@@ -842,15 +876,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         // setups:
-        window.addEventListener('keydown', globalHandleKeyDown);
-        window.addEventListener('wheel', globalHandleWheel, { passive: false });
+        window.addEventListener('keydown'  , globalHandleKeyDown);
+        window.addEventListener('wheel'    , globalHandleWheel, { passive: false });
+        window.addEventListener('mousedown', globalHandleMouseDown);
         
         
         
         // cleanups:
         return () => {
-            window.removeEventListener('keydown', globalHandleKeyDown);
-            window.removeEventListener('wheel', globalHandleWheel);
+            window.removeEventListener('keydown'  , globalHandleKeyDown);
+            window.removeEventListener('wheel'    , globalHandleWheel);
+            window.removeEventListener('mousedown', globalHandleMouseDown);
         };
     }, []);
     
@@ -953,6 +989,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 } as any : undefined}
                 tabIndex={0}
                 onFocus={() => setFocusedVariable(index)}
+                onContextMenu={handleContextMenu}
             >
                 <div className={styles.waves}>
                     {waves.map(({tick, value}, index, waves) => {
@@ -1116,6 +1153,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     {(selectionStart !== null) && (selectionEnd !== null) && <div className={styles.selectionRange} style={{'--selStart': Math.min(selectionStart, selectionEnd)  * baseScale, '--selEnd': Math.max(selectionStart, selectionEnd) * baseScale} as any} />}
                 </div>
             </div>
+            {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
+                <li tabIndex={0}>Format Values<span className='icon-next' /></li>
+                <li tabIndex={0}>Remove Signal</li>
+            </ul>}
+            {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu}>
+                <li tabIndex={0}>Binary</li>
+                <li tabIndex={0}>Decimal</li>
+                <li tabIndex={0}>Hexadecimal</li>
+            </ul>}
         </div>
     );
 };

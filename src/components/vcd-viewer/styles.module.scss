@@ -2,7 +2,7 @@
     // variables:
     --col-main-backg: black;
     --col-main-foreg: white;
-    --col-toolbar-border: #ddddddcc;
+    --col-border: #ddddddcc;
     --col-handler: currentColor;
     --col-handler-active: #75BEFF;
     --col-wave-primary: #B5CEA8;
@@ -60,7 +60,7 @@
     
     
     // borders:
-    border-block-end: solid 1px var(--col-toolbar-border);
+    border-block-end: solid 1px var(--col-border);
     
     
     
@@ -671,4 +671,88 @@
     
     // borders:
     // border-inline: solid 1px currentColor;
+}
+
+.menu {
+    // positions:
+    position: absolute;
+    
+    
+    
+    // layouts:
+    display: grid;
+    list-style-type: none;
+    
+    
+    
+    // backgrounds:
+    background-color: var(--col-main-backg);
+    
+    
+    
+    // borders:
+    border: solid 1px var(--col-border);
+    border-radius: 8px;
+    
+    
+    
+    // spacings:
+    padding: unset;
+    margin: unset;
+    
+    
+    
+    // children:
+    &>* {
+        // layouts:
+        display: grid;
+        grid-auto-flow: column;
+        justify-content: space-between;
+        align-items: center;
+        
+        
+        
+        // spacings:
+        gap: 12px;
+        padding-inline: 12px;
+        padding-block: 8px;
+        
+        
+        
+        // typos:
+        font-size: 16px;
+        font-weight: 400;
+        
+        
+        
+        // children:
+        &>[class ~= "icon-next"] {
+            display: inline-block;
+            
+            
+            
+            // sizes:
+            box-sizing: border-box;
+            inline-size: 24px;
+            block-size: 24px;
+            
+            
+            
+            // appearances:
+            background-color: var(--col-ctrl-forg);
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-size: contain;
+            mask-repeat: no-repeat;
+            mask-size: contain;
+            -webkit-mask-image: url(./assets/next.svg);
+            mask-image: url(./assets/next.svg);
+        }
+        
+        
+        
+        // states:
+        &:is(:hover, :focus-visible) {
+            background-color: var(--col-ctrl-active);
+        }
+    }
 }

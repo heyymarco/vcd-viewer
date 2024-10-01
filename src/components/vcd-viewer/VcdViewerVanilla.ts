@@ -63,6 +63,9 @@ export class VcdViewerVanilla {
     
     _searchType        : SearchType    = SearchType.HEX;
     
+    _showMenu          : { x: number, y: number}|null = null;
+    _showMenuValues    : { x: number, y: number}|null = null;
+    
     _inputLogs         = {
         isMouseActive       : false,
         isTouchActive       : false,
@@ -400,6 +403,8 @@ export class VcdViewerVanilla {
     _mainSelectionRef  : HTMLDivElement|null    = null;
     _altSelectionRef   : HTMLDivElement|null    = null;
     _rangeSelectionRef : HTMLDivElement|null    = null;
+    _menuRef           : HTMLUListElement|null = null;
+    _menuValuesRef     : HTMLUListElement|null = null;
     
     
     
@@ -440,7 +445,7 @@ export class VcdViewerVanilla {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (['controlleft', 'controlright'].includes(keyCode)) return; // ignore [ctrl] key, we handle it globally
+        if (['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // ignore [ctrl][escape] key, we handle it globally
         
         
         
@@ -469,7 +474,7 @@ export class VcdViewerVanilla {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (!['controlleft', 'controlright'].includes(keyCode)) return; // only interested of [ctrl] key
+        if (!['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
         
         
         
@@ -478,6 +483,10 @@ export class VcdViewerVanilla {
         if (this._watchGlobalKey(true) === true) {
             // console.log({activeKeys: inputLogs.activeKeys});
             // TODO: update keydown activated
+            if (keyCode === 'escape') {
+                if (this._showMenu) this._setShowMenu(null);
+                if (this._showMenuValues) this._setShowMenuValues(null);
+            } // if
         } // if
     }
     _globalHandleWheel(event: WheelEvent) {
@@ -495,6 +504,20 @@ export class VcdViewerVanilla {
         else {
             this._handleZoomOut();
         }
+    }
+    _globalHandleMouseDown(event: MouseEvent) {
+        // conditions:
+        const targetElm = event.target as Element|null;
+        if (targetElm) {
+            if (this._menuRef && this._menuRef.contains(targetElm)) return;
+            if (this._menuValuesRef && this._menuValuesRef.contains(targetElm)) return;
+        } // if
+        
+        
+        
+        // actions:
+        if (this._showMenu) this._setShowMenu(null);
+        if (this._showMenuValues) this._setShowMenuValues(null);
     }
     
     _handleMouseDown(event: MouseEvent) {
@@ -796,6 +819,17 @@ export class VcdViewerVanilla {
         this._setEnableTouchScroll(!this._enableTouchScroll);
     }
     
+    _handleContextMenu(event: MouseEvent) {
+        event.preventDefault(); // handled
+        
+        
+        
+        this._setShowMenu({
+            x : event.clientX,
+            y : event.clientY,
+        });
+    }
+    
     
     
     // global handlers:
@@ -1007,18 +1041,21 @@ export class VcdViewerVanilla {
         
         const releaseGlobalEvents = (typeof(window) !== 'undefined') ? (() => {
             // handlers:
-            const globalHandleKeyDown = (event: KeyboardEvent) => this._globalHandleKeyDown(event);
-            const globalHandleWheel   = (event: WheelEvent) => this._globalHandleWheel(event);
+            const globalHandleKeyDown   = (event: KeyboardEvent) => this._globalHandleKeyDown(event);
+            const globalHandleWheel     = (event: WheelEvent)    => this._globalHandleWheel(event);
+            const globalHandleMouseDown = (event: MouseEvent)    => this._globalHandleMouseDown(event);
             // setups:
-            window.addEventListener('keydown', globalHandleKeyDown);
-            window.addEventListener('wheel'  , globalHandleWheel, { passive: false });
+            window.addEventListener('keydown'  , globalHandleKeyDown);
+            window.addEventListener('wheel'    , globalHandleWheel, { passive: false });
+            window.addEventListener('mousedown', globalHandleMouseDown);
             
             
             
             // cleanups:
             return () => {
-                window.removeEventListener('keydown', globalHandleKeyDown);
-                window.removeEventListener('wheel'  , globalHandleWheel);
+                window.removeEventListener('keydown'  , globalHandleKeyDown);
+                window.removeEventListener('wheel'    , globalHandleWheel);
+                window.removeEventListener('mousedown', globalHandleMouseDown);
             };
         })() : undefined;
         
@@ -1040,6 +1077,10 @@ export class VcdViewerVanilla {
         
         main.appendChild(this._createToolbar());
         main.appendChild(this._createBodyOuter());
+        
+        // conditional render:
+        this._menuRef = this._createMenu();
+        this._menuValuesRef = this._createMenuValues();
         
         this._mainRef = main;
         return main;
@@ -1184,6 +1225,62 @@ export class VcdViewerVanilla {
         const rangeSelection = document.createElement('div');
         rangeSelection.classList.add(styles.selectionRange);
         return rangeSelection;
+    }
+    _createMenu() {
+        const menu = document.createElement('ul');
+        menu.classList.add(styles.menu);
+        
+        const menuFormat = document.createElement('li');
+        menuFormat.tabIndex = 0;
+        const menuFormatIcon = document.createElement('span');
+        menuFormatIcon.classList.add('icon-text');
+        menuFormat.append(
+            'Format Values',
+            menuFormatIcon,
+        );
+        
+        const menuRemove = document.createElement('li');
+        menuRemove.tabIndex = 0;
+        menuRemove.append(
+            'Remove Signal'
+        );
+        
+        menu.append(
+            menuFormat,
+            menuRemove,
+        );
+        
+        return menu;
+    }
+    _createMenuValues() {
+        const menu = document.createElement('ul');
+        menu.classList.add(styles.menu);
+        
+        const menuBinary = document.createElement('li');
+        menuBinary.tabIndex = 0;
+        menuBinary.append(
+            'Binary',
+        );
+        
+        const menuDecimal = document.createElement('li');
+        menuDecimal.tabIndex = 0;
+        menuDecimal.append(
+            'Decimal'
+        );
+        
+        const menuHexadecimal = document.createElement('li');
+        menuHexadecimal.tabIndex = 0;
+        menuHexadecimal.append(
+            'Hexadecimal'
+        );
+        
+        menu.append(
+            menuBinary,
+            menuDecimal,
+            menuHexadecimal,
+        );
+        
+        return menu;
     }
     destroy() {
         this._cleanup?.();
@@ -1495,6 +1592,7 @@ export class VcdViewerVanilla {
                         this._setFocusedVariable(index);
                     }, 200);
                 });
+                variableItem.addEventListener('contextmenu', (event) => this._handleContextMenu(event))
                 
                 return variableItem;
             })
@@ -1553,6 +1651,26 @@ export class VcdViewerVanilla {
         }
         else {
             this._rangeSelectionRef?.parentElement?.removeChild(this._rangeSelectionRef);
+        } // if
+        
+        if (this._showMenu && this._menuRef) {
+            this._menuRef.style.insetInlineStart = `${this._showMenu.x}px`;
+            this._menuRef.style.insetBlockStart  = `${this._showMenu.y}px`;
+            
+            this._mainRef?.appendChild(this._menuRef);
+        }
+        else {
+            this._menuRef?.parentElement?.removeChild(this._menuRef);
+        } // if
+        
+        if (this._showMenuValues && this._menuValuesRef) {
+            this._menuValuesRef.style.insetInlineStart = `${this._showMenuValues.x}px`;
+            this._menuValuesRef.style.insetBlockStart  = `${this._showMenuValues.y}px`;
+            
+            this._mainRef?.appendChild(this._menuValuesRef);
+        }
+        else {
+            this._menuValuesRef?.parentElement?.removeChild(this._menuValuesRef);
         } // if
     }
     
@@ -1699,6 +1817,28 @@ export class VcdViewerVanilla {
         
         
         this._moveToIndex = moveToIndex;
+        
+        this._refreshState();
+        this._refreshVcd();
+    }
+    _setShowMenu(showMenu: typeof this._showMenu) {
+        // conditions:
+        if (this._showMenu === showMenu) return;
+        
+        
+        
+        this._showMenu = showMenu;
+        
+        this._refreshState();
+        this._refreshVcd();
+    }
+    _setShowMenuValues(showMenuValues: typeof this._showMenuValues) {
+        // conditions:
+        if (this._showMenuValues === showMenuValues) return;
+        
+        
+        
+        this._showMenuValues = showMenuValues;
         
         this._refreshState();
         this._refreshVcd();
