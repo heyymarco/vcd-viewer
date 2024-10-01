@@ -1280,7 +1280,14 @@ export class VcdViewerVanilla {
         return wrapper;
     }
     
+    _refreshVcdAbort : ReturnType<typeof setTimeout>|undefined = undefined;
     _refreshVcd() {
+        clearTimeout(this._refreshVcdAbort);
+        this._refreshVcdAbort = setTimeout(() => {
+            this._refreshVcdInternal();
+        }, 0);
+    }
+    _refreshVcdInternal() {
         this._isBinarySelection = (this._focusedVariable !== null) && (this._allVcdVariables?.[this._focusedVariable]?.size === 1);
         
         this._moveableLabels = (
@@ -1308,7 +1315,11 @@ export class VcdViewerVanilla {
             ? this._allVcdVariables.map((variable, index) => {
                 const variableItem = this._reactVariableItem(index, variable);
                 
-                variableItem.addEventListener('focus', () => this._setFocusedVariable(index));
+                variableItem.addEventListener('focus', () => {
+                    setTimeout(() => {
+                        this._setFocusedVariable(index);
+                    }, 200);
+                });
                 
                 return variableItem;
             })
@@ -1324,7 +1335,14 @@ export class VcdViewerVanilla {
             )
         );
     }
+    _refreshStateAbort : ReturnType<typeof setTimeout>|undefined = undefined;
     _refreshState() {
+        clearTimeout(this._refreshStateAbort);
+        this._refreshStateAbort = setTimeout(() => {
+            this._refreshStateInternal();
+        }, 0);
+    }
+    _refreshStateInternal() {
         this._btnTouchRef?.classList[this._enableTouchScroll ? 'add' : 'remove']('active');
         this._btnSearchTimeRef?.classList[(this._searchType === SearchType.TIME) ? 'add' : 'remove']('active');
         this._btnSearchHexRef?.classList[(this._searchType === SearchType.HEX) ? 'add' : 'remove']('active');
