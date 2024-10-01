@@ -57,6 +57,6 @@ export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex:
 
 
 
-export const actionKeys    = ['AltLeft', 'AltRight'];
+export const actionKeys    = ['AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
 export const actionMouses  = [1]; // [only_left_click]
 export const actionTouches = [1]; // [only_single_touch]

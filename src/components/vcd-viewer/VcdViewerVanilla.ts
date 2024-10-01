@@ -382,6 +382,7 @@ export class VcdViewerVanilla {
     
     
     // refs:
+    _mainRef           : HTMLDivElement|null    = null;
     _labelsRef         : HTMLUListElement|null  = null;
     _valuesRef         : HTMLUListElement|null  = null;
     _bodyRef           : HTMLDivElement|null    = null;
@@ -405,6 +406,9 @@ export class VcdViewerVanilla {
     // utilities:
     _isAltPressed() {
         return this._inputLogs.activeKeys.has('altleft') || this._inputLogs.activeKeys.has('altright');
+    }
+    _isCtrlPressed() {
+        return this._inputLogs.activeKeys.has('controlleft') || this._inputLogs.activeKeys.has('controlright');
     }
     
     
@@ -436,6 +440,7 @@ export class VcdViewerVanilla {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
+        if (['controlleft', 'controlright'].includes(keyCode)) return; // ignore [ctrl] key, we handle it globally
         
         
         
@@ -458,6 +463,38 @@ export class VcdViewerVanilla {
         //     // trigger the onClick event later at `onKeyUp`
         //     this._inputLogs.performKeyUpActions = true;
         // }
+    }
+    _globalHandleKeyDown(event: KeyboardEvent) {
+        // conditions:
+        /* note: the `code` may `undefined` on autoComplete */
+        const keyCode = (event.code as string|undefined)?.toLowerCase();
+        if (!keyCode) return; // ignores [unidentified] key
+        if (!['controlleft', 'controlright'].includes(keyCode)) return; // only interested of [ctrl] key
+        
+        
+        
+        // logs:
+        this._inputLogs.logKeyEvent(event, true /*key_down*/, actionKeys);
+        if (this._watchGlobalKey(true) === true) {
+            // console.log({activeKeys: inputLogs.activeKeys});
+            // TODO: update keydown activated
+        } // if
+    }
+    _globalHandleWheel(event: WheelEvent) {
+        // conditions:
+        if (!this._isCtrlPressed()) return;
+        if (!this._mainRef || !document.elementsFromPoint(event.clientX, event.clientY).includes(this._mainRef)) return; // the cursor is not on top mainElm => ignore
+        event.preventDefault();
+        
+        
+        
+        // actions:
+        if (event.deltaY < 0) {
+            this._handleZoomIn();
+        }
+        else {
+            this._handleZoomOut();
+        }
     }
     
     _handleMouseDown(event: MouseEvent) {
@@ -967,8 +1004,27 @@ export class VcdViewerVanilla {
     constructor(placeholder: Element) {
         const main = this._createMain();
         placeholder.appendChild(main);
+        
+        const releaseGlobalEvents = (typeof(window) !== 'undefined') ? (() => {
+            // handlers:
+            const globalHandleKeyDown = (event: KeyboardEvent) => this._globalHandleKeyDown(event);
+            const globalHandleWheel   = (event: WheelEvent) => this._globalHandleWheel(event);
+            // setups:
+            window.addEventListener('keydown', globalHandleKeyDown);
+            window.addEventListener('wheel'  , globalHandleWheel, { passive: false });
+            
+            
+            
+            // cleanups:
+            return () => {
+                window.removeEventListener('keydown', globalHandleKeyDown);
+                window.removeEventListener('wheel'  , globalHandleWheel);
+            };
+        })() : undefined;
+        
         this._cleanup = () => {
             main.parentElement?.removeChild?.(main);
+            releaseGlobalEvents?.();
         };
         
         
@@ -985,6 +1041,7 @@ export class VcdViewerVanilla {
         main.appendChild(this._createToolbar());
         main.appendChild(this._createBodyOuter());
         
+        this._mainRef = main;
         return main;
     }
     _createToolbar() {

@@ -262,6 +262,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     
     // refs:
+    const mainRef      = useRef<HTMLDivElement|null>(null);
     const svgRef       = useRef<SVGSVGElement|null>(null);
     const bodyRef      = useRef<HTMLDivElement|null>(null);
     const rulerRef     = useRef<SVGGElement|null>(null);
@@ -272,6 +273,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // utilities:
     const isAltPressed = useEvent((): boolean => {
         return inputLogs.activeKeys.has('altleft') || inputLogs.activeKeys.has('altright')
+    });
+    const isCtrlPressed = useEvent((): boolean => {
+        return inputLogs.activeKeys.has('controlleft') || inputLogs.activeKeys.has('controlright')
     });
     
     
@@ -287,6 +291,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
+        if (['controlleft', 'controlright'].includes(keyCode)) return; // ignore [ctrl] key, we handle it globally
         
         
         
@@ -309,6 +314,39 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         //     // trigger the onClick event later at `onKeyUp`
         //     inputLogs.performKeyUpActions = true;
         // }
+    });
+    
+    const globalHandleKeyDown     = useEvent((event: KeyboardEvent) => {
+        // conditions:
+        /* note: the `code` may `undefined` on autoComplete */
+        const keyCode = (event.code as string|undefined)?.toLowerCase();
+        if (!keyCode) return; // ignores [unidentified] key
+        if (!['controlleft', 'controlright'].includes(keyCode)) return; // only interested of [ctrl] key
+        
+        
+        
+        // logs:
+        inputLogs.logKeyEvent(event, true /*key_down*/, actionKeys);
+        if (watchGlobalKey(true) === true) {
+            // console.log({activeKeys: inputLogs.activeKeys});
+            // TODO: update keydown activated
+        } // if
+    });
+    const globalHandleWheel       = useEvent((event: WheelEvent) => {
+        // conditions:
+        if (!isCtrlPressed()) return;
+        if (!mainRef.current || !document.elementsFromPoint(event.clientX, event.clientY).includes(mainRef.current)) return; // the cursor is not on top mainElm => ignore
+        event.preventDefault();
+        
+        
+        
+        // actions:
+        if (event.deltaY < 0) {
+            handleZoomIn();
+        }
+        else {
+            handleZoomOut();
+        }
     });
     
     const handleMouseDown         = useEvent<React.MouseEventHandler<Element>>((event) => {
@@ -633,7 +671,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // logs:
             inputLogs.logKeyEvent(event, false /*key_up*/, actionKeys);
             if (watchGlobalKey(false) === false) {
-                console.log({activeKeys: inputLogs.activeKeys});
+                // console.log({activeKeys: inputLogs.activeKeys});
             //     // TODO: update keydown deactivated
             } // if
         };
@@ -797,6 +835,25 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         }
     }, [maxTick, baseScale]);
     
+    useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (typeof(window) === 'undefined') return;
+        
+        
+        
+        // setups:
+        window.addEventListener('keydown', globalHandleKeyDown);
+        window.addEventListener('wheel', globalHandleWheel, { passive: false });
+        
+        
+        
+        // cleanups:
+        return () => {
+            window.removeEventListener('keydown', globalHandleKeyDown);
+            window.removeEventListener('wheel', globalHandleWheel);
+        };
+    }, []);
+    
     
     
     // default props:
@@ -943,6 +1000,11 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         <div
             // other props:
             {...restDivProps}
+            
+            
+            
+            // refs:
+            ref={mainRef}
             
             
             
