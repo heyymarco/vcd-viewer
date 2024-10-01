@@ -217,6 +217,182 @@ export class VcdViewerVanilla {
         );
     }
     
+    _handleMouseDown(event: MouseEvent) {
+        // actions:
+        // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
+        
+        
+        
+        // logs:
+        this._inputLogs.logMouseEvent(event, true /*mouse_down*/, actionMouses);
+        if (this._watchGlobalMouse(true) === true) {
+            // console.log({activeKeys: this._inputLogs.activeKeys});
+            this._handlePointerDown(event);
+        } // if
+    }
+    _handleTouchStart(event: TouchEvent) {
+        // actions:
+        // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
+        
+        
+        
+        // logs:
+        this._inputLogs.logTouchEvent(event, true /*touch_down*/, actionTouches);
+        if (this._watchGlobalTouch(true) === true) {
+            // console.log({activeKeys: this._inputLogs.activeKeys});
+            
+            if (this._enableTouchScroll) {
+                const touchX = (event.touches.length === 1 /* no multi touch for scrolling */) ? event.touches[0].clientX : undefined;
+                if (touchX !== undefined) this._touchStartRef = touchX;
+            }
+            else {
+                // simulates the Touch(Start|End|Cancel) as Mouse(Down|Up):
+                this._handlePointerDown(
+                    new MouseEvent((event?.type === 'touchstart') ? 'mousedown' : 'mouseup', {
+                        // simulates for `onPointerCaptureCancel(event)` & `onPointerCaptureEnd(event)`:
+                        ...event,
+                        ...(() => {
+                            const isTouchStart = event?.type === 'touchstart';
+                            const touch        = isTouchStart ? event?.touches?.[0] : event?.changedTouches?.[0];
+                            return {
+                                clientX : touch?.clientX ?? 0,
+                                clientY : touch?.clientY ?? 0,
+                                
+                                screenX : touch?.screenX ?? 0,
+                                screenY : touch?.screenY ?? 0,
+                                
+                                pageX   : touch?.pageX   ?? 0,
+                                pageY   : touch?.pageY   ?? 0,
+                                
+                                button  : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                                buttons : isTouchStart ? 1 : 0, // if touched: simulates primary button (usually the left button), otherwise simulates no button pressed
+                            };
+                        })(),
+                    }),
+                );
+            } // if
+        } // if
+    }
+    _handlePointerDown(event: MouseEvent) {
+        // conditions:
+        const variablesElm = this._variablesRef;
+        if (!variablesElm) return;
+        
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const { x } = variablesElm.getBoundingClientRect();
+        const relativePosition = event.clientX - x;
+        const valuePosition    = relativePosition / this._baseScale;
+        
+        
+        
+        this._setSelectionStart(valuePosition);
+        this._setSelectionEnd(null);
+    }
+    
+    _handleMouseMove(event: MouseEvent) {
+        this._handlePointerMove(event);
+    }
+    _handleTouchMove(event: TouchEvent) {
+        if (this._enableTouchScroll) {
+            // conditions:
+            const bodyElm = this._bodyRef;
+            if (!bodyElm) return;
+            
+            
+            
+            // actions:
+            const touchX = (event.touches.length === 1 /* no multi touch for scrolling */) ? event.touches[0].clientX : undefined;
+            if (touchX !== undefined) {
+                bodyElm.scrollLeft += (this._touchStartRef - touchX);
+                this._touchStartRef = touchX; // restart the pos
+            } // if
+            
+            
+            
+            return; // handled => done
+        } // if
+        
+        
+        
+        // simulates the TouchMove as MouseMove:
+        this._handlePointerMove(
+            new MouseEvent('mousemove', {
+                // simulates for `onPointerCaptureStart(event)` & `onPointerCaptureMove(event)`:
+                ...event,
+                ...(() => {
+                    const touch = event?.touches?.[0];
+                    return {
+                        clientX : touch?.clientX ?? 0,
+                        clientY : touch?.clientY ?? 0,
+                        
+                        screenX : touch?.screenX ?? 0,
+                        screenY : touch?.screenY ?? 0,
+                        
+                        pageX   : touch?.pageX   ?? 0,
+                        pageY   : touch?.pageY   ?? 0,
+                        
+                        button  : 1, // primary button (usually the left button)
+                        buttons : 1, // primary button (usually the left button)
+                    };
+                })(),
+            }),
+        );
+    }
+    _handlePointerMove(event: MouseEvent) {
+        // conditions:
+        const variablesElm = this._variablesRef;
+        if (!variablesElm) return;
+        
+        if (!this._inputLogs.isMouseActive && !this._inputLogs.isTouchActive) return; // no active pointer => ignore
+        
+        
+        
+        const { x } = variablesElm.getBoundingClientRect();
+        const relativePosition = event.clientX - x;
+        const valuePosition    = relativePosition / this._baseScale;
+        
+        
+        
+        if ((this._selectionStart === null) || Math.abs(valuePosition - this._selectionStart) < 2) return; // ignore very small selection
+        this._setSelectionEnd(valuePosition);
+    }
+    _handlePointerUp(event: MouseEvent) {
+        // conditions:
+        if ((this._selectionStart === null) || (this._selectionEnd === null)) return; // no selectionRange => ignore
+        
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const viewRange    = Math.abs(this._selectionStart - this._selectionEnd) * this._baseScale;
+        const clientArea   = bodyElm.getBoundingClientRect().width;
+        const targetScale  = clientArea / viewRange;
+        const reZoom       = Math.log10(targetScale) / Math.log10(2);
+        this._setZoom(this._zoom + reZoom);
+        
+        setTimeout(() => this._handleScrollToSelection(), 0); // scroll to the beginning of selection after the new zoom is completed:
+    }
+    _handleScrollToSelection() {
+        // conditions:
+        if ((this._selectionStart === null) || (this._selectionEnd === null)) return; // no selectionRange => ignore
+        
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const scrollTo = (Math.min(this._selectionStart, this._selectionEnd) * this._baseScale);
+        bodyElm.scrollLeft = scrollTo;
+        
+        this._setSelectionStart(null);
+        this._setSelectionEnd(null);
+    }
+    
     _handleClick(event: MouseEvent) {
         // conditions:
         if ((this._selectionStart !== null) && (this._selectionEnd !== null)) return; // ignore if selectionRange is active
@@ -342,6 +518,162 @@ export class VcdViewerVanilla {
     
     
     
+    // global handlers:
+    _watchGlobalKeyStatusRef   : undefined|(() => void) = undefined;
+    _watchGlobalKey(active: boolean): boolean|null {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!this._watchGlobalKeyStatusRef === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleKeyUp = (event: KeyboardEvent): void => {
+            // conditions:
+            /* note: the `code` may `undefined` on autoComplete */
+            const keyCode = (event.code as string|undefined)?.toLowerCase();
+            if (!keyCode) return; // ignores [unidentified] key
+            
+            
+            
+            // logs:
+            this._inputLogs.logKeyEvent(event, false /*key_up*/, actionKeys);
+            if (this._watchGlobalKey(false) === false) {
+                console.log({activeKeys: this._inputLogs.activeKeys});
+            //     // TODO: update keydown deactivated
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('keyup'   , handleKeyUp);
+            
+            
+            
+            // cleanups later:
+            this._watchGlobalKeyStatusRef = () => {
+                window.removeEventListener('keyup'   , handleKeyUp);
+            };
+        }
+        else {
+            // cleanups:
+            this._watchGlobalKeyStatusRef?.();
+            this._watchGlobalKeyStatusRef = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    }
+    _watchGlobalMouseStatusRef : undefined|(() => void) = undefined;
+    _watchGlobalMouse(active: boolean): boolean|null {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!this._watchGlobalMouseStatusRef === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleMouseUp = (event: MouseEvent): void => {
+            // logs:
+            this._inputLogs.logMouseEvent(event, false /*mouse_up*/, actionMouses);
+            if (this._watchGlobalMouse(false) === false) {
+                // console.log({activeKeys: this._inputLogs.activeKeys});
+                this._handlePointerUp(event);
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('mouseup' , handleMouseUp);
+            
+            
+            
+            // cleanups later:
+            this._watchGlobalMouseStatusRef = () => {
+                window.removeEventListener('mouseup' , handleMouseUp);
+            };
+        }
+        else {
+            // cleanups:
+            this._watchGlobalMouseStatusRef?.();
+            this._watchGlobalMouseStatusRef = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    }
+    _watchGlobalTouchStatusRef : undefined|(() => void) = undefined;
+    _watchGlobalTouch(active: boolean): boolean|null {
+        // conditions:
+        const shouldActive = active /* && enabled */;
+        if (!!this._watchGlobalTouchStatusRef === shouldActive) return null; // already activated|deactivated => nothing to do
+        
+        
+        
+        // handlers:
+        const handleTouchEnd = (event: TouchEvent): void => {
+            // logs:
+            this._inputLogs.logTouchEvent(event, false /*touch_up*/, actionTouches);
+            if (this._watchGlobalTouch(false) === false) {
+                // console.log({activeKeys: this._inputLogs.activeKeys});
+                
+                // simulates the TouchEnd as MouseUp:
+                this._handlePointerUp(
+                    new MouseEvent('mouseup', {
+                        ...event,
+                        ...(() => {
+                            const touch = event?.touches?.[0];
+                            return {
+                                clientX : touch?.clientX ?? 0,
+                                clientY : touch?.clientY ?? 0,
+                                
+                                screenX : touch?.screenX ?? 0,
+                                screenY : touch?.screenY ?? 0,
+                                
+                                pageX   : touch?.pageX   ?? 0,
+                                pageY   : touch?.pageY   ?? 0,
+                                
+                                button  : 0, // simulates no button pressed
+                                buttons : 0, // simulates no button pressed
+                            };
+                        })(),
+                    }),
+                );
+            } // if
+        };
+        
+        
+        
+        // actions:
+        if (shouldActive) {
+            window.addEventListener('touchend', handleTouchEnd);
+            
+            
+            
+            // cleanups later:
+            this._watchGlobalTouchStatusRef = () => {
+                window.removeEventListener('touchend', handleTouchEnd);
+            };
+        }
+        else {
+            // cleanups:
+            this._watchGlobalTouchStatusRef?.();
+            this._watchGlobalTouchStatusRef = undefined;
+        } // if
+        
+        
+        
+        return shouldActive;
+    }
+    
+    
+    
     constructor(placeholder: Element) {
         const main = this._createMain();
         placeholder.appendChild(main);
@@ -430,9 +762,11 @@ export class VcdViewerVanilla {
         body.classList.add(styles.body);
         body.appendChild(this._createRuler());
         body.appendChild(this._createVariables());
-        this._mainSelectionRef  = body.appendChild(this._createMainSelection());
-        this._altSelectionRef   = body.appendChild(this._createAltSelection());
-        this._rangeSelectionRef = body.appendChild(this._createRangeSelection());
+        
+        // conditional render:
+        this._mainSelectionRef  = this._createMainSelection();
+        this._altSelectionRef   = this._createAltSelection();
+        this._rangeSelectionRef = this._createRangeSelection();
         
         this._bodyRef = body;
         return body;
@@ -460,6 +794,12 @@ export class VcdViewerVanilla {
         variables.classList.add(styles.variables);
         
         variables.addEventListener('click', (event) => this._handleClick(event));
+        
+        variables.addEventListener('mousedown', (event) => this._handleMouseDown(event));
+        variables.addEventListener('touchstart', (event) => this._handleTouchStart(event));
+        
+        variables.addEventListener('mousemove', (event) => this._handleMouseMove(event));
+        variables.addEventListener('touchmove', (event) => this._handleTouchMove(event));
         
         this._variablesRef = variables;
         
@@ -692,10 +1032,33 @@ export class VcdViewerVanilla {
         if (this._btnNextEdgeNeg) this._btnNextEdgeNeg.disabled = !this._isBinarySelection;
         if (this._btnPrevRef    ) this._btnPrevRef.disabled = (this._searchType !== SearchType.HEX);
         
-        if (this._mainSelection  !== null) this._mainSelectionRef?.style.setProperty('--position', `${this._mainSelection * this._baseScale}`);
-        if (this._altSelection   !== null) this._altSelectionRef?.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
-        if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selStart', `${Math.min(this._selectionStart, this._selectionEnd)  * this._baseScale}`);
-        if ((this._selectionStart !== null) && (this._selectionEnd !== null)) this._rangeSelectionRef?.style.setProperty('--selEnd', `${Math.max(this._selectionStart, this._selectionEnd) * this._baseScale}`);
+        if ((this._mainSelection  !== null) && (this._mainSelectionRef)) {
+            this._mainSelectionRef.style.setProperty('--position', `${this._mainSelection * this._baseScale}`);
+            
+            this._bodyRef?.appendChild(this._mainSelectionRef);
+        }
+        else {
+            this._mainSelectionRef?.parentElement?.removeChild(this._mainSelectionRef);
+        } // if
+        
+        if ((this._altSelection   !== null) && (this._altSelectionRef)) {
+            this._altSelectionRef.style.setProperty('--position', `${this._altSelection * this._baseScale}`);
+            
+            this._bodyRef?.appendChild(this._altSelectionRef);
+        }
+        else {
+            this._altSelectionRef?.parentElement?.removeChild(this._altSelectionRef);
+        } // if
+        
+        if ((this._selectionStart !== null) && (this._selectionEnd !== null) && (this._rangeSelectionRef)) {
+            this._rangeSelectionRef.style.setProperty('--selStart', `${Math.min(this._selectionStart, this._selectionEnd)  * this._baseScale}`);
+            this._rangeSelectionRef.style.setProperty('--selEnd', `${Math.max(this._selectionStart, this._selectionEnd) * this._baseScale}`);
+            
+            this._bodyRef?.appendChild(this._rangeSelectionRef);
+        }
+        else {
+            this._rangeSelectionRef?.parentElement?.removeChild(this._rangeSelectionRef);
+        } // if
     }
     
     
@@ -743,6 +1106,14 @@ export class VcdViewerVanilla {
     }
     _setAltSelection(altSelection: number|null) {
         this._altSelection = altSelection;
+        this._refreshState();
+    }
+    _setSelectionStart(selectionStart: number|null) {
+        this._selectionStart = selectionStart;
+        this._refreshState();
+    }
+    _setSelectionEnd(selectionEnd: number|null) {
+        this._selectionEnd = selectionEnd;
         this._refreshState();
     }
     _setFocusedVariable(focusedVariable: number) {
