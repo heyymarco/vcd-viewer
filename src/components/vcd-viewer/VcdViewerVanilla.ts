@@ -4,11 +4,17 @@ import * as d3              from 'd3'
 
 // models:
 import {
-    type VcdVariable,
+    type VcdVariableExtended,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
+    
+    VcdValueFormat,
+    vcdValueToString,
 }                           from '@/models/vcd'
+import {
+    produce,
+}                           from 'immer'
 
 // utilities:
 import {
@@ -42,7 +48,7 @@ export class VcdViewerVanilla {
     _vcd               : Vcd|null      = null;  
     _minTick           : number        = 0;
     _maxTick           : number        = 0;
-    _allVcdVariables   : VcdVariable[] = [];
+    _allVcdVariables   : VcdVariableExtended[] = [];
     
     _zoom              : number        = 1;
     _baseScale         : number        = 2 ** this._zoom;
@@ -726,12 +732,13 @@ export class VcdViewerVanilla {
         this._setZoom(Math.round(this._zoom + 1));
     }
     
-    _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean), allVariables: boolean = false) {
-        if (!allVariables && (this._focusedVariable === null)) return;
+    _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariableExtended) => boolean), allVariables: boolean = false) {
+        if (!allVariables || (this._focusedVariable === null)) return;
+        const variable      = this._allVcdVariables[this._focusedVariable];
         const waves         = (
             (
                 !allVariables
-                ? this._allVcdVariables[this._focusedVariable ?? 0].waves
+                ? variable.waves
                 : (
                     this._allVcdVariables
                     .flatMap(({ waves }) => waves)
@@ -747,12 +754,12 @@ export class VcdViewerVanilla {
             if (!allVariables) return;
             current = this._minTick;
         } // if
-        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave)));
+        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)));
         const dummyEdge     = {
             ...(gotoNext ? waves[waves.length - 1] : waves[0]),
             tick: gotoNext ? this._maxTick : this._minTick,
         } satisfies VcdWave;
-        if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge, variable))) target = dummyEdge;
         if (target === undefined) return;
         const selectionPos = target.tick;
         (isAlt ? this._setAltSelection : this._setMainSelection).call(this, selectionPos);
@@ -784,7 +791,7 @@ export class VcdViewerVanilla {
                 this._setMainSelection(searchNum);
                 break;
             case SearchType.HEX  :
-                this._handleGotoEdge(false, (wave) => (wave.value.toString(16).toLowerCase().includes(this._search.toLowerCase())), true);
+                this._handleGotoEdge(false, (wave, { format }) => (vcdValueToString(wave.value, format).toLowerCase().includes(this._search.toLowerCase())), true);
                 break;
         } // switch
     }
@@ -796,7 +803,7 @@ export class VcdViewerVanilla {
                 this._setMainSelection(searchNum);
                 break;
             case SearchType.HEX  :
-                this._handleGotoEdge(true, (wave) => (wave.value.toString(16).toLowerCase().includes(this._search.toLowerCase())), true);
+                this._handleGotoEdge(true, (wave, { format }) => (vcdValueToString(wave.value, format).toLowerCase().includes(this._search.toLowerCase())), true);
                 break;
         } // switch
     }
@@ -830,7 +837,7 @@ export class VcdViewerVanilla {
         });
     }
     _handleMenuRemove() {
-        if (!this._focusedVariable) return;
+        if (this._focusedVariable === null) return;
         
         this._setAllVcdVariables(
             this._allVcdVariables.toSpliced(this._focusedVariable, 1)
@@ -842,7 +849,7 @@ export class VcdViewerVanilla {
     _handleMenuFormatValues(event: MouseEvent) {
         const { top, right } = (event.currentTarget as Element).getBoundingClientRect();
         this._setShowMenuValues({
-            x : right,
+            x : right - 2,
             y : top,
         });
     }
@@ -853,6 +860,30 @@ export class VcdViewerVanilla {
         
         
         if (this._showMenuValues) this._setShowMenuValues(null);
+    }
+    
+    _handleMenuFormatOf(format: VcdValueFormat) {
+        if (this._focusedVariable === null) return;
+        const focusedVariable = this._focusedVariable;
+        this._setAllVcdVariables(
+            produce(this._allVcdVariables, (allVcdVariables) => {
+                const variable = allVcdVariables[focusedVariable];
+                if (variable === undefined) return;
+                variable.format = format;
+            })
+        );
+        
+        if (this._showMenu) this._setShowMenu(null);
+        if (this._showMenuValues) this._setShowMenuValues(null);
+    }
+    _handleMenuFormatBinary() {
+        this._handleMenuFormatOf(VcdValueFormat.BINARY);
+    }
+    _handleMenuFormatDecimal() {
+        this._handleMenuFormatOf(VcdValueFormat.DECIMAL);
+    }
+    _handleMenuFormatHexadecimal() {
+        this._handleMenuFormatOf(VcdValueFormat.HEXADECIMAL);
     }
     
     
@@ -1290,18 +1321,21 @@ export class VcdViewerVanilla {
         menuBinary.append(
             'Binary',
         );
+        menuBinary.addEventListener('click', () => this._handleMenuFormatBinary());
         
         const menuDecimal = document.createElement('li');
         menuDecimal.tabIndex = 0;
         menuDecimal.append(
             'Decimal'
         );
+        menuDecimal.addEventListener('click', () => this._handleMenuFormatDecimal());
         
         const menuHexadecimal = document.createElement('li');
         menuHexadecimal.tabIndex = 0;
         menuHexadecimal.append(
             'Hexadecimal'
         );
+        menuHexadecimal.addEventListener('click', () => this._handleMenuFormatHexadecimal());
         
         menu.append(
             menuBinary,
@@ -1321,7 +1355,7 @@ export class VcdViewerVanilla {
     
     
     
-    _reactListItem(index: number, variable: VcdVariable) {
+    _reactListItem(index: number, variable: VcdVariableExtended) {
         const listItem = document.createElement('span');
         listItem.classList.add(styles.label);
         const classState = ((this._moveFromIndex !== null) ? ((this._moveFromIndex === index) ? 'dragging' : 'dropZone') : null);
@@ -1350,7 +1384,7 @@ export class VcdViewerVanilla {
         label.addEventListener('pointerdown', () => this._moveFromIndex = index);
         return label;
     }
-    _reactListItemValue(variable: VcdVariable) {
+    _reactListItemValue(variable: VcdVariableExtended) {
         const label = document.createElement('span');
         if (this._vcd) label.append(
             `${getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.')}.${variable.name}`
@@ -1370,7 +1404,7 @@ export class VcdViewerVanilla {
         return hack;
     }
     
-    _reactValueItem(index: number, wave: VcdWaveExtended) {
+    _reactValueItem(index: number, wave: VcdWaveExtended, format: VcdValueFormat) {
         const listItem = document.createElement('span');
         listItem.classList.add(styles.labelValue);
         const classState = ((this._moveFromIndex !== null) ? ((this._moveFromIndex === index) ? 'dragging' : 'dropZone') : null);
@@ -1388,16 +1422,16 @@ export class VcdViewerVanilla {
             style.setProperty('--moveRelative', null);
         } // if
         
-        listItem.appendChild(this._reactValueItemValue(wave));
+        listItem.appendChild(this._reactValueItemValue(wave, format));
         
         return listItem;
     }
-    _reactValueItemValue({ prevValue, value, nextValue }: VcdWaveExtended) {
+    _reactValueItemValue({ prevValue, value, nextValue}: VcdWaveExtended, format: VcdValueFormat) {
         const labelPrevGroup = (prevValue !== undefined) ? document.createDocumentFragment() : undefined;
         if (labelPrevGroup && (prevValue !== undefined)) {
             const label = document.createElement('span');
             label.append(
-                `${prevValue.toString(16)}`
+                vcdValueToString(prevValue, format)
             );
             
             const hypen = document.createElement('span');
@@ -1413,7 +1447,7 @@ export class VcdViewerVanilla {
         if (labelNextGroup && (nextValue !== undefined)) {
             const label = document.createElement('span');
             label.append(
-                `${nextValue.toString(16)}`
+                vcdValueToString(nextValue, format)
             );
             
             const hypen = document.createElement('span');
@@ -1429,14 +1463,14 @@ export class VcdViewerVanilla {
         label.append(
             ...[
                 labelPrevGroup,
-                `${value.toString(16)}`,
+                vcdValueToString(value, format),
                 labelNextGroup,
             ].filter((label): label is Exclude<typeof label, undefined> => (label !== undefined))
         );
         return label;
     }
     
-    _reactVariableItem(index: number, variable: VcdVariable) {
+    _reactVariableItem(index: number, variable: VcdVariableExtended) {
         const variableItem = document.createElement('div');
         variableItem.classList.add(styles.variable);
         const classFocusState = ((this._focusedVariable === index) ? 'focus' : null);
@@ -1467,7 +1501,7 @@ export class VcdViewerVanilla {
         
         return variableItem;
     }
-    _reactVariableWaves(variable: VcdVariable) {
+    _reactVariableWaves(variable: VcdVariableExtended) {
         const wavesElm = document.createElement('div');
         wavesElm.classList.add(styles.waves);
         
@@ -1481,7 +1515,7 @@ export class VcdViewerVanilla {
         
         return wavesElm;
     }
-    _reactVariableWave(index: number, {waves, size}: VcdVariable, {tick, value}: VcdWave) {
+    _reactVariableWave(index: number, {waves, size, format}: VcdVariableExtended, {tick, value}: VcdWave) {
         const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : this._maxTick;
         // if (nextTick === maxTick) return null;
         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
@@ -1502,12 +1536,12 @@ export class VcdViewerVanilla {
         wave.style.setProperty('--length', `${length}`);
         
         if (!isBinary) wave.append(
-            `${((typeof(value) === 'string') ? value : value.toString(16))}`
+            `${((typeof(value) === 'string') ? value : vcdValueToString(value, format))}`
         );
         
         return wave;
     }
-    _reactVariableWaveLast({waves, size}: VcdVariable) {
+    _reactVariableWaveLast({waves, size, format}: VcdVariableExtended) {
         const lastWave = waves.length ? waves[waves.length - 1] : undefined;
         if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
         const {
@@ -1528,7 +1562,7 @@ export class VcdViewerVanilla {
         if (classBinaryState) wave.classList.add(...classBinaryState);
         
         if (!isBinary) wave.append(
-            `${((typeof(value) === 'string') ? value : value.toString(16))}`
+            `${((typeof(value) === 'string') ? value : vcdValueToString(value, format))}`
         );
         
         return wave;
@@ -1574,27 +1608,32 @@ export class VcdViewerVanilla {
         this._moveableValues = (
             ((mainSelection !== null) && this._allVcdVariables)
             ? this._allVcdVariables
-                .flatMap(({ waves }) =>
-                    waves
-                    .map((wave, index, waves): VcdWaveExtended => {
-                        const prevIndex = index - 1;
-                        const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
-                        
-                        const nextIndex = index + 1;
-                        const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
-                        const nextTick  = nextWave?.tick ?? this._maxTick;
-                        
-                        return {
-                            ...wave,
-                            lastTick  : nextTick,
-                            prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
-                            nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
-                        };
-                    })
-                    .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
-                )
-                .map((variable, index) =>
-                    this._reactValueItem(index, variable)
+                .map(({ waves, format }) => ({
+                    format,
+                    waves : (
+                        waves
+                        .map((wave, index, waves): VcdWaveExtended => {
+                            const prevIndex = index - 1;
+                            const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
+                            
+                            const nextIndex = index + 1;
+                            const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
+                            const nextTick  = nextWave?.tick ?? this._maxTick;
+                            
+                            return {
+                                ...wave,
+                                lastTick  : nextTick,
+                                prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
+                                nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
+                            };
+                        })
+                        .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
+                    ),
+                }))
+                .flatMap(({ format, waves }, index) =>
+                    waves.map((wave) =>
+                        this._reactValueItem(index, wave, format)
+                    )
                 )
             : []
         );
@@ -1717,7 +1756,7 @@ export class VcdViewerVanilla {
         this._vcd             =  vcd;
         this._minTick         = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
         this._maxTick         = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
-        this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule) : [];
+        this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : [];
         
         this._refreshState();
         this._refreshVcd();

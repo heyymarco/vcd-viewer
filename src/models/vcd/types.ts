@@ -24,6 +24,15 @@ export interface VcdVariable {
     waves      : VcdWave[]
 }
 
+export enum VcdValueFormat {
+    BINARY,
+    DECIMAL,
+    HEXADECIMAL,
+}
+export interface VcdVariableExtended extends VcdVariable {
+    format : VcdValueFormat
+}
+
 export interface VcdWave {
     tick       : number
     value      : number|string

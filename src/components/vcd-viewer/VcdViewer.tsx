@@ -23,10 +23,13 @@ import {
 
 // models:
 import {
-    type VcdVariable,
+    type VcdVariableExtended,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
+    
+    VcdValueFormat,
+    vcdValueToString,
 }                           from '@/models/vcd'
 
 // utilities:
@@ -41,6 +44,9 @@ import {
     actionMouses,
     actionTouches,
 }                           from './utilities'
+import {
+    produce,
+}                           from 'immer'
 
 
 
@@ -72,10 +78,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // states:
     const minTick           = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
     const maxTick           = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
-    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? flatMapVariables(vcd.rootModule) : []);
+    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariableExtended[]>(() => vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : []);
     useIsomorphicLayoutEffect(() => {
         setAllVcdVariables(
-            vcd ? flatMapVariables(vcd.rootModule) : []
+            vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : []
         );
     }, [vcd]); // resets the `allVcdVariables` when vcd changes
     
@@ -578,12 +584,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setZoom((current) => Math.round(current + 1));
     });
     
-    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave) => boolean), allVariables: boolean = false) => {
-        if (!allVariables && (focusedVariable === null)) return;
+    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariableExtended) => boolean), allVariables: boolean = false) => {
+        if (!allVariables || (focusedVariable === null)) return;
+        const variable      = allVcdVariables[focusedVariable];
         const waves         = (
             (
                 !allVariables
-                ? allVcdVariables[focusedVariable ?? 0].waves
+                ? variable.waves
                 : (
                     allVcdVariables
                     .flatMap(({ waves }) => waves)
@@ -599,12 +606,12 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             if (!allVariables) return;
             current = minTick;
         } // if
-        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave)));
+        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)));
         const dummyEdge     = {
             ...(gotoNext ? waves[waves.length - 1] : waves[0]),
             tick: gotoNext ? maxTick : minTick,
         } satisfies VcdWave;
-        if ((target === undefined) && (!predicate || predicate(dummyEdge))) target = dummyEdge;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge, variable))) target = dummyEdge;
         if (target === undefined) return;
         const selectionPos = target.tick;
         (isAlt ? setAltSelection : setMainSelection)(selectionPos);
@@ -636,7 +643,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 setMainSelection(searchNum);
                 break;
             case SearchType.HEX  :
-                handleGotoEdge(false, (wave) => (wave.value.toString(16).toLowerCase().includes(search.toLowerCase())), true);
+                handleGotoEdge(false, (wave, { format }) => (vcdValueToString(wave.value, format).toLowerCase().includes(search.toLowerCase())), true);
                 break;
         } // switch
     });
@@ -648,7 +655,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 setMainSelection(searchNum);
                 break;
             case SearchType.HEX  :
-                handleGotoEdge(true, (wave) => (wave.value.toString(16).toLowerCase().includes(search.toLowerCase())), true);
+                handleGotoEdge(true, (wave, { format }) => (vcdValueToString(wave.value, format).toLowerCase().includes(search.toLowerCase())), true);
                 break;
         } // switch
     });
@@ -682,7 +689,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         });
     });
     const handleMenuRemove        = useEvent(() => {
-        if (!focusedVariable) return;
+        if (focusedVariable === null) return;
         
         setAllVcdVariables(
             allVcdVariables.toSpliced(focusedVariable, 1)
@@ -694,7 +701,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
         setShowMenuValues({
-            x : right,
+            x : right - 2,
             y : top,
         });
     });
@@ -705,6 +712,29 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         if (showMenuValues) setShowMenuValues(null);
+    });
+    
+    const handleMenuFormatOf = useEvent((format: VcdValueFormat) => {
+        if (focusedVariable === null) return;
+        setAllVcdVariables(
+            produce(allVcdVariables, (allVcdVariables) => {
+                const variable = allVcdVariables[focusedVariable];
+                if (variable === undefined) return;
+                variable.format = format;
+            })
+        );
+        
+        if (showMenu) setShowMenu(null);
+        if (showMenuValues) setShowMenuValues(null);
+    });
+    const handleMenuFormatBinary = useEvent(() => {
+        handleMenuFormatOf(VcdValueFormat.BINARY);
+    });
+    const handleMenuFormatDecimal = useEvent(() => {
+        handleMenuFormatOf(VcdValueFormat.DECIMAL);
+    });
+    const handleMenuFormatHexadecimal = useEvent(() => {
+        handleMenuFormatOf(VcdValueFormat.HEXADECIMAL);
     });
     
     
@@ -957,49 +987,54 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         ((mainSelection !== null) && allVcdVariables)
         ? (
             allVcdVariables
-            .flatMap(({ waves }) =>
-                waves
-                .map((wave, index, waves): VcdWaveExtended => {
-                    const prevIndex = index - 1;
-                    const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
-                    
-                    const nextIndex = index + 1;
-                    const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
-                    const nextTick  = nextWave?.tick ?? maxTick;
-                    
-                    return {
-                        ...wave,
-                        lastTick  : nextTick,
-                        prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
-                        nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
-                    };
-                })
-                .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
-            )
-            .map(({ prevValue, value, nextValue }, index) =>
-                <span
-                    key={index}
-                    className={cn(
-                        styles.labelValue,
-                        (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
-                    )}
-                    style={(moveFromIndex === index) ?{
-                        '--posX'         : movePosRelative.x,
-                        '--posY'         : movePosRelative.y,
-                        '--moveRelative' : (moveToIndex ?? index) - index,
-                    } as any : undefined}
-                >
-                    {(prevValue !== undefined) && <><span>{prevValue.toString(16)}</span><span>-</span></>}
-                    <span>{value.toString(16)}</span>
-                    {(nextValue !== undefined) && <><span>-</span><span>{nextValue.toString(16)}</span></>}
-                </span>
+            .map(({ waves, format }) => ({
+                format,
+                waves: (
+                    waves
+                    .map((wave, index, waves): VcdWaveExtended => {
+                        const prevIndex = index - 1;
+                        const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
+                        
+                        const nextIndex = index + 1;
+                        const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
+                        const nextTick  = nextWave?.tick ?? maxTick;
+                        
+                        return {
+                            ...wave,
+                            lastTick  : nextTick,
+                            prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
+                            nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
+                        };
+                    })
+                    .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
+                ),
+            }))
+            .flatMap(({ format, waves }, index) =>
+                waves.map(({ prevValue, value, nextValue }) =>
+                    <span
+                        key={index}
+                        className={cn(
+                            styles.labelValue,
+                            (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
+                        )}
+                        style={(moveFromIndex === index) ?{
+                            '--posX'         : movePosRelative.x,
+                            '--posY'         : movePosRelative.y,
+                            '--moveRelative' : (moveToIndex ?? index) - index,
+                        } as any : undefined}
+                    >
+                        {(prevValue !== undefined) && <><span>{vcdValueToString(prevValue, format)}</span><span>-</span></>}
+                        <span>{vcdValueToString(value, format)}</span>
+                        {(nextValue !== undefined) && <><span>-</span><span>{vcdValueToString(nextValue, format)}</span></>}
+                    </span>
+                )
             )
         )
         : []
     );
     const moveableVariables : React.ReactNode[] = (
         vcd
-        ? allVcdVariables.map(({ waves, size }, index) =>
+        ? allVcdVariables.map(({ waves, size, format }, index) =>
             <div
                 key={index}
                 className={cn(
@@ -1030,7 +1065,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                         if (length === 0) return;
                         return (
                             <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                                {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
+                                {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
                     })}
@@ -1050,7 +1085,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     // jsx:
                     return (
                         <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                            {!isBinary && ((typeof(value) === 'string') ? value : value.toString(16))}
+                            {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                         </span>
                     );
                 })()}
@@ -1183,9 +1218,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
             </ul>}
             {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu} style={{ insetInlineStart: `${showMenuValues.x}px`, insetBlockStart: `${showMenuValues.y}px` }}>
-                <li tabIndex={0}>Binary</li>
-                <li tabIndex={0}>Decimal</li>
-                <li tabIndex={0}>Hexadecimal</li>
+                <li tabIndex={0} onClick={handleMenuFormatBinary}>Binary</li>
+                <li tabIndex={0} onClick={handleMenuFormatDecimal}>Decimal</li>
+                <li tabIndex={0} onClick={handleMenuFormatHexadecimal}>Hexadecimal</li>
             </ul>}
         </div>
     );
