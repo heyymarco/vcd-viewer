@@ -1456,6 +1456,7 @@ export class VcdViewerVanilla {
         
         this._focusedVariable = focusedVariable;
         this._refreshState();
+        this._refreshVcd();
     }
     _setEnableTouchScroll(enableTouchScroll: typeof this._enableTouchScroll) {
         // conditions:
