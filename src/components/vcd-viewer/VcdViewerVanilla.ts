@@ -779,7 +779,7 @@ export class VcdViewerVanilla {
             // logs:
             this._inputLogs.logKeyEvent(event, false /*key_up*/, actionKeys);
             if (this._watchGlobalKey(false) === false) {
-                console.log({activeKeys: this._inputLogs.activeKeys});
+                // console.log({activeKeys: this._inputLogs.activeKeys});
             //     // TODO: update keydown deactivated
             } // if
         };
@@ -1197,9 +1197,6 @@ export class VcdViewerVanilla {
         } // if
         
         variableItem.tabIndex = 0;
-        variableItem.addEventListener('focus', () => {
-            this._setFocusedVariable(index);
-        });
         
         variableItem.append(
             ...[
@@ -1308,9 +1305,13 @@ export class VcdViewerVanilla {
         
         this._moveableVariables = (
             this._vcd
-            ? this._allVcdVariables.map((variable, index) =>
-                this._reactVariableItem(index, variable)
-            )
+            ? this._allVcdVariables.map((variable, index) => {
+                const variableItem = this._reactVariableItem(index, variable);
+                
+                variableItem.addEventListener('focus', () => this._setFocusedVariable(index));
+                
+                return variableItem;
+            })
             : []
         );
         
@@ -1417,10 +1418,14 @@ export class VcdViewerVanilla {
         this._selectionEnd = selectionEnd;
         this._refreshState();
     }
-    _setFocusedVariable(focusedVariable: number) {
+    _setFocusedVariable(focusedVariable: typeof this._focusedVariable) {
+        // conditions:
+        if (this._focusedVariable === focusedVariable) return;
+        
+        
+        
         this._focusedVariable = focusedVariable;
         this._refreshState();
-        // TODO: apply|remove .focus class without calling `_refreshVcd()` to avoid onFocus() onClick() issue
     }
     _setEnableTouchScroll(enableTouchScroll: boolean) {
         this._enableTouchScroll = enableTouchScroll;
