@@ -217,6 +217,40 @@ export class VcdViewerVanilla {
         );
     }
     
+    _handleKeyDown(event: KeyboardEvent) {
+        // conditions:
+        if ((event.target as Element)?.tagName === 'INPUT') return; // do not intercept <input>
+        
+        
+        
+        // conditions:
+        /* note: the `code` may `undefined` on autoComplete */
+        const keyCode = (event.code as string|undefined)?.toLowerCase();
+        if (!keyCode) return; // ignores [unidentified] key
+        
+        
+        
+        // actions:
+        if (!['tab'].includes(keyCode)) event.preventDefault();
+        
+        
+        
+        // logs:
+        this._inputLogs.logKeyEvent(event, true /*key_down*/, actionKeys);
+        if (this._watchGlobalKey(true) === true) {
+            // console.log({activeKeys: inputLogs.activeKeys});
+            // TODO: update keydown activated
+        } // if
+        
+        
+        
+        // // actions:
+        // if (this._inputLogs.isActive) {
+        //     // trigger the onClick event later at `onKeyUp`
+        //     this._inputLogs.performKeyUpActions = true;
+        // }
+    }
+    
     _handleMouseDown(event: MouseEvent) {
         // actions:
         // event.preventDefault(); // do not preventing, causing the click_to_focus doesn't work
@@ -689,8 +723,12 @@ export class VcdViewerVanilla {
     _createMain() {
         const main = document.createElement('div');
         main.classList.add(styles.main);
+        
+        main.addEventListener('keydown', (event) => this._handleKeyDown(event));
+        
         main.appendChild(this._createToolbar());
         main.appendChild(this._createBodyOuter());
+        
         return main;
     }
     _createToolbar() {
