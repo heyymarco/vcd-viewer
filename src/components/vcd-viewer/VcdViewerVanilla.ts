@@ -497,9 +497,16 @@ export class VcdViewerVanilla {
     }
     _globalHandleWheel(event: WheelEvent) {
         // conditions:
-        if (!this._isCtrlPressed()) return;
         if (!this._mainRef || !document.elementsFromPoint(event.clientX, event.clientY).includes(this._mainRef)) return; // the cursor is not on top mainElm => ignore
-        event.preventDefault();
+        if (!this._isCtrlPressed()) {
+            event.preventDefault();
+            
+            const bodyElm = this._bodyRef;
+            if (bodyElm) bodyElm.scrollLeft += event.deltaY;
+            
+            return; // intercepted => done
+        } // if
+        event.preventDefault(); // intercepted
         
         
         

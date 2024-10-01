@@ -349,9 +349,16 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     const globalHandleWheel       = useEvent((event: WheelEvent) => {
         // conditions:
-        if (!isCtrlPressed()) return;
         if (!mainRef.current || !document.elementsFromPoint(event.clientX, event.clientY).includes(mainRef.current)) return; // the cursor is not on top mainElm => ignore
-        event.preventDefault();
+        if (!isCtrlPressed()) {
+            event.preventDefault();
+            
+            const bodyElm = bodyRef.current;
+            if (bodyElm) bodyElm.scrollLeft += event.deltaY;
+            
+            return; // intercepted => done
+        } // if
+        event.preventDefault(); // intercepted
         
         
         
