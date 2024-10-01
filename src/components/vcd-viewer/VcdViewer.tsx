@@ -691,6 +691,21 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
     });
+    const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
+        const { top, right } = event.currentTarget.getBoundingClientRect();
+        setShowMenuValues({
+            x : right,
+            y : top,
+        });
+    });
+    const handleMenuFormatValuesHide = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
+        // conditions:
+        if (!menuValuesRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuValuesRef.current)) return; // the cursor is on top menuValuesElm => ignore
+        
+        
+        
+        if (showMenuValues) setShowMenuValues(null);
+    });
     
     
     
@@ -1164,10 +1179,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 </div>
             </div>
             {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
-                <li tabIndex={0}>Format Values<span className='icon-next' /></li>
+                <li tabIndex={0} onClick={handleMenuFormatValues} onMouseEnter={handleMenuFormatValues} onMouseLeave={handleMenuFormatValuesHide}>Format Values<span className='icon-next' /></li>
                 <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
             </ul>}
-            {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu}>
+            {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu} style={{ insetInlineStart: `${showMenuValues.x}px`, insetBlockStart: `${showMenuValues.y}px` }}>
                 <li tabIndex={0}>Binary</li>
                 <li tabIndex={0}>Decimal</li>
                 <li tabIndex={0}>Hexadecimal</li>

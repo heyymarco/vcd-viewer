@@ -839,6 +839,21 @@ export class VcdViewerVanilla {
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
     }
+    _handleMenuFormatValues(event: MouseEvent) {
+        const { top, right } = (event.currentTarget as Element).getBoundingClientRect();
+        this._setShowMenuValues({
+            x : right,
+            y : top,
+        });
+    }
+    _handleMenuFormatValuesHide(event: MouseEvent) {
+        // conditions:
+        if (!this._menuValuesRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuValuesRef)) return; // the cursor is on top menuValuesElm => ignore
+        
+        
+        
+        if (this._showMenuValues) this._setShowMenuValues(null);
+    }
     
     
     
@@ -1248,6 +1263,9 @@ export class VcdViewerVanilla {
             'Format Values',
             menuFormatIcon,
         );
+        menuFormat.addEventListener('click'     , (event) => this._handleMenuFormatValues(event));
+        menuFormat.addEventListener('mouseenter', (event) => this._handleMenuFormatValues(event));
+        menuFormat.addEventListener('mouseleave', (event) => this._handleMenuFormatValuesHide(event));
         
         const menuRemove = document.createElement('li');
         menuRemove.tabIndex = 0;
