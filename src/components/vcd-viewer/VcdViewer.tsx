@@ -26,6 +26,7 @@ import {
     type VcdVariable,
     type Vcd,
     type VcdWave,
+    type VcdWaveExtended,
 }                           from '@/models/vcd'
 
 // utilities:
@@ -834,6 +835,50 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         )
         : []
     );
+    const moveableValues : React.ReactNode[] = (
+        ((mainSelection !== null) && allVcdVariables)
+        ? (
+            allVcdVariables
+            .flatMap(({ waves }) =>
+                waves
+                .map((wave, index, waves): VcdWaveExtended => {
+                    const prevIndex = index - 1;
+                    const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
+                    
+                    const nextIndex = index + 1;
+                    const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
+                    const nextTick  = nextWave?.tick ?? maxTick;
+                    
+                    return {
+                        ...wave,
+                        lastTick  : nextTick,
+                        prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
+                        nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
+                    };
+                })
+                .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
+            )
+            .map(({ prevValue, value, nextValue }, index) =>
+                <span
+                    key={index}
+                    className={cn(
+                        styles.labelValue,
+                        (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
+                    )}
+                    style={(moveFromIndex === index) ?{
+                        '--posX'         : movePosRelative.x,
+                        '--posY'         : movePosRelative.y,
+                        '--moveRelative' : (moveToIndex ?? index) - index,
+                    } as any : undefined}
+                >
+                    {(prevValue !== undefined) && <><span>{prevValue.toString(16)}</span><span>-</span></>}
+                    <span>{value.toString(16)}</span>
+                    {(nextValue !== undefined) && <><span>-</span><span>{nextValue.toString(16)}</span></>}
+                </span>
+            )
+        )
+        : []
+    );
     const moveableVariables : React.ReactNode[] = (
         vcd
         ? allVcdVariables.map(({ waves, size }, index) =>
@@ -945,6 +990,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                             // onMouseEnter={() => setMoveToIndex(index)} // works on mouse but doesn't on touch, so we use `elementsFromPoint()` strategy on `onPointerCaptureMove()`
                         >
                             {movedLabel}
+                        </li>
+                    )}
+                    <li className={styles.scrollbarHack} />
+                </ul>
+                <ul className={styles.labels}>
+                    {moveVcdVariableData(moveableValues, moveFromIndex, moveToIndex).map((movedValue, index) =>
+                        <li
+                            key={index}
+                            className={styles.labelWrapper}
+                            data-droppable={index}
+                        >
+                            {movedValue}
                         </li>
                     )}
                     <li className={styles.scrollbarHack} />

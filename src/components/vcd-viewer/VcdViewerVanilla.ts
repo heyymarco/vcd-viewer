@@ -7,6 +7,7 @@ import {
     type VcdVariable,
     type Vcd,
     type VcdWave,
+    type VcdWaveExtended,
 }                           from '@/models/vcd'
 
 // utilities:
@@ -382,6 +383,7 @@ export class VcdViewerVanilla {
     
     // refs:
     _labelsRef         : HTMLUListElement|null  = null;
+    _valuesRef         : HTMLUListElement|null  = null;
     _bodyRef           : HTMLDivElement|null    = null;
     _rulerRef          : SVGGElement|null       = null;
     _variablesRef      : HTMLDivElement|null    = null;
@@ -409,6 +411,7 @@ export class VcdViewerVanilla {
     
     // react:
     _moveableLabels    : HTMLElement[] = [];
+    _moveableValues    : HTMLElement[] = [];
     _moveableVariables : HTMLElement[] = [];
     
     
@@ -1039,6 +1042,7 @@ export class VcdViewerVanilla {
         const bodyOuter = document.createElement('div');
         bodyOuter.classList.add(styles.bodyOuter);
         bodyOuter.appendChild(this._createLabels());
+        bodyOuter.appendChild(this._createValues());
         bodyOuter.appendChild(this._createBody());
         return bodyOuter;
     }
@@ -1051,6 +1055,13 @@ export class VcdViewerVanilla {
         
         this._labelsRef = labels;
         return labels;
+    }
+    _createValues() {
+        const values = document.createElement('ul');
+        values.classList.add(styles.labels);
+        
+        this._valuesRef = values;
+        return values;
     }
     _createBody() {
         const body = document.createElement('div');
@@ -1174,6 +1185,72 @@ export class VcdViewerVanilla {
         const hack = document.createElement('li');
         hack.classList.add(styles.scrollbarHack);
         return hack;
+    }
+    
+    _reactValueItem(index: number, wave: VcdWaveExtended) {
+        const listItem = document.createElement('span');
+        listItem.classList.add(styles.labelValue);
+        const classState = ((this._moveFromIndex !== null) ? ((this._moveFromIndex === index) ? 'dragging' : 'dropZone') : null);
+        if (classState) listItem.classList.add(classState);
+        
+        const style = listItem.style;
+        if (this._moveFromIndex === index) {
+            style.setProperty('--posX'        , `${this._movePosRelative.x}`             );
+            style.setProperty('--posY'        , `${this._movePosRelative.y}`             );
+            style.setProperty('--moveRelative', `${(this._moveToIndex ?? index) - index}`);
+        }
+        else {
+            style.setProperty('--posX'        , null);
+            style.setProperty('--posY'        , null);
+            style.setProperty('--moveRelative', null);
+        } // if
+        
+        listItem.appendChild(this._reactValueItemValue(wave));
+        
+        return listItem;
+    }
+    _reactValueItemValue({ prevValue, value, nextValue }: VcdWaveExtended) {
+        const labelPrevGroup = (prevValue !== undefined) ? document.createDocumentFragment() : undefined;
+        if (labelPrevGroup && (prevValue !== undefined)) {
+            const label = document.createElement('span');
+            label.append(
+                `${prevValue.toString(16)}`
+            );
+            
+            const hypen = document.createElement('span');
+            hypen.append('-');
+            
+            labelPrevGroup.append(
+                label,
+                hypen,
+            );
+        } // if
+        
+        const labelNextGroup = (nextValue !== undefined) ? document.createDocumentFragment() : undefined;
+        if (labelNextGroup && (nextValue !== undefined)) {
+            const label = document.createElement('span');
+            label.append(
+                `${nextValue.toString(16)}`
+            );
+            
+            const hypen = document.createElement('span');
+            hypen.append('-');
+            
+            labelNextGroup.append(
+                hypen,
+                label,
+            );
+        } // if
+        
+        const label = document.createElement('span');
+        label.append(
+            ...[
+                labelPrevGroup,
+                `${value.toString(16)}`,
+                labelNextGroup,
+            ].filter((label): label is Exclude<typeof label, undefined> => (label !== undefined))
+        );
+        return label;
     }
     
     _reactVariableItem(index: number, variable: VcdVariable) {
@@ -1310,6 +1387,47 @@ export class VcdViewerVanilla {
         
         
         
+        const mainSelection = this._mainSelection;
+        this._moveableValues = (
+            ((mainSelection !== null) && this._allVcdVariables)
+            ? this._allVcdVariables
+                .flatMap(({ waves }) =>
+                    waves
+                    .map((wave, index, waves): VcdWaveExtended => {
+                        const prevIndex = index - 1;
+                        const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
+                        
+                        const nextIndex = index + 1;
+                        const nextWave  = (nextIndex < waves.length) ? waves[nextIndex] : undefined;
+                        const nextTick  = nextWave?.tick ?? this._maxTick;
+                        
+                        return {
+                            ...wave,
+                            lastTick  : nextTick,
+                            prevValue : (wave.tick === mainSelection) ? prevWave?.value : undefined,
+                            nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
+                        };
+                    })
+                    .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
+                )
+                .map((variable, index) =>
+                    this._reactValueItem(index, variable)
+                )
+            : []
+        );
+        
+        this._valuesRef?.replaceChildren();
+        this._valuesRef?.append(
+            ...
+            moveVcdVariableData(this._moveableValues, this._moveFromIndex, this._moveToIndex)
+            .map((movedLabel, index) =>
+                this._reactCrateLabelWrapper(index, movedLabel)
+            ),
+            this._reactCrateScrollbarHack(),
+        );
+        
+        
+        
         this._moveableVariables = (
             this._vcd
             ? this._allVcdVariables.map((variable, index) => {
@@ -1438,6 +1556,7 @@ export class VcdViewerVanilla {
         
         this._mainSelection = mainSelection;
         this._refreshState();
+        this._refreshVcd();
     }
     _setAltSelection(altSelection: typeof this._altSelection) {
         // conditions:

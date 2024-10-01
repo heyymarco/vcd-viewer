@@ -244,9 +244,9 @@
     // layouts:
     display: grid;
     grid-template:
-        "labels body" max-content
+        "labels values body" max-content
         /
-        min-content 1fr;
+        min-content 12ch 1fr;
 }
 .labels {
     // layouts:
@@ -368,6 +368,34 @@
         &::before, &::after {
             border-top-color: var(--col-handler-active);
         }
+    }
+}
+.labelValue {
+    // layouts:
+    display: grid;
+    grid-auto-flow: column;
+    justify-content: end;
+    align-items: center;
+    
+    
+    
+    // sizes:
+    block-size: var(--variable-height);
+    overflow: hidden;
+    
+    
+    
+    // typos:
+    text-align: end;
+    text-overflow: ellipsis;
+    
+    
+    
+    // states:
+    &[class ~= "dragging"] {
+        position: relative;
+        left : calc((var(--posX) * 1px));
+        top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
     }
 }
 .scrollbarHack {

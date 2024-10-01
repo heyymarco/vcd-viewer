@@ -29,6 +29,12 @@ export interface VcdWave {
     value      : number|string
 }
 
+export interface VcdWaveExtended extends VcdWave {
+    lastTick   : number
+    prevValue  : number|string | undefined
+    nextValue  : number|string | undefined
+}
+
 
 export type VcdToken =
     |'DATE'
