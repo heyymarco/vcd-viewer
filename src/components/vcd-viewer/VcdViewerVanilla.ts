@@ -1369,6 +1369,11 @@ export class VcdViewerVanilla {
         return this._vcd;
     }
     setVcd(vcd: Vcd|null) {
+        // conditions:
+        if (this._vcd === vcd) return;
+        
+        
+        
         this._vcd             =  vcd;
         this._minTick         = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
         this._maxTick         = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
@@ -1395,26 +1400,51 @@ export class VcdViewerVanilla {
     _getZoom() {
         return this._zoom;
     }
-    _setZoom(zoom: number) {
+    _setZoom(zoom: typeof this._zoom) {
+        // conditions:
+        if (this._zoom === zoom) return;
+        
+        
+        
         this._zoom      = zoom;
         this._baseScale = 2 ** zoom;
         
         this._refreshState();
         this._refreshVcd();
     }
-    _setMainSelection(mainSelection: number|null) {
+    _setMainSelection(mainSelection: typeof this._mainSelection) {
+        // conditions:
+        if (this._mainSelection === mainSelection) return;
+        
+        
+        
         this._mainSelection = mainSelection;
         this._refreshState();
     }
-    _setAltSelection(altSelection: number|null) {
+    _setAltSelection(altSelection: typeof this._altSelection) {
+        // conditions:
+        if (this._altSelection === altSelection) return;
+        
+        
+        
         this._altSelection = altSelection;
         this._refreshState();
     }
-    _setSelectionStart(selectionStart: number|null) {
+    _setSelectionStart(selectionStart: typeof this._selectionStart) {
+        // conditions:
+        if (this._selectionStart === selectionStart) return;
+        
+        
+        
         this._selectionStart = selectionStart;
         this._refreshState();
     }
-    _setSelectionEnd(selectionEnd: number|null) {
+    _setSelectionEnd(selectionEnd: typeof this._selectionEnd) {
+        // conditions:
+        if (this._selectionEnd === selectionEnd) return;
+        
+        
+        
         this._selectionEnd = selectionEnd;
         this._refreshState();
     }
@@ -1427,27 +1457,52 @@ export class VcdViewerVanilla {
         this._focusedVariable = focusedVariable;
         this._refreshState();
     }
-    _setEnableTouchScroll(enableTouchScroll: boolean) {
+    _setEnableTouchScroll(enableTouchScroll: typeof this._enableTouchScroll) {
+        // conditions:
+        if (this._enableTouchScroll === enableTouchScroll) return;
+        
+        
+        
         this._enableTouchScroll = enableTouchScroll;
         this._refreshState();
     }
-    _setSearchType(searchType: SearchType) {
+    _setSearchType(searchType: typeof this._searchType) {
+        // conditions:
+        if (this._searchType === searchType) return;
+        
+        
+        
         this._searchType = searchType;
         this._refreshState();
     }
     _setMovePosRelative(movePosRelative: typeof this._movePosRelative) {
+        // conditions:
+        if (this._movePosRelative === movePosRelative) return;
+        
+        
+        
         this._movePosRelative = movePosRelative;
         
         this._refreshState();
         this._refreshVcd();
     }
     _setMoveFromIndex(moveFromIndex: typeof this._moveFromIndex) {
+        // conditions:
+        if (this._moveFromIndex === moveFromIndex) return;
+        
+        
+        
         this._moveFromIndex = moveFromIndex;
         
         this._refreshState();
         this._refreshVcd();
     }
     _setMoveToIndex(moveToIndex: typeof this._moveToIndex) {
+        // conditions:
+        if (this._moveToIndex === moveToIndex) return;
+        
+        
+        
         this._moveToIndex = moveToIndex;
         
         this._refreshState();
