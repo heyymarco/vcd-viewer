@@ -829,6 +829,16 @@ export class VcdViewerVanilla {
             y : event.clientY,
         });
     }
+    _handleMenuRemove() {
+        if (!this._focusedVariable) return;
+        
+        this._setAllVcdVariables(
+            this._allVcdVariables.toSpliced(this._focusedVariable, 1)
+        );
+        
+        if (this._showMenu) this._setShowMenu(null);
+        if (this._showMenuValues) this._setShowMenuValues(null);
+    }
     
     
     
@@ -1233,7 +1243,7 @@ export class VcdViewerVanilla {
         const menuFormat = document.createElement('li');
         menuFormat.tabIndex = 0;
         const menuFormatIcon = document.createElement('span');
-        menuFormatIcon.classList.add('icon-text');
+        menuFormatIcon.classList.add('icon-next');
         menuFormat.append(
             'Format Values',
             menuFormatIcon,
@@ -1244,6 +1254,7 @@ export class VcdViewerVanilla {
         menuRemove.append(
             'Remove Signal'
         );
+        menuRemove.addEventListener('click', () => this._handleMenuRemove());
         
         menu.append(
             menuFormat,
@@ -1707,6 +1718,17 @@ export class VcdViewerVanilla {
                 }]);
             } // if
         } // if
+    }
+    _setAllVcdVariables(allVcdVariables: typeof this._allVcdVariables) {
+        // conditions:
+        if (this._allVcdVariables === allVcdVariables) return;
+        
+        
+        
+        this._allVcdVariables = allVcdVariables;
+        
+        this._refreshState();
+        this._refreshVcd();
     }
     _getZoom() {
         return this._zoom;

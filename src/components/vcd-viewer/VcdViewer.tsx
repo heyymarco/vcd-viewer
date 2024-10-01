@@ -681,6 +681,16 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             y : event.clientY,
         });
     });
+    const handleMenuRemove        = useEvent(() => {
+        if (!focusedVariable) return;
+        
+        setAllVcdVariables(
+            allVcdVariables.toSpliced(focusedVariable, 1)
+        );
+        
+        if (showMenu) setShowMenu(null);
+        if (showMenuValues) setShowMenuValues(null);
+    });
     
     
     
@@ -1155,7 +1165,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             </div>
             {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
                 <li tabIndex={0}>Format Values<span className='icon-next' /></li>
-                <li tabIndex={0}>Remove Signal</li>
+                <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
             </ul>}
             {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu}>
                 <li tabIndex={0}>Binary</li>
