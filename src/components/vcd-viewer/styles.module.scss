@@ -545,7 +545,7 @@
     
     
     // backgrounds:
-    background-color: var(--col-wave-primary);
+    background-color: var(--color, var(--col-wave-primary));
     &[class ~= "error"] {
         background-color: var(--col-wave-error);
     }
@@ -553,7 +553,7 @@
     clip-path: polygon(var(--hexaCrop) 0%, calc(100% - var(--hexaCrop)) 0%, 100% 50%, calc(100% - var(--hexaCrop)) 100%, var(--hexaCrop) 100%, 0% 50%);
     &[class ~= "bin"] {
         clip-path: unset;
-        border: solid 1px var(--col-wave-primary);
+        border: solid 1px var(--color, var(--col-wave-primary));
         // border-inline-width: 0.5px;
         &:not(:is([class ~= "error"], [class ~= "last"])) {
             background: transparent;
@@ -754,5 +754,29 @@
         &:is(:hover, :focus-visible) {
             background-color: var(--col-ctrl-active);
         }
+    }
+}
+.menuColors {
+    // layouts:
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-flow: row;
+    
+    
+    
+    // sizes:
+    overflow: hidden;
+    
+    
+    
+    // children:
+    &>* {
+        // sizes:
+        inline-size: 16px;
+        aspect-ratio: 1 / 1;
+        
+        
+        
+        // backgrounds:
+        background-color: currentColor;
     }
 }

@@ -1,3 +1,7 @@
+import type Color           from 'color'
+
+
+
 export interface Vcd {
     date      ?: Date
     version   ?: string
@@ -26,6 +30,7 @@ export interface VcdVariable {
     // extra data:
     id         : number
     format     : VcdValueFormat
+    color      : Color|null
 }
 
 export enum VcdValueFormat {

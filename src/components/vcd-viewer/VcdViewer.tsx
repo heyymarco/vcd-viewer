@@ -30,7 +30,10 @@ import {
     
     VcdValueFormat,
     vcdValueToString,
-}                           from '@/models/vcd'
+    
+    defaultColorOptions,
+}                           from '@/models'
+import type Color           from 'color'
 
 // utilities:
 import {
@@ -60,12 +63,15 @@ export interface VcdViewerProps
 {
     // values:
     vcd ?: Vcd|null
+    
+    colorOptions ?: Color[]
 }
 const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // props:
     const {
         // values:
         vcd,
+        colorOptions = defaultColorOptions,
         
         
         
@@ -110,6 +116,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     const [showMenu         , setShowMenu         ] = useState<{ x: number, y: number}|null>(null);
     const [showMenuValues   , setShowMenuValues   ] = useState<{ x: number, y: number}|null>(null);
+    const [showMenuColors   , setShowMenuColors   ] = useState<{ x: number, y: number}|null>(null);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -278,6 +285,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const variablesRef  = useRef<HTMLDivElement|null>(null);
     const menuRef       = useRef<HTMLUListElement|null>(null);
     const menuValuesRef = useRef<HTMLUListElement|null>(null);
+    const menuColorsRef = useRef<HTMLUListElement|null>(null);
     
     
     
@@ -344,6 +352,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             if (keyCode === 'escape') {
                 if (showMenu) setShowMenu(null);
                 if (showMenuValues) setShowMenuValues(null);
+                if (showMenuColors) setShowMenuColors(null);
             } // if
         } // if
     });
@@ -376,6 +385,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         if (targetElm) {
             if (menuRef.current && menuRef.current.contains(targetElm)) return;
             if (menuValuesRef.current && menuValuesRef.current.contains(targetElm)) return;
+            if (menuColorsRef.current && menuColorsRef.current.contains(targetElm)) return;
         } // if
         
         
@@ -383,6 +393,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         // actions:
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
+        if (showMenuColors) setShowMenuColors(null);
     });
     
     const handleMouseDown         = useEvent<React.MouseEventHandler<Element>>((event) => {
@@ -695,6 +706,21 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             y : event.clientY,
         });
     });
+    const handleMenuSetColor      = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
+        const { top, right } = event.currentTarget.getBoundingClientRect();
+        setShowMenuColors({
+            x : right - 2,
+            y : top,
+        });
+    });
+    const handleMenuSetColorHide  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
+        // conditions:
+        if (!menuColorsRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuColorsRef.current)) return; // the cursor is on top menuColorsElm => ignore
+        
+        
+        
+        if (showMenuColors) setShowMenuColors(null);
+    });
     const handleMenuRemove        = useEvent(() => {
         if (focusedVariable === null) return;
         
@@ -704,6 +730,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
+        if (showMenuColors) setShowMenuColors(null);
     });
     const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
@@ -733,6 +760,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
+        if (showMenuColors) setShowMenuColors(null);
     });
     const handleMenuFormatBinary = useEvent(() => {
         handleMenuFormatOf(VcdValueFormat.BINARY);
@@ -742,6 +770,20 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     const handleMenuFormatHexadecimal = useEvent(() => {
         handleMenuFormatOf(VcdValueFormat.HEXADECIMAL);
+    });
+    const handleMenuColorOf = useEvent((color: Color) => {
+        if (focusedVariable === null) return;
+        setAllVcdVariables(
+            produce(allVcdVariables, (allVcdVariables) => {
+                const variable = allVcdVariables[focusedVariable];
+                if (variable === undefined) return;
+                variable.color = color;
+            })
+        );
+        
+        if (showMenu) setShowMenu(null);
+        if (showMenuValues) setShowMenuValues(null);
+        if (showMenuColors) setShowMenuColors(null);
     });
     
     
@@ -1041,7 +1083,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     );
     const moveableVariables : React.ReactNode[] = (
         vcd
-        ? allVcdVariables.map(({ waves, size, format }, index) =>
+        ? allVcdVariables.map(({ waves, size, format, color }, index) =>
             <div
                 key={index}
                 className={cn(
@@ -1049,11 +1091,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     ((focusedVariable === index) ? 'focus' : null),
                     (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
                 )}
-                style={(moveFromIndex === index) ?{
-                    '--posX'         : movePosRelative.x,
-                    '--posY'         : movePosRelative.y,
-                    '--moveRelative' : (moveToIndex ?? index) - index,
-                } as any : undefined}
+                style={{
+                    ...((moveFromIndex === index) ? {
+                        '--posX'         : movePosRelative.x,
+                        '--posY'         : movePosRelative.y,
+                        '--moveRelative' : (moveToIndex ?? index) - index,
+                    } as any : undefined),
+                    
+                    ...((color !== null) ? {
+                        '--color': color.hexa(),
+                    } as any : undefined),
+                }}
                 tabIndex={0}
                 onFocus={() => setFocusedVariable(index)}
                 onContextMenu={handleContextMenu}
@@ -1222,12 +1270,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             </div>
             {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
                 {(focusedVariable !== null) && (allVcdVariables[focusedVariable]?.size > 1) && <li tabIndex={0} onClick={handleMenuFormatValues} onMouseEnter={handleMenuFormatValues} onMouseLeave={handleMenuFormatValuesHide}>Format Values<span className='icon-next' /></li>}
+                <li tabIndex={0} onClick={handleMenuSetColor} onMouseEnter={handleMenuSetColor} onMouseLeave={handleMenuSetColorHide}>Change Color<span className='icon-next' /></li>
                 <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
             </ul>}
             {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu} style={{ insetInlineStart: `${showMenuValues.x}px`, insetBlockStart: `${showMenuValues.y}px` }}>
                 <li tabIndex={0} onClick={handleMenuFormatBinary}>Binary</li>
                 <li tabIndex={0} onClick={handleMenuFormatDecimal}>Decimal</li>
                 <li tabIndex={0} onClick={handleMenuFormatHexadecimal}>Hexadecimal</li>
+            </ul>}
+            {!!showMenuColors && <ul ref={menuColorsRef} className={cn(styles.menu, styles.menuColors)} style={{ insetInlineStart: `${showMenuColors.x}px`, insetBlockStart: `${showMenuColors.y}px` }}>
+                {colorOptions.map((color, index) =>
+                    <li key={index} tabIndex={0} style={{ color: color.hexa() }} onClick={() => handleMenuColorOf(color)} />
+                )}
             </ul>}
         </div>
     );

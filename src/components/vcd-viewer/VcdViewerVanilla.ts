@@ -11,10 +11,10 @@ import {
     
     VcdValueFormat,
     vcdValueToString,
-}                           from '@/models/vcd'
-import {
-    produce,
-}                           from 'immer'
+    
+    defaultColorOptions,
+}                           from '@/models'
+import type Color           from 'color'
 
 // utilities:
 import {
@@ -28,6 +28,9 @@ import {
     actionMouses,
     actionTouches,
 }                           from './utilities'
+import {
+    produce,
+}                           from 'immer'
 
 
 
@@ -46,6 +49,8 @@ export class VcdViewerVanilla {
     
     // states:
     _vcd               : Vcd|null      = null;  
+    _colorOptions      : Color[]       = defaultColorOptions;
+    
     _minTick           : number        = 0;
     _maxTick           : number        = 0;
     _allVcdVariables   : VcdVariable[] = [];
@@ -71,6 +76,7 @@ export class VcdViewerVanilla {
     
     _showMenu          : { x: number, y: number}|null = null;
     _showMenuValues    : { x: number, y: number}|null = null;
+    _showMenuColors    : { x: number, y: number}|null = null;
     
     _inputLogs         = {
         isMouseActive       : false,
@@ -412,6 +418,7 @@ export class VcdViewerVanilla {
     _menuRef           : HTMLUListElement|null  = null;
     _menuFormatRef     : HTMLLIElement|null     = null;
     _menuValuesRef     : HTMLUListElement|null  = null;
+    _menuColorsRef     : HTMLUListElement|null  = null;
     
     
     
@@ -493,6 +500,7 @@ export class VcdViewerVanilla {
             if (keyCode === 'escape') {
                 if (this._showMenu) this._setShowMenu(null);
                 if (this._showMenuValues) this._setShowMenuValues(null);
+                if (this._showMenuColors) this._setShowMenuColors(null);
             } // if
         } // if
     }
@@ -525,6 +533,7 @@ export class VcdViewerVanilla {
         if (targetElm) {
             if (this._menuRef && this._menuRef.contains(targetElm)) return;
             if (this._menuValuesRef && this._menuValuesRef.contains(targetElm)) return;
+            if (this._menuColorsRef && this._menuColorsRef.contains(targetElm)) return;
         } // if
         
         
@@ -532,6 +541,7 @@ export class VcdViewerVanilla {
         // actions:
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
+        if (this._showMenuColors) this._setShowMenuColors(null);
     }
     
     _handleMouseDown(event: MouseEvent) {
@@ -844,6 +854,21 @@ export class VcdViewerVanilla {
             y : event.clientY,
         });
     }
+    _handleMenuSetColor(event: MouseEvent) {
+        const { top, right } = (event.currentTarget as Element).getBoundingClientRect();
+        this._setShowMenuColors({
+            x : right - 2,
+            y : top,
+        });
+    }
+    _handleMenuSetColorHide(event: MouseEvent) {
+        // conditions:
+        if (!this._menuColorsRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuColorsRef)) return; // the cursor is on top menuColorsElm => ignore
+        
+        
+        
+        if (this._showMenuColors) this._setShowMenuColors(null);
+    }
     _handleMenuRemove() {
         if (this._focusedVariable === null) return;
         
@@ -853,6 +878,7 @@ export class VcdViewerVanilla {
         
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
+        if (this._showMenuColors) this._setShowMenuColors(null);
     }
     _handleMenuFormatValues(event: MouseEvent) {
         const { top, right } = (event.currentTarget as Element).getBoundingClientRect();
@@ -883,6 +909,7 @@ export class VcdViewerVanilla {
         
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
+        if (this._showMenuColors) this._setShowMenuColors(null);
     }
     _handleMenuFormatBinary() {
         this._handleMenuFormatOf(VcdValueFormat.BINARY);
@@ -892,6 +919,21 @@ export class VcdViewerVanilla {
     }
     _handleMenuFormatHexadecimal() {
         this._handleMenuFormatOf(VcdValueFormat.HEXADECIMAL);
+    }
+    _handleMenuColorOf(color: Color) {
+        if (this._focusedVariable === null) return;
+        const focusedVariable = this._focusedVariable;
+        this._setAllVcdVariables(
+            produce(this._allVcdVariables, (allVcdVariables) => {
+                const variable = allVcdVariables[focusedVariable];
+                if (variable === undefined) return;
+                variable.color = color;
+            })
+        );
+        
+        if (this._showMenu) this._setShowMenu(null);
+        if (this._showMenuValues) this._setShowMenuValues(null);
+        if (this._showMenuColors) this._setShowMenuColors(null);
     }
     
     
@@ -1145,6 +1187,7 @@ export class VcdViewerVanilla {
         // conditional render:
         this._menuRef = this._createMenu();
         this._menuValuesRef = this._createMenuValues();
+        this._menuColorsRef = this._createMenuColors();
         
         this._mainRef = main;
         return main;
@@ -1307,6 +1350,18 @@ export class VcdViewerVanilla {
         menuFormat.addEventListener('mouseleave', (event) => this._handleMenuFormatValuesHide(event));
         this._menuFormatRef = menuFormat;
         
+        const menuColors = document.createElement('li');
+        menuColors.tabIndex = 0;
+        const menuColorsIcon = document.createElement('span');
+        menuColorsIcon.classList.add('icon-next');
+        menuColors.append(
+            'Change Color',
+            menuColorsIcon,
+        );
+        menuColors.addEventListener('click'     , (event) => this._handleMenuSetColor(event));
+        menuColors.addEventListener('mouseenter', (event) => this._handleMenuSetColor(event));
+        menuColors.addEventListener('mouseleave', (event) => this._handleMenuSetColorHide(event));
+        
         const menuRemove = document.createElement('li');
         menuRemove.tabIndex = 0;
         menuRemove.append(
@@ -1316,6 +1371,7 @@ export class VcdViewerVanilla {
         
         menu.append(
             menuFormat,
+            menuColors,
             menuRemove,
         );
         
@@ -1350,6 +1406,25 @@ export class VcdViewerVanilla {
             menuBinary,
             menuDecimal,
             menuHexadecimal,
+        );
+        
+        return menu;
+    }
+    _createMenuColors() {
+        const menu = document.createElement('ul');
+        menu.classList.add(styles.menu);
+        menu.classList.add(styles.menuColors);
+        
+        menu.append(
+            ...this._colorOptions.map((color, index) => {
+                const menuColor = document.createElement('li');
+                menuColor.tabIndex = 0;
+                menuColor.style.color = color.hexa();
+                
+                menuColor.addEventListener('click', () => this._handleMenuColorOf(color));
+                
+                return menuColor;
+            })
         );
         
         return menu;
@@ -1497,6 +1572,12 @@ export class VcdViewerVanilla {
             style.setProperty('--posX'        , null);
             style.setProperty('--posY'        , null);
             style.setProperty('--moveRelative', null);
+        } // if
+        if (variable.color !== null) {
+            style.setProperty('--color', variable.color.hexa());
+        }
+        else {
+            style.setProperty('--color', null);
         } // if
         
         variableItem.tabIndex = 0;
@@ -1753,6 +1834,16 @@ export class VcdViewerVanilla {
             this._menuValuesRef?.parentElement?.removeChild(this._menuValuesRef);
         } // if
         
+        if (this._showMenuColors && this._menuColorsRef) {
+            this._menuColorsRef.style.insetInlineStart = `${this._showMenuColors.x}px`;
+            this._menuColorsRef.style.insetBlockStart  = `${this._showMenuColors.y}px`;
+            
+            this._mainRef?.appendChild(this._menuColorsRef);
+        }
+        else {
+            this._menuColorsRef?.parentElement?.removeChild(this._menuColorsRef);
+        } // if
+        
         if (this._menuFormatRef) {
             if ((this._focusedVariable !== null) && (this._allVcdVariables[this._focusedVariable]?.size > 1)) {
                 this._menuRef?.prepend(this._menuFormatRef);
@@ -1768,7 +1859,7 @@ export class VcdViewerVanilla {
     getVcd() {
         return this._vcd;
     }
-    setVcd(vcd: Vcd|null) {
+    setVcd(vcd: typeof this._vcd) {
         // conditions:
         if (this._vcd === vcd) return;
         
@@ -1796,6 +1887,20 @@ export class VcdViewerVanilla {
                 }]);
             } // if
         } // if
+    }
+    getColorOptions() {
+        return this._colorOptions;
+    }
+    setColorOptions(colorOptions: typeof this._colorOptions) {
+        // conditions:
+        if (this._colorOptions === colorOptions) return;
+        
+        
+        
+        this._colorOptions =  colorOptions;
+        
+        this._refreshState();
+        this._refreshVcd();
     }
     _setAllVcdVariables(allVcdVariables: typeof this._allVcdVariables) {
         // conditions:
@@ -1942,5 +2047,17 @@ export class VcdViewerVanilla {
         
         this._refreshState();
         this._refreshVcd();
+    }
+    _setShowMenuColors(showMenuColors: typeof this._showMenuColors) {
+        // conditions:
+        if (this._showMenuColors === showMenuColors) return;
+        
+        
+        
+        this._showMenuColors = showMenuColors;
+        
+        this._refreshState();
+        this._refreshVcd();
+
     }
 }

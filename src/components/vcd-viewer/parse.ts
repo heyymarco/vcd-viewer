@@ -143,6 +143,7 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                             // extra data:
                             id      : (++idCounter),
                             format  : VcdValueFormat.HEXADECIMAL,
+                            color   : null,
                         };
                         currentModule.variables.push(newVariable);
                         
