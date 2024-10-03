@@ -751,18 +751,22 @@ export class VcdViewerVanilla {
     }
     
     _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) {
-        if (!allVariables || (this._focusedVariable === null)) return;
-        const variable      = this._allVcdVariables[this._focusedVariable];
-        const waves         = (
+        const wavesGroup = (
             (
-                !allVariables
-                ? variable.waves
-                : (
+                allVariables
+                ? (
                     this._allVcdVariables
-                    .flatMap(({ waves }) => waves)
-                    .sort((a, b) => a.tick - b.tick)
+                    .flatMap((variable) =>
+                        variable.waves.map((wave) => ({ variable, wave }))
+                    )
                 )
+                : (() => {
+                    if (this._focusedVariable === null) return []
+                    const variable = this._allVcdVariables[this._focusedVariable];
+                    return variable.waves.map((wave) => ({ variable, wave }))
+                })()
             )
+            .toSorted((a, b) => a.wave.tick - b.wave.tick)
             ??
             []
         );
@@ -772,12 +776,13 @@ export class VcdViewerVanilla {
             if (!allVariables) return;
             current = this._minTick;
         } // if
-        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)));
+        let   target        = wavesGroup[gotoNext ? 'find' : 'findLast'](({variable, wave}) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)))?.wave;
+        const variableEdge  = (gotoNext ? wavesGroup[wavesGroup.length - 1] : wavesGroup[0]);
         const dummyEdge     = {
-            ...(gotoNext ? waves[waves.length - 1] : waves[0]),
+            ...variableEdge.wave,
             tick: gotoNext ? this._maxTick : this._minTick,
         } satisfies VcdWave;
-        if ((target === undefined) && (!predicate || predicate(dummyEdge, variable))) target = dummyEdge;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge, variableEdge.variable))) target = dummyEdge;
         if (target === undefined) return;
         const selectionPos = target.tick;
         (isAlt ? this._setAltSelection : this._setMainSelection).call(this, selectionPos);

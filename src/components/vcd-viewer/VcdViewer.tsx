@@ -603,18 +603,22 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     
     const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) => {
-        if (!allVariables || (focusedVariable === null)) return;
-        const variable      = allVcdVariables[focusedVariable];
-        const waves         = (
+        const wavesGroup = (
             (
-                !allVariables
-                ? variable.waves
-                : (
+                allVariables
+                ? (
                     allVcdVariables
-                    .flatMap(({ waves }) => waves)
-                    .sort((a, b) => a.tick - b.tick)
+                    .flatMap((variable) =>
+                        variable.waves.map((wave) => ({ variable, wave }))
+                    )
                 )
+                : (() => {
+                    if (focusedVariable === null) return []
+                    const variable = allVcdVariables[focusedVariable];
+                    return variable.waves.map((wave) => ({ variable, wave }))
+                })()
             )
+            .toSorted((a, b) => a.wave.tick - b.wave.tick)
             ??
             []
         );
@@ -624,12 +628,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             if (!allVariables) return;
             current = minTick;
         } // if
-        let   target        = waves[gotoNext ? 'find' : 'findLast']((wave) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)));
+        let   target        = wavesGroup[gotoNext ? 'find' : 'findLast'](({variable, wave}) => (gotoNext ? (wave.tick > current) : (wave.tick < current)) && (!predicate || predicate(wave, variable)))?.wave;
+        const variableEdge  = (gotoNext ? wavesGroup[wavesGroup.length - 1] : wavesGroup[0]);
         const dummyEdge     = {
-            ...(gotoNext ? waves[waves.length - 1] : waves[0]),
+            ...variableEdge.wave,
             tick: gotoNext ? maxTick : minTick,
         } satisfies VcdWave;
-        if ((target === undefined) && (!predicate || predicate(dummyEdge, variable))) target = dummyEdge;
+        if ((target === undefined) && (!predicate || predicate(dummyEdge, variableEdge.variable))) target = dummyEdge;
         if (target === undefined) return;
         const selectionPos = target.tick;
         (isAlt ? setAltSelection : setMainSelection)(selectionPos);
