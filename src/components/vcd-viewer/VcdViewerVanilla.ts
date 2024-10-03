@@ -409,8 +409,9 @@ export class VcdViewerVanilla {
     _mainSelectionRef  : HTMLDivElement|null    = null;
     _altSelectionRef   : HTMLDivElement|null    = null;
     _rangeSelectionRef : HTMLDivElement|null    = null;
-    _menuRef           : HTMLUListElement|null = null;
-    _menuValuesRef     : HTMLUListElement|null = null;
+    _menuRef           : HTMLUListElement|null  = null;
+    _menuFormatRef     : HTMLLIElement|null     = null;
+    _menuValuesRef     : HTMLUListElement|null  = null;
     
     
     
@@ -1304,6 +1305,7 @@ export class VcdViewerVanilla {
         menuFormat.addEventListener('click'     , (event) => this._handleMenuFormatValues(event));
         menuFormat.addEventListener('mouseenter', (event) => this._handleMenuFormatValues(event));
         menuFormat.addEventListener('mouseleave', (event) => this._handleMenuFormatValuesHide(event));
+        this._menuFormatRef = menuFormat;
         
         const menuRemove = document.createElement('li');
         menuRemove.tabIndex = 0;
@@ -1667,7 +1669,10 @@ export class VcdViewerVanilla {
                         this._setFocusedVariable(index);
                     }, 200);
                 });
-                variableItem.addEventListener('contextmenu', (event) => this._handleContextMenu(event))
+                variableItem.addEventListener('contextmenu', (event) => {
+                    this._setFocusedVariable(index);
+                    this._handleContextMenu(event);
+                })
                 
                 return variableItem;
             })
@@ -1746,6 +1751,15 @@ export class VcdViewerVanilla {
         }
         else {
             this._menuValuesRef?.parentElement?.removeChild(this._menuValuesRef);
+        } // if
+        
+        if (this._menuFormatRef) {
+            if ((this._focusedVariable !== null) && (this._allVcdVariables[this._focusedVariable]?.size > 1)) {
+                this._menuRef?.prepend(this._menuFormatRef);
+            }
+            else {
+                this._menuFormatRef.parentElement?.removeChild(this._menuFormatRef);
+            } // if
         } // if
     }
     
