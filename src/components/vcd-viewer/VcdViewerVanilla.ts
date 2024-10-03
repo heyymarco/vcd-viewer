@@ -866,13 +866,17 @@ export class VcdViewerVanilla {
             y : top,
         });
     }
+    _handleMenuSetColorHideAbort: ReturnType<typeof setTimeout>|undefined = undefined;
     _handleMenuSetColorHide(event: MouseEvent) {
-        // conditions:
-        if (!this._menuColorsRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuColorsRef)) return; // the cursor is on top menuColorsElm => ignore
-        
-        
-        
-        if (this._showMenuColors) this._setShowMenuColors(null);
+        clearTimeout(this._handleMenuSetColorHideAbort);
+        this._handleMenuSetColorHideAbort = setTimeout(() => {
+            // conditions:
+            if (!this._menuColorsRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuColorsRef)) return; // the cursor is on top menuColorsElm => ignore
+            
+            
+            
+            if (this._showMenuColors) this._setShowMenuColors(null);
+        }, 100);
     }
     _handleMenuRemove() {
         if (this._focusedVariable === null) return;
@@ -892,13 +896,17 @@ export class VcdViewerVanilla {
             y : top,
         });
     }
+    _handleMenuFormatValuesHideAbort: ReturnType<typeof setTimeout>|undefined = undefined;
     _handleMenuFormatValuesHide(event: MouseEvent) {
-        // conditions:
-        if (!this._menuValuesRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuValuesRef)) return; // the cursor is on top menuValuesElm => ignore
-        
-        
-        
-        if (this._showMenuValues) this._setShowMenuValues(null);
+        clearTimeout(this._handleMenuFormatValuesHideAbort);
+        this._handleMenuFormatValuesHideAbort = setTimeout(() => {
+            // conditions:
+            if (!this._menuValuesRef || document.elementsFromPoint(event.clientX, event.clientY).includes(this._menuValuesRef)) return; // the cursor is on top menuValuesElm => ignore
+            
+            
+            
+            if (this._showMenuValues) this._setShowMenuValues(null);
+        }, 100);
     }
     
     _handleMenuFormatOf(format: VcdValueFormat) {

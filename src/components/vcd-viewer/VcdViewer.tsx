@@ -718,13 +718,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             y : top,
         });
     });
+    const handleMenuSetColorHideAbortRef = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
     const handleMenuSetColorHide  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
-        // conditions:
-        if (!menuColorsRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuColorsRef.current)) return; // the cursor is on top menuColorsElm => ignore
-        
-        
-        
-        if (showMenuColors) setShowMenuColors(null);
+        clearTimeout(handleMenuSetColorHideAbortRef.current);
+        handleMenuSetColorHideAbortRef.current = setTimeout(() => {
+            // conditions:
+            if (!menuColorsRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuColorsRef.current)) return; // the cursor is on top menuColorsElm => ignore
+            
+            
+            
+            if (showMenuColors) setShowMenuColors(null);
+        }, 100);
     });
     const handleMenuRemove        = useEvent(() => {
         if (focusedVariable === null) return;
@@ -744,13 +748,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             y : top,
         });
     });
+    const handleMenuFormatValuesHideAbortRef = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
     const handleMenuFormatValuesHide = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
-        // conditions:
-        if (!menuValuesRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuValuesRef.current)) return; // the cursor is on top menuValuesElm => ignore
-        
-        
-        
-        if (showMenuValues) setShowMenuValues(null);
+        clearTimeout(handleMenuFormatValuesHideAbortRef.current);
+        handleMenuFormatValuesHideAbortRef.current = setTimeout(() => {
+            // conditions:
+            if (!menuValuesRef.current || document.elementsFromPoint(event.clientX, event.clientY).includes(menuValuesRef.current)) return; // the cursor is on top menuValuesElm => ignore
+            
+            
+            
+            if (showMenuValues) setShowMenuValues(null);
+        }, 100);
     });
     
     const handleMenuFormatOf = useEvent((format: VcdValueFormat) => {

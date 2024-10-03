@@ -715,6 +715,11 @@
         
         
         
+        // accessibilities:
+        cursor: pointer;
+        
+        
+        
         // spacings:
         gap: 12px;
         padding-inline: 12px;
@@ -781,5 +786,13 @@
         
         // backgrounds:
         background-color: currentColor;
+        
+        
+        
+        // states:
+        &:is(:hover, :focus-visible) {
+            background-color: currentColor;
+            filter: brightness(80%);
+        }
     }
 }
