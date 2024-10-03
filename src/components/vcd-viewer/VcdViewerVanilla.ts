@@ -4,7 +4,7 @@ import * as d3              from 'd3'
 
 // models:
 import {
-    type VcdVariableExtended,
+    type VcdVariable,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
@@ -48,7 +48,7 @@ export class VcdViewerVanilla {
     _vcd               : Vcd|null      = null;  
     _minTick           : number        = 0;
     _maxTick           : number        = 0;
-    _allVcdVariables   : VcdVariableExtended[] = [];
+    _allVcdVariables   : VcdVariable[] = [];
     
     _zoom              : number        = 1;
     _baseScale         : number        = 2 ** this._zoom;
@@ -739,7 +739,7 @@ export class VcdViewerVanilla {
         this._setZoom(Math.round(this._zoom + 1));
     }
     
-    _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariableExtended) => boolean), allVariables: boolean = false) {
+    _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) {
         if (!allVariables || (this._focusedVariable === null)) return;
         const variable      = this._allVcdVariables[this._focusedVariable];
         const waves         = (
@@ -1362,7 +1362,7 @@ export class VcdViewerVanilla {
     
     
     
-    _reactListItem(index: number, variable: VcdVariableExtended) {
+    _reactListItem(index: number, variable: VcdVariable) {
         const listItem = document.createElement('span');
         listItem.classList.add(styles.label);
         const classState = ((this._moveFromIndex !== null) ? ((this._moveFromIndex === index) ? 'dragging' : 'dropZone') : null);
@@ -1391,7 +1391,7 @@ export class VcdViewerVanilla {
         label.addEventListener('pointerdown', () => this._moveFromIndex = index);
         return label;
     }
-    _reactListItemValue(variable: VcdVariableExtended) {
+    _reactListItemValue(variable: VcdVariable) {
         const label = document.createElement('span');
         if (this._vcd) label.append(
             `${getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.')}.${variable.name}`
@@ -1477,7 +1477,7 @@ export class VcdViewerVanilla {
         return label;
     }
     
-    _reactVariableItem(index: number, variable: VcdVariableExtended) {
+    _reactVariableItem(index: number, variable: VcdVariable) {
         const variableItem = document.createElement('div');
         variableItem.classList.add(styles.variable);
         const classFocusState = ((this._focusedVariable === index) ? 'focus' : null);
@@ -1508,7 +1508,7 @@ export class VcdViewerVanilla {
         
         return variableItem;
     }
-    _reactVariableWaves(variable: VcdVariableExtended) {
+    _reactVariableWaves(variable: VcdVariable) {
         const wavesElm = document.createElement('div');
         wavesElm.classList.add(styles.waves);
         
@@ -1522,7 +1522,7 @@ export class VcdViewerVanilla {
         
         return wavesElm;
     }
-    _reactVariableWave(index: number, {waves, size, format}: VcdVariableExtended, {tick, value}: VcdWave) {
+    _reactVariableWave(index: number, {waves, size, format}: VcdVariable, {tick, value}: VcdWave) {
         const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : this._maxTick;
         // if (nextTick === maxTick) return null;
         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
@@ -1548,7 +1548,7 @@ export class VcdViewerVanilla {
         
         return wave;
     }
-    _reactVariableWaveLast({waves, size, format}: VcdVariableExtended) {
+    _reactVariableWaveLast({waves, size, format}: VcdVariable) {
         const lastWave = waves.length ? waves[waves.length - 1] : undefined;
         if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
         const {
@@ -1763,7 +1763,7 @@ export class VcdViewerVanilla {
         this._vcd             =  vcd;
         this._minTick         = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
         this._maxTick         = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
-        this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : [];
+        this._allVcdVariables =  vcd ? flatMapVariables(vcd.rootModule) : [];
         
         this._refreshState();
         this._refreshVcd();

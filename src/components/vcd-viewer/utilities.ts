@@ -31,7 +31,11 @@ export const getModulesOfVariable = (vcd: Vcd, variable: VcdVariable): VcdModule
     return getRecursiveModulesOfVariable([], vcd.rootModule, variable);
 }
 const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule: VcdModule, variable: VcdVariable): VcdModule[]|null => {
-    if (currentModule.variables.includes(variable)) return [...parentModules, currentModule];
+    if (currentModule.variables.some((searchVariable): boolean => {
+        if (searchVariable === variable) return true;
+        if (searchVariable.id === variable.id) return true;
+        return false;
+    })) return [...parentModules, currentModule];
     for (const subModule of currentModule.submodules) {
         const found = getRecursiveModulesOfVariable([...parentModules, currentModule], subModule, variable);
         if (found) return found;

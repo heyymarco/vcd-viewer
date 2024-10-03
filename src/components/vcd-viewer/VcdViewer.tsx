@@ -23,7 +23,7 @@ import {
 
 // models:
 import {
-    type VcdVariableExtended,
+    type VcdVariable,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
@@ -78,10 +78,10 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     // states:
     const minTick           = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
     const maxTick           = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
-    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariableExtended[]>(() => vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : []);
+    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? flatMapVariables(vcd.rootModule) : []);
     useIsomorphicLayoutEffect(() => {
         setAllVcdVariables(
-            vcd ? flatMapVariables(vcd.rootModule).map((variable): VcdVariableExtended => ({...variable, format: VcdValueFormat.HEXADECIMAL })) : []
+            vcd ? flatMapVariables(vcd.rootModule) : []
         );
     }, [vcd]); // resets the `allVcdVariables` when vcd changes
     
@@ -591,7 +591,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setZoom((current) => Math.round(current + 1));
     });
     
-    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariableExtended) => boolean), allVariables: boolean = false) => {
+    const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) => {
         if (!allVariables || (focusedVariable === null)) return;
         const variable      = allVcdVariables[focusedVariable];
         const waves         = (

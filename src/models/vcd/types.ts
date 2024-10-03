@@ -22,15 +22,16 @@ export interface VcdVariable {
     msb        : number|undefined
     lsb        : number|undefined
     waves      : VcdWave[]
+    
+    // extra data:
+    id         : number
+    format     : VcdValueFormat
 }
 
 export enum VcdValueFormat {
     BINARY,
     DECIMAL,
     HEXADECIMAL,
-}
-export interface VcdVariableExtended extends VcdVariable {
-    format : VcdValueFormat
 }
 
 export interface VcdWave {

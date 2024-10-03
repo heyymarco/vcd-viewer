@@ -4,6 +4,7 @@ import {
     type VcdModule,
     type VcdVariable,
     type VcdToken,
+    VcdValueFormat,
 }                           from '@/models/vcd'
 import {
     produce,
@@ -17,6 +18,7 @@ const nanFallback = <TNumber extends number, TFallback>(num: TNumber, fallback: 
 }
 export const parseVcdFromFileContent = (content: string): Vcd|null => {
     const vcd = produce({ rootModule: { name: 'root', submodules: [], variables: [] } } as unknown as Vcd, (draft) => {
+        let idCounter      : number = -1;
         let prevToken      : VcdToken|null = null;
         let parentModules  : VcdModule[]   = [];
         let currentModule  : VcdModule     = draft.rootModule;
@@ -137,6 +139,10 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                             msb     : nanFallback(Number.parseInt(msb), undefined),
                             lsb     : nanFallback(Number.parseInt(lsb), undefined),
                             waves   : [],
+                            
+                            // extra data:
+                            id      : (++idCounter),
+                            format  : VcdValueFormat.HEXADECIMAL,
                         };
                         currentModule.variables.push(newVariable);
                         
