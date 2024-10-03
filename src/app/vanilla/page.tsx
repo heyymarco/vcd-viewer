@@ -1,19 +1,34 @@
 'use client'
 
-import { useMemo } from "react";
+import {  useRef, useState } from "react";
 import { parseVcdFromFileContent, VcdViewer, VcdViewerVanilla } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import {
+    useEvent,
     useIsomorphicLayoutEffect,
 }                           from '@reusable-ui/core'
+import { type Vcd } from "@/models";
 
 
 
 export default function Home() {
-    // important: always memorize the vcd (json) object to make sure it always the same object reference,
-    // otherwise the <VcdViewer> resets the order state and the user's changes lost
-    const vcd = useMemo(() => parseVcdFromFileContent(vcdContent), []);
+    const [vcd, setVcd] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent));
+    const [vcdVersion, setVcdVersion] = useState<any>(() => new Date());
+    const handleFileOpen = useEvent<React.ChangeEventHandler<HTMLInputElement>>(async (event) => {
+        const file : File|null = event.currentTarget.files?.[0] ?? null;
+        if (!file) return;
+        
+        const fileContent = await file.text();
+        const newVcd = parseVcdFromFileContent(fileContent);
+        setVcd(newVcd);
+        setVcdVersion(new Date(file.lastModified));
+        
+        vcdViewerVanillaRef.current?.setVcd(newVcd);
+    });
     
+    
+    
+    const vcdViewerVanillaRef = useRef<VcdViewerVanilla|null>(null);
     useIsomorphicLayoutEffect(() => {
         // conditions:
         const placeholderElm = document.querySelector('#vcd-viewer-placeholder');
@@ -24,14 +39,18 @@ export default function Home() {
         // setups:
         const vcdViewer = new VcdViewerVanilla(placeholderElm);
         vcdViewer.setVcd(vcd);
+        vcdViewerVanillaRef.current = vcdViewer;
         
         
         
         // cleanups:
         return () => {
             vcdViewer.destroy();
+            vcdViewerVanillaRef.current = null;
         };
     }, []);
+    
+    
     
     return (
         <div>
@@ -43,8 +62,12 @@ export default function Home() {
             <p>
                 React version:
             </p>
-            <VcdViewer vcd={vcd} />
+            <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
             <hr />
+            <p>
+                Open a *.vcd file from your computer:
+            </p>
+            <input type='file' accept='.vcd' onChange={handleFileOpen} multiple={false} />
             <p>parsed:</p>
             <pre>
                 {JSON.stringify(vcd, undefined, 4)}

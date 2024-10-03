@@ -63,6 +63,7 @@ export interface VcdViewerProps
 {
     // values:
     vcd ?: Vcd|null
+    vcdVersion ?: any
     
     colorOptions ?: Color[]
 }
@@ -71,6 +72,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const {
         // values:
         vcd,
+        vcdVersion = vcd,
         colorOptions = defaultColorOptions,
         
         
@@ -85,11 +87,19 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const minTick           = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
     const maxTick           = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
     const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? flatMapVariables(vcd.rootModule) : []);
+    const prevVcdVersion = useRef(vcdVersion);
     useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (prevVcdVersion.current === vcdVersion) return; // no changes detected => ignore
+        prevVcdVersion.current = vcdVersion; // sync
+        
+        
+        
+        // actions:
         setAllVcdVariables(
             vcd ? flatMapVariables(vcd.rootModule) : []
         );
-    }, [vcd]); // resets the `allVcdVariables` when vcd changes
+    }, [vcd, vcdVersion]); // resets the `allVcdVariables` when vcd changes
     
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
