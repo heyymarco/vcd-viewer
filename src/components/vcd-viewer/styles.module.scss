@@ -309,6 +309,7 @@
     
     // states:
     &[class ~= "dragging"] {
+        z-index: 999;
         position: relative;
         left : calc((var(--posX) * 1px));
         top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
@@ -393,6 +394,7 @@
     
     // states:
     &[class ~= "dragging"] {
+        z-index: 999;
         position: relative;
         left : calc((var(--posX) * 1px));
         top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
@@ -524,6 +526,7 @@
     }
     
     &[class ~= "dragging"] {
+        z-index: 999;
         position: relative;
         left : calc((var(--posX) * 1px));
         top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
