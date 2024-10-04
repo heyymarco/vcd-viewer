@@ -839,4 +839,8 @@
 }
 .menuList {
     transform: translateX(-50%);
+    max-block-size: min(300px, 80vh);
+    overflow-y: auto;
+    // -webkit-scrollbar-gutter: stable;
+    // scrollbar-gutter: stable;
 }
