@@ -543,9 +543,7 @@ export class VcdViewerVanilla {
         
         
         // actions:
-        if (this._showMenu) this._setShowMenu(null);
-        if (this._showMenuValues) this._setShowMenuValues(null);
-        if (this._showMenuColors) this._setShowMenuColors(null);
+        this._handleHideAllMenus();
     }
     
     _handleMouseDown(event: MouseEvent) {
@@ -889,9 +887,7 @@ export class VcdViewerVanilla {
             this._allVcdVariables.toSpliced(this._focusedVariable, 1)
         );
         
-        if (this._showMenu) this._setShowMenu(null);
-        if (this._showMenuValues) this._setShowMenuValues(null);
-        if (this._showMenuColors) this._setShowMenuColors(null);
+        this._handleHideAllMenus();
     }
     _handleMenuFormatValues(event: MouseEvent) {
         const { top, right } = (event.currentTarget as Element).getBoundingClientRect();
@@ -924,9 +920,7 @@ export class VcdViewerVanilla {
             })
         );
         
-        if (this._showMenu) this._setShowMenu(null);
-        if (this._showMenuValues) this._setShowMenuValues(null);
-        if (this._showMenuColors) this._setShowMenuColors(null);
+        this._handleHideAllMenus();
     }
     _handleMenuFormatBinary() {
         this._handleMenuFormatOf(VcdValueFormat.BINARY);
@@ -948,6 +942,13 @@ export class VcdViewerVanilla {
             })
         );
         
+        this._handleHideAllMenus();
+    }
+    
+    _handleMenuList(event: MouseEvent) {
+
+    }
+    _handleHideAllMenus() {
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
         if (this._showMenuColors) this._setShowMenuColors(null);
@@ -1232,9 +1233,11 @@ export class VcdViewerVanilla {
         
         this._btnTouchRef = toolbar.appendChild(this._createButton('touch', { onClick: () => this._handleToggleTouchScroll() }));
         
+        toolbar.appendChild(this._createButton('list', { onClick: (event) => this._handleMenuList(event) }));
+        
         return toolbar;
     }
-    _createButton(className: string, props?: { onClick?: () => void, text?: string }) {
+    _createButton(className: string, props?: { onClick?: (event: MouseEvent) => void, text?: string }) {
         const {
             onClick,
             text,

@@ -405,9 +405,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         // actions:
-        if (showMenu) setShowMenu(null);
-        if (showMenuValues) setShowMenuValues(null);
-        if (showMenuColors) setShowMenuColors(null);
+        handleHideAllMenus();
     });
     
     const handleMouseDown         = useEvent<React.MouseEventHandler<Element>>((event) => {
@@ -751,9 +749,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             allVcdVariables.toSpliced(focusedVariable, 1)
         );
         
-        if (showMenu) setShowMenu(null);
-        if (showMenuValues) setShowMenuValues(null);
-        if (showMenuColors) setShowMenuColors(null);
+        handleHideAllMenus();
     });
     const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
@@ -785,9 +781,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             })
         );
         
-        if (showMenu) setShowMenu(null);
-        if (showMenuValues) setShowMenuValues(null);
-        if (showMenuColors) setShowMenuColors(null);
+        handleHideAllMenus();
     });
     const handleMenuFormatBinary = useEvent(() => {
         handleMenuFormatOf(VcdValueFormat.BINARY);
@@ -808,6 +802,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             })
         );
         
+        handleHideAllMenus();
+    });
+    
+    const handleMenuList = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
+
+    });
+    const handleHideAllMenus = useEvent(() => {
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
         if (showMenuColors) setShowMenuColors(null);
@@ -1217,6 +1218,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 <button type='button' className='next' onClick={handleGotoNextSearch} />
                 
                 <button type='button' className={cn('touch', (enableTouchScroll ? 'active' : null))} onClick={handleToggleTouchScroll} />
+                
+                <button type='button' className='list' onClick={handleMenuList} />
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}

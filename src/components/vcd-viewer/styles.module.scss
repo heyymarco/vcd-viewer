@@ -125,6 +125,7 @@
         &[class ~= "prev"           ]::before { -webkit-mask-image: url(./assets/prev.svg);            mask-image: url(./assets/prev.svg);            }
         &[class ~= "next"           ]::before { -webkit-mask-image: url(./assets/next.svg);            mask-image: url(./assets/next.svg);            }
         &[class ~= "touch"          ]::before { -webkit-mask-image: url(./assets/touch.svg);           mask-image: url(./assets/touch.svg);           }
+        &[class ~= "list"           ]::before { -webkit-mask-image: url(./assets/list.svg);            mask-image: url(./assets/list.svg);            }
         
         
         
