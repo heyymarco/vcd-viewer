@@ -843,4 +843,20 @@
     overflow-y: auto;
     // -webkit-scrollbar-gutter: stable;
     // scrollbar-gutter: stable;
+    &>* {
+        display: grid;
+        grid-template-columns: min-content 1fr;
+        
+        
+        
+        // accessibilities:
+        cursor: unset;
+        &>input[type="checkbox"] {
+            cursor: pointer;
+        }
+    }
+}
+.menuLabelGroup {
+    pointer-events: none;
+    grid-template-columns: unset;
 }

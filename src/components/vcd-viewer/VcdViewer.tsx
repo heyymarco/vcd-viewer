@@ -129,6 +129,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [showMenuColors   , setShowMenuColors   ] = useState<{ x: number, y: number}|null>(null);
     
     const [showMenuList     , setShowMenuList     ] = useState<{ x: number, y: number}|null>(null);
+    const [removedVariables , setRemovedVariables ] = useState<VcdVariable[]>([]);
     
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
@@ -814,6 +815,18 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             y : bottom + (document.scrollingElement?.scrollTop ?? 0),
         });
     });
+    const handleMenuListRemoveOf = useEvent((variableIndex: number) => {
+        const mutated = allVcdVariables.slice(0);
+        const removed = mutated.splice(variableIndex, 1);
+        setAllVcdVariables(mutated);
+        setRemovedVariables((current) => [...current, ...removed]);
+    });
+    const handleMenuListRestoreOf = useEvent((variableIndex: number) => {
+        const mutated = removedVariables.slice(0);
+        const restored = mutated.splice(variableIndex, 1);
+        setRemovedVariables(mutated);
+        setAllVcdVariables((current) => [...current, ...restored]);
+    });
     const handleHideAllMenus = useEvent(() => {
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
@@ -1323,13 +1336,28 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 )}
             </ul>}
             {!!showMenuList && !!vcd && <ul ref={menuListRef} className={cn(styles.menu, styles.menuList)} style={{ insetInlineStart: `${showMenuList.x}px`, insetBlockStart: `${showMenuList.y}px` }}>
-                {moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex).map((variable, index) =>
-                    <li key={index} tabIndex={0} onClick={undefined}>
-                        <span>
-                            {getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.{variable.name}
-                        </span>
-                    </li>
-                )}
+                {!!allVcdVariables.length && <>
+                    <li className={styles.menuLabelGroup}>Shown Items:</li>
+                    {moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex).map((variable, index) =>
+                        <li key={index} tabIndex={0}>
+                            <input type='checkbox' checked={true} onChange={() => handleMenuListRemoveOf(index)} />
+                            <span>
+                                {getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.{variable.name}
+                            </span>
+                        </li>
+                    )}
+                </>}
+                {!!removedVariables.length && <>
+                    <li className={styles.menuLabelGroup}>Removed Items:</li>
+                    {removedVariables.map((variable, index) =>
+                        <li key={index} tabIndex={0}>
+                            <input type='checkbox' checked={false} onChange={() => handleMenuListRestoreOf(index)} />
+                            <span>
+                                {getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.{variable.name}
+                            </span>
+                        </li>
+                    )}
+                </>}
             </ul>}
         </div>
     );

@@ -79,6 +79,7 @@ export class VcdViewerVanilla {
     _showMenuColors    : { x: number, y: number}|null = null;
     
     _showMenuList      : { x: number, y: number}|null = null;
+    _removedVariables  : VcdVariable[] = [];
     
     _inputLogs         = {
         isMouseActive       : false,
@@ -422,6 +423,8 @@ export class VcdViewerVanilla {
     _menuValuesRef     : HTMLUListElement|null  = null;
     _menuColorsRef     : HTMLUListElement|null  = null;
     _menuListRef       : HTMLUListElement|null  = null;
+    _menuListShownRef  : DocumentFragment|null  = null;
+    _menuListRemovedRef : DocumentFragment|null  = null;
     
     
     
@@ -954,6 +957,18 @@ export class VcdViewerVanilla {
             y : bottom + (document.scrollingElement?.scrollTop ?? 0),
         });
     }
+    _handleMenuListRemoveOf(variableIndex: number) {
+        const mutated = this._allVcdVariables.slice(0);
+        const removed = mutated.splice(variableIndex, 1);
+        this._setAllVcdVariables(mutated);
+        this._setRemovedVariables([...this._removedVariables, ...removed]);
+    }
+    handleMenuListRestoreOf(variableIndex: number) {
+        const mutated = this._removedVariables.slice(0);
+        const restored = mutated.splice(variableIndex, 1);
+        this._setRemovedVariables(mutated);
+        this._setAllVcdVariables([...this._allVcdVariables, ...restored]);
+    }
     _handleHideAllMenus() {
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
@@ -1462,6 +1477,9 @@ export class VcdViewerVanilla {
         menu.classList.add(styles.menu);
         menu.classList.add(styles.menuList);
         
+        this._menuListShownRef = document.createDocumentFragment();
+        this._menuListRemovedRef  = document.createDocumentFragment();
+        
         return menu;
     }
     destroy() {
@@ -1818,25 +1836,66 @@ export class VcdViewerVanilla {
         
         
         this._menuListRef?.replaceChildren();
-        this._menuListRef?.append(
-            ...moveVcdVariableData(this._allVcdVariables, this._moveFromIndex, this._moveToIndex).map((variable, index) => {
-                const menuExisting = document.createElement('li');
-                menuExisting.tabIndex = 0;
-                
-                menuExisting.addEventListener('click', () => {});
-                
-                const label = document.createElement('span');
-                label.append(
-                    `${this._vcd ? getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.') : ''}.${variable.name}`,
-                );
-                
-                menuExisting.append(
-                    label,
-                );
-                
-                return menuExisting;
-            })
-        );
+        if (this._menuListShownRef && this._allVcdVariables.length) {
+            this._menuListShownRef.replaceChildren();
+            const shownLabel = document.createElement('li');
+            shownLabel.classList.add(styles.menuLabelGroup);
+            shownLabel.append('Shown Items:');
+            this._menuListShownRef.append(
+                shownLabel,
+                ...moveVcdVariableData(this._allVcdVariables, this._moveFromIndex, this._moveToIndex).map((variable, index) => {
+                    const menuExisting = document.createElement('li');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = true;
+                    checkbox.addEventListener('change', () => this._handleMenuListRemoveOf(index));
+                    
+                    const label = document.createElement('span');
+                    label.append(
+                        `${this._vcd ? getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.') : ''}.${variable.name}`,
+                    );
+                    
+                    menuExisting.append(
+                        checkbox,
+                        label,
+                    );
+                    
+                    return menuExisting;
+                })
+            );
+            this._menuListRef?.append(this._menuListShownRef);
+        } // if
+        if (this._menuListRemovedRef && this._removedVariables.length) {
+            this._menuListRemovedRef.replaceChildren();
+            const removedLabel = document.createElement('li');
+            removedLabel.classList.add(styles.menuLabelGroup);
+            removedLabel.append('Removed Items:');
+            this._menuListRemovedRef.append(
+                removedLabel,
+                ...this._removedVariables.map((variable, index) => {
+                    const menuExisting = document.createElement('li');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = false;
+                    checkbox.addEventListener('change', () => this.handleMenuListRestoreOf(index));
+                    
+                    const label = document.createElement('span');
+                    label.append(
+                        `${this._vcd ? getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.') : ''}.${variable.name}`,
+                    );
+                    
+                    menuExisting.append(
+                        checkbox,
+                        label,
+                    );
+                    
+                    return menuExisting;
+                })
+            );
+            this._menuListRef?.append(this._menuListRemovedRef);
+        } // if
     }
     _refreshStateAbort : ReturnType<typeof setTimeout>|undefined = undefined;
     _refreshState() {
@@ -2146,6 +2205,17 @@ export class VcdViewerVanilla {
         
         
         this._showMenuList = showMenuList;
+        
+        this._refreshState();
+        this._refreshVcd();
+    }
+    _setRemovedVariables(removedVariables: typeof this._removedVariables) {
+        // conditions:
+        if (this._removedVariables === removedVariables) return;
+        
+        
+        
+        this._removedVariables = removedVariables;
         
         this._refreshState();
         this._refreshVcd();
