@@ -78,6 +78,8 @@ export class VcdViewerVanilla {
     _showMenuValues    : { x: number, y: number}|null = null;
     _showMenuColors    : { x: number, y: number}|null = null;
     
+    _showMenuList      : { x: number, y: number}|null = null;
+    
     _inputLogs         = {
         isMouseActive       : false,
         isTouchActive       : false,
@@ -419,6 +421,7 @@ export class VcdViewerVanilla {
     _menuFormatRef     : HTMLLIElement|null     = null;
     _menuValuesRef     : HTMLUListElement|null  = null;
     _menuColorsRef     : HTMLUListElement|null  = null;
+    _menuListRef       : HTMLUListElement|null  = null;
     
     
     
@@ -501,9 +504,7 @@ export class VcdViewerVanilla {
             // console.log({activeKeys: inputLogs.activeKeys});
             // TODO: update keydown activated
             if (keyCode === 'escape') {
-                if (this._showMenu) this._setShowMenu(null);
-                if (this._showMenuValues) this._setShowMenuValues(null);
-                if (this._showMenuColors) this._setShowMenuColors(null);
+                this._handleHideAllMenus();
             } // if
         } // if
     }
@@ -538,6 +539,7 @@ export class VcdViewerVanilla {
             if (this._menuRef && this._menuRef.contains(targetElm)) return;
             if (this._menuValuesRef && this._menuValuesRef.contains(targetElm)) return;
             if (this._menuColorsRef && this._menuColorsRef.contains(targetElm)) return;
+            if (this._menuListRef && this._menuListRef.contains(targetElm)) return;
         } // if
         
         
@@ -946,12 +948,17 @@ export class VcdViewerVanilla {
     }
     
     _handleMenuList(event: MouseEvent) {
-
+        const { left, right, bottom } = (event.currentTarget as Element).getBoundingClientRect();
+        this._setShowMenuList({
+            x : (left + right) / 2,
+            y : bottom + (document.scrollingElement?.scrollTop ?? 0),
+        });
     }
     _handleHideAllMenus() {
         if (this._showMenu) this._setShowMenu(null);
         if (this._showMenuValues) this._setShowMenuValues(null);
         if (this._showMenuColors) this._setShowMenuColors(null);
+        if (this._showMenuList) this._setShowMenuList(null);
     }
     
     
@@ -1206,6 +1213,7 @@ export class VcdViewerVanilla {
         this._menuRef = this._createMenu();
         this._menuValuesRef = this._createMenuValues();
         this._menuColorsRef = this._createMenuColors();
+        this._menuListRef = this._createMenuList();
         
         this._mainRef = main;
         return main;
@@ -1446,6 +1454,13 @@ export class VcdViewerVanilla {
                 return menuColor;
             })
         );
+        
+        return menu;
+    }
+    _createMenuList() {
+        const menu = document.createElement('ul');
+        menu.classList.add(styles.menu);
+        menu.classList.add(styles.menuList);
         
         return menu;
     }
@@ -1799,6 +1814,29 @@ export class VcdViewerVanilla {
                 this._reactCrateVariableWrapper(movedVariable)
             )
         );
+        
+        
+        
+        this._menuListRef?.replaceChildren();
+        this._menuListRef?.append(
+            ...moveVcdVariableData(this._allVcdVariables, this._moveFromIndex, this._moveToIndex).map((variable, index) => {
+                const menuExisting = document.createElement('li');
+                menuExisting.tabIndex = 0;
+                
+                menuExisting.addEventListener('click', () => {});
+                
+                const label = document.createElement('span');
+                label.append(
+                    `${this._vcd ? getModulesOfVariable(this._vcd, variable)?.slice(1).map(({name}) => name).join('.') : ''}.${variable.name}`,
+                );
+                
+                menuExisting.append(
+                    label,
+                );
+                
+                return menuExisting;
+            })
+        );
     }
     _refreshStateAbort : ReturnType<typeof setTimeout>|undefined = undefined;
     _refreshState() {
@@ -1865,6 +1903,15 @@ export class VcdViewerVanilla {
             this._menuValuesRef?.parentElement?.removeChild(this._menuValuesRef);
         } // if
         
+        if (this._menuFormatRef) {
+            if ((this._focusedVariable !== null) && (this._allVcdVariables[this._focusedVariable]?.size > 1)) {
+                this._menuRef?.prepend(this._menuFormatRef);
+            }
+            else {
+                this._menuFormatRef.parentElement?.removeChild(this._menuFormatRef);
+            } // if
+        } // if
+        
         if (this._showMenuColors && this._menuColorsRef) {
             this._menuColorsRef.style.insetInlineStart = `${this._showMenuColors.x}px`;
             this._menuColorsRef.style.insetBlockStart  = `${this._showMenuColors.y}px`;
@@ -1875,13 +1922,14 @@ export class VcdViewerVanilla {
             this._menuColorsRef?.parentElement?.removeChild(this._menuColorsRef);
         } // if
         
-        if (this._menuFormatRef) {
-            if ((this._focusedVariable !== null) && (this._allVcdVariables[this._focusedVariable]?.size > 1)) {
-                this._menuRef?.prepend(this._menuFormatRef);
-            }
-            else {
-                this._menuFormatRef.parentElement?.removeChild(this._menuFormatRef);
-            } // if
+        if (this._showMenuList && !!this._vcd && this._menuListRef) {
+            this._menuListRef.style.insetInlineStart = `${this._showMenuList.x}px`;
+            this._menuListRef.style.insetBlockStart  = `${this._showMenuList.y}px`;
+            
+            this._mainRef?.appendChild(this._menuListRef);
+        }
+        else {
+            this._menuListRef?.parentElement?.removeChild(this._menuListRef);
         } // if
     }
     
@@ -2090,5 +2138,16 @@ export class VcdViewerVanilla {
         this._refreshState();
         this._refreshVcd();
 
+    }
+    _setShowMenuList(showMenuList: typeof this._showMenuList) {
+        // conditions:
+        if (this._showMenuList === showMenuList) return;
+        
+        
+        
+        this._showMenuList = showMenuList;
+        
+        this._refreshState();
+        this._refreshVcd();
     }
 }

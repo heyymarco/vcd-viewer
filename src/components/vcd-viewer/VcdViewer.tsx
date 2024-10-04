@@ -128,6 +128,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [showMenuValues   , setShowMenuValues   ] = useState<{ x: number, y: number}|null>(null);
     const [showMenuColors   , setShowMenuColors   ] = useState<{ x: number, y: number}|null>(null);
     
+    const [showMenuList     , setShowMenuList     ] = useState<{ x: number, y: number}|null>(null);
+    
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
         isTouchActive       : false,
@@ -296,6 +298,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const menuRef       = useRef<HTMLUListElement|null>(null);
     const menuValuesRef = useRef<HTMLUListElement|null>(null);
     const menuColorsRef = useRef<HTMLUListElement|null>(null);
+    const menuListRef   = useRef<HTMLUListElement|null>(null);
     
     
     
@@ -363,9 +366,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             // console.log({activeKeys: inputLogs.activeKeys});
             // TODO: update keydown activated
             if (keyCode === 'escape') {
-                if (showMenu) setShowMenu(null);
-                if (showMenuValues) setShowMenuValues(null);
-                if (showMenuColors) setShowMenuColors(null);
+                handleHideAllMenus();
             } // if
         } // if
     });
@@ -400,6 +401,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             if (menuRef.current && menuRef.current.contains(targetElm)) return;
             if (menuValuesRef.current && menuValuesRef.current.contains(targetElm)) return;
             if (menuColorsRef.current && menuColorsRef.current.contains(targetElm)) return;
+            if (menuListRef.current && menuListRef.current.contains(targetElm)) return;
         } // if
         
         
@@ -806,12 +808,17 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     });
     
     const handleMenuList = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
-
+        const { left, right, bottom } = event.currentTarget.getBoundingClientRect();
+        setShowMenuList({
+            x : (left + right) / 2,
+            y : bottom + (document.scrollingElement?.scrollTop ?? 0),
+        });
     });
     const handleHideAllMenus = useEvent(() => {
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
         if (showMenuColors) setShowMenuColors(null);
+        if (showMenuList) setShowMenuList(null);
     });
     
     
@@ -1313,6 +1320,15 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             {!!showMenuColors && <ul ref={menuColorsRef} className={cn(styles.menu, styles.menuColors)} style={{ insetInlineStart: `${showMenuColors.x}px`, insetBlockStart: `${showMenuColors.y}px` }}>
                 {colorOptions.map((color, index) =>
                     <li key={index} tabIndex={0} style={{ color: color.hexa() }} onClick={() => handleMenuColorOf(color)} />
+                )}
+            </ul>}
+            {!!showMenuList && !!vcd && <ul ref={menuListRef} className={cn(styles.menu, styles.menuList)} style={{ insetInlineStart: `${showMenuList.x}px`, insetBlockStart: `${showMenuList.y}px` }}>
+                {moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex).map((variable, index) =>
+                    <li key={index} tabIndex={0} onClick={undefined}>
+                        <span>
+                            {getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.{variable.name}
+                        </span>
+                    </li>
                 )}
             </ul>}
         </div>
