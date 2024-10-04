@@ -429,6 +429,9 @@ export class VcdViewerVanilla {
     _isCtrlPressed() {
         return this._inputLogs.activeKeys.has('controlleft') || this._inputLogs.activeKeys.has('controlright');
     }
+    _isShiftPressed() {
+        return this._inputLogs.activeKeys.has('shiftleft') || this._inputLogs.activeKeys.has('shiftright');
+    }
     
     
     
@@ -488,7 +491,7 @@ export class VcdViewerVanilla {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (!['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
+        if (!['controlleft', 'controlright', 'shiftleft', 'shiftright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
         
         
         
@@ -507,7 +510,19 @@ export class VcdViewerVanilla {
     _globalHandleWheel(event: WheelEvent) {
         // conditions:
         if (!this._mainRef || !document.elementsFromPoint(event.clientX, event.clientY).includes(this._mainRef)) return; // the cursor is not on top mainElm => ignore
-        if (!this._isCtrlPressed()) {
+        if (this._isCtrlPressed()) {
+            event.preventDefault();
+            
+            if (event.deltaY < 0) {
+                this._handleZoomIn();
+            }
+            else {
+                this._handleZoomOut();
+            } // if
+            
+            return; // intercepted => done
+        }
+        else if (this._isShiftPressed()) {
             event.preventDefault();
             
             const bodyElm = this._bodyRef;
@@ -515,17 +530,6 @@ export class VcdViewerVanilla {
             
             return; // intercepted => done
         } // if
-        event.preventDefault(); // intercepted
-        
-        
-        
-        // actions:
-        if (event.deltaY < 0) {
-            this._handleZoomIn();
-        }
-        else {
-            this._handleZoomOut();
-        }
     }
     _globalHandleMouseDown(event: MouseEvent) {
         // conditions:

@@ -306,6 +306,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const isCtrlPressed = useEvent((): boolean => {
         return inputLogs.activeKeys.has('controlleft') || inputLogs.activeKeys.has('controlright')
     });
+    const isShiftPressed = useEvent((): boolean => {
+        return inputLogs.activeKeys.has('shiftleft') || inputLogs.activeKeys.has('shiftright')
+    });
     
     
     
@@ -350,7 +353,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         /* note: the `code` may `undefined` on autoComplete */
         const keyCode = (event.code as string|undefined)?.toLowerCase();
         if (!keyCode) return; // ignores [unidentified] key
-        if (!['controlleft', 'controlright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
+        if (!['controlleft', 'controlright', 'shiftleft', 'shiftright', 'escape'].includes(keyCode)) return; // only interested of [ctrl] key
         
         
         
@@ -369,7 +372,19 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const globalHandleWheel       = useEvent((event: WheelEvent) => {
         // conditions:
         if (!mainRef.current || !document.elementsFromPoint(event.clientX, event.clientY).includes(mainRef.current)) return; // the cursor is not on top mainElm => ignore
-        if (!isCtrlPressed()) {
+        if (isCtrlPressed()) {
+            event.preventDefault();
+            
+            if (event.deltaY < 0) {
+                handleZoomIn();
+            }
+            else {
+                handleZoomOut();
+            } // if
+            
+            return; // intercepted => done
+        }
+        else if (isShiftPressed()) {
             event.preventDefault();
             
             const bodyElm = bodyRef.current;
@@ -377,17 +392,6 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             
             return; // intercepted => done
         } // if
-        event.preventDefault(); // intercepted
-        
-        
-        
-        // actions:
-        if (event.deltaY < 0) {
-            handleZoomIn();
-        }
-        else {
-            handleZoomOut();
-        }
     });
     const globalHandleMouseDown   = useEvent((event: MouseEvent) => {
         // conditions:
