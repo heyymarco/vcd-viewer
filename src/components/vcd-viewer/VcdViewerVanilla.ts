@@ -1357,7 +1357,7 @@ export class VcdViewerVanilla {
         const menuFormat = document.createElement('li');
         menuFormat.tabIndex = 0;
         const menuFormatIcon = document.createElement('span');
-        menuFormatIcon.classList.add('icon-next');
+        menuFormatIcon.classList.add('drop-right');
         menuFormat.append(
             'Format Values',
             menuFormatIcon,
@@ -1370,7 +1370,7 @@ export class VcdViewerVanilla {
         const menuColors = document.createElement('li');
         menuColors.tabIndex = 0;
         const menuColorsIcon = document.createElement('span');
-        menuColorsIcon.classList.add('icon-next');
+        menuColorsIcon.classList.add('drop-right');
         menuColors.append(
             'Change Color',
             menuColorsIcon,

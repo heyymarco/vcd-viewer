@@ -1298,8 +1298,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 </div>
             </div>
             {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
-                {(focusedVariable !== null) && (allVcdVariables[focusedVariable]?.size > 1) && <li tabIndex={0} onClick={handleMenuFormatValues} onMouseEnter={handleMenuFormatValues} onMouseLeave={handleMenuFormatValuesHide}>Format Values<span className='icon-next' /></li>}
-                <li tabIndex={0} onClick={handleMenuSetColor} onMouseEnter={handleMenuSetColor} onMouseLeave={handleMenuSetColorHide}>Change Color<span className='icon-next' /></li>
+                {(focusedVariable !== null) && (allVcdVariables[focusedVariable]?.size > 1) && <li tabIndex={0} onClick={handleMenuFormatValues} onMouseEnter={handleMenuFormatValues} onMouseLeave={handleMenuFormatValuesHide}>Format Values<span className='drop-right' /></li>}
+                <li tabIndex={0} onClick={handleMenuSetColor} onMouseEnter={handleMenuSetColor} onMouseLeave={handleMenuSetColorHide}>Change Color<span className='drop-right' /></li>
                 <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
             </ul>}
             {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu} style={{ insetInlineStart: `${showMenuValues.x}px`, insetBlockStart: `${showMenuValues.y}px` }}>
