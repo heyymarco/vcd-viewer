@@ -721,8 +721,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         setShowMenu({
-            x : event.clientX,
-            y : event.clientY,
+            x : event.pageX,
+            y : event.pageY,
         });
     });
     const handleMenuSetColor      = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
@@ -1223,6 +1223,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     onMouseDown={pointerCapturable.handleMouseDown}
                     onTouchStart={pointerCapturable.handleTouchStart}
                 >
+                    <li className={styles.rulerHack} />
                     {moveVcdVariableData(moveableLabels, moveFromIndex, moveToIndex).map((movedLabel, index) =>
                         <li
                             key={index}
@@ -1236,6 +1237,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     <li className={styles.scrollbarHack} />
                 </ul>
                 <ul className={styles.labels}>
+                    <li className={styles.rulerHack} />
                     {moveVcdVariableData(moveableValues, moveFromIndex, moveToIndex).map((movedValue, index) =>
                         <li
                             key={index}

@@ -21,11 +21,22 @@
     --ctrl-border-radius: 4px;
     --variable-height: 22px;
     --variable-gap   : 6px;
+    --ruler-height: 30px;
     
     
     
     // layouts:
     display: grid;
+    grid-template:
+        "toolbar" max-content
+        /
+        1fr;
+    grid-auto-rows: 1fr;
+    
+    
+    
+    // sizes:
+    overflow: hidden;
     
     
     
@@ -45,6 +56,11 @@
     font-weight: 600;
 }
 .toolbar {
+    // positions:
+    grid-area: toolbar;
+    
+    
+    
     // layouts:
     display: grid;
     grid-auto-flow: column;
@@ -244,14 +260,15 @@
     // layouts:
     display: grid;
     grid-template:
-        "labels values body" max-content
+        "labels values body" 1fr
         /
         min-content 12ch 1fr;
+    overflow: auto;
 }
 .labels {
     // layouts:
     display: grid;
-    align-content: end;
+    align-content: start;
     
     list-style-type: none;
     
@@ -400,6 +417,27 @@
         top  : calc((var(--posY) * 1px) - (var(--moveRelative, 0) * (var(--variable-height) + var(--variable-gap))));
     }
 }
+.rulerHack {
+    // appearances:
+    visibility: hidden;
+    
+    
+    
+    // accessibilities:
+    pointer-events: none;
+    
+    
+    
+    // sizes:
+    box-sizing: content-box;
+    block-size: var(--ruler-height);
+    
+    
+    
+    // spacings:
+    margin: 0;
+    padding: 0;
+}
 .scrollbarHack {
     // appearances:
     visibility: hidden;
@@ -440,6 +478,7 @@
     grid-auto-flow: row;
     grid-auto-rows: max-content;
     justify-items: stretch;
+    align-content: start;
     
     
     
@@ -462,7 +501,8 @@
     
     
     // sizes:
-    block-size: 30px;
+    box-sizing: border-box;
+    block-size: var(--ruler-height);
     overflow: visible;
 }
 

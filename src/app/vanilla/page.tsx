@@ -57,12 +57,14 @@ export default function Home() {
             <p>
                 Vanilla version:
             </p>
-            <div id='vcd-viewer-placeholder'></div>
+            <div id='vcd-viewer-placeholder' style={{ display: 'grid', height: '70vh' }}></div>
             <hr />
             <p>
                 React version:
             </p>
-            <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
+            <div style={{ display: 'grid', height: '70vh' }}>
+                <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
+            </div>
             <hr />
             <p>
                 Open a *.vcd file from your computer:

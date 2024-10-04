@@ -859,8 +859,8 @@ export class VcdViewerVanilla {
         
         
         this._setShowMenu({
-            x : event.clientX,
-            y : event.clientY,
+            x : event.pageX,
+            y : event.pageY,
         });
     }
     _handleMenuSetColor(event: MouseEvent) {
@@ -1499,6 +1499,11 @@ export class VcdViewerVanilla {
         wrapper.appendChild(movedLabel);
         return wrapper;
     }
+    _reactCrateRulerHack() {
+        const hack = document.createElement('li');
+        hack.classList.add(styles.rulerHack);
+        return hack;
+    }
     _reactCrateScrollbarHack() {
         const hack = document.createElement('li');
         hack.classList.add(styles.scrollbarHack);
@@ -1701,11 +1706,14 @@ export class VcdViewerVanilla {
         
         this._labelsRef?.replaceChildren();
         this._labelsRef?.append(
+            this._reactCrateRulerHack(),
+            
             ...
             moveVcdVariableData(this._moveableLabels, this._moveFromIndex, this._moveToIndex)
             .map((movedLabel, index) =>
                 this._reactCrateLabelWrapper(index, movedLabel)
             ),
+            
             this._reactCrateScrollbarHack(),
         );
         
@@ -1747,11 +1755,14 @@ export class VcdViewerVanilla {
         
         this._valuesRef?.replaceChildren();
         this._valuesRef?.append(
+            this._reactCrateRulerHack(),
+            
             ...
             moveVcdVariableData(this._moveableValues, this._moveFromIndex, this._moveToIndex)
             .map((movedLabel, index) =>
                 this._reactCrateLabelWrapper(index, movedLabel)
             ),
+            
             this._reactCrateScrollbarHack(),
         );
         

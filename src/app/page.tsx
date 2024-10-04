@@ -25,7 +25,9 @@ export default function Home() {
     
     return (
         <div>
-            <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
+            <div style={{ display: 'grid', height: '70vh' }}>
+                <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
+            </div>
             <hr />
             <p>
                 Open a *.vcd file from your computer:
