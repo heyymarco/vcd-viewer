@@ -748,9 +748,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const handleMenuRemove        = useEvent(() => {
         if (focusedVariable === null) return;
         
-        setAllVcdVariables(
-            allVcdVariables.toSpliced(focusedVariable, 1)
-        );
+        handleMenuListRemoveOf(focusedVariable);
         
         handleHideAllMenus();
     });

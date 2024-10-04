@@ -888,9 +888,7 @@ export class VcdViewerVanilla {
     _handleMenuRemove() {
         if (this._focusedVariable === null) return;
         
-        this._setAllVcdVariables(
-            this._allVcdVariables.toSpliced(this._focusedVariable, 1)
-        );
+        this._handleMenuListRemoveOf(this._focusedVariable);
         
         this._handleHideAllMenus();
     }
