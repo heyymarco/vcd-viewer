@@ -599,7 +599,7 @@
         clip-path: unset;
         border: solid 1px var(--color, var(--col-wave-primary));
         // border-inline-width: 0.5px;
-        &:not(:is([class ~= "error"], [class ~= "last"])) {
+        &:not(:is([class ~= "error"], [class ~= "last"], [class ~= "sync"])) {
             background: transparent;
         }
         margin-inline: -0.5px;
@@ -645,6 +645,15 @@
         // layouts:
         @include waveLayout;
     }
+}
+.syncWave {
+    // layouts:
+    @include waveLayout;
+    
+    
+    
+    // backgrunds:
+    background-color: var(--col-wave-error);
 }
 .lastWave {
     // positions:

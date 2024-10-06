@@ -1651,6 +1651,36 @@ export class VcdViewerVanilla {
         const wavesElm = document.createElement('div');
         wavesElm.classList.add(styles.waves);
         
+        if (!!variable.waves.length && (variable.waves[0].tick > this._minTick)) {
+            const size     = variable.size;
+            const format   = variable.format;
+            const value    = variable.waves[0].value;
+            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+            const isBinary = (size === 1);
+            
+            
+            
+            const length = variable.waves[0].tick * this._baseScale;
+            if (length === 0) return null;
+            
+            const wave = document.createElement('span');
+            wave.classList.add(styles.syncWave);
+            wave.classList.add('sync');
+            const classErrorState = isError ? 'error' : null;
+            const classBinaryState = isBinary ? ['bin', value ? 'hi':'lo'] : null;
+            if (classErrorState ) wave.classList.add(classErrorState );
+            if (classBinaryState) wave.classList.add(...classBinaryState);
+            wave.style.setProperty('--length', `${length}`);
+            
+            wave.append(
+                `${((typeof(value) === 'string') ? value : vcdValueToString(value, format))}`
+            );
+            
+            wavesElm.append(
+                wave,
+            );
+        } // if
+        
         wavesElm.append(
             ...
             variable.waves.map((wave, index) =>
@@ -1707,7 +1737,7 @@ export class VcdViewerVanilla {
         if (classErrorState ) wave.classList.add(classErrorState );
         if (classBinaryState) wave.classList.add(...classBinaryState);
         
-        if (!isBinary) wave.append(
+        wave.append(
             `${((typeof(value) === 'string') ? value : vcdValueToString(value, format))}`
         );
         

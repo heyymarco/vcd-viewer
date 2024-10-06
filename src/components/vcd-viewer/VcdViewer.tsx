@@ -1156,6 +1156,22 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 onContextMenu={handleContextMenu}
             >
                 <div className={styles.waves}>
+                    {!!waves.length && (waves[0].tick > minTick) && (() => {
+                        const value    = waves[0].value;
+                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                        const isBinary = (size === 1);
+                        
+                        
+                        
+                        // jsx:
+                        const length = waves[0].tick * baseScale;
+                        if (length === 0) return null;
+                        return (
+                            <span key={index} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                                {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                            </span>
+                        );
+                    })()}
                     {waves.map(({tick, value}, index, waves) => {
                         const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
                         // if (nextTick === maxTick) return null;
@@ -1166,7 +1182,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                         
                         // jsx:
                         const length = (nextTick - tick) * baseScale;
-                        if (length === 0) return;
+                        if (length === 0) return null;
                         return (
                             <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
                                 {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
@@ -1189,7 +1205,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     // jsx:
                     return (
                         <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                            {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                            {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                         </span>
                     );
                 })()}
