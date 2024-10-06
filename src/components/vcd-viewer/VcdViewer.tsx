@@ -612,9 +612,32 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     const handleZoomOut           = useEvent(() => {
         setZoom((current) => Math.round(current - 1));
+        setTimeout(handleScrollToPointer, 10); // scroll to current pointer pos
     });
     const handleZoomIn            = useEvent(() => {
         setZoom((current) => Math.round(current + 1));
+        setTimeout(handleScrollToPointer, 10); // scroll to current pointer pos
+    });
+    const handleScrollToPointer = useEvent(() => {
+        // conditions:
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
+        
+        
+        // // bodyElm.scrollLeft *= zoomRatio;
+        // const targetTick               = 350;
+        // const lastWaveMinInlineSize    = 40;
+        // 
+        // const scrollToTickFraction     = 0.5;
+        // const scrollToTickValue        = scrollToTickFraction * maxTick;
+        // const targetTickToScrollToTick = scrollToTickValue - targetTick;
+        // 
+        // setMainSelection(targetTick); // for visual debugging purpose
+        // const maxScroll    = bodyElm.scrollWidth - bodyElm.clientWidth;
+        // bodyElm.scrollLeft = Math.min(maxScroll, Math.max(0,
+        //     (maxScroll * ((targetTick) / maxTick)) - (lastWaveMinInlineSize / 2) - (targetTickToScrollToTick * ((maxTick + scrollToTickValue + lastWaveMinInlineSize) / scrollToTickValue))
+        // ));
     });
     
     const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) => {
