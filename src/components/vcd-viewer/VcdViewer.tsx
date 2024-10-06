@@ -1101,28 +1101,32 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                             nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
                         };
                     })
-                    .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
+                    // .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
                 ),
             }))
-            .flatMap(({ format, waves }, index) =>
-                waves.map(({ prevValue, value, nextValue }) =>
-                    <span
-                        key={index}
-                        className={cn(
-                            styles.labelValue,
-                            (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
-                        )}
-                        style={(moveFromIndex === index) ?{
-                            '--posX'         : movePosRelative.x,
-                            '--posY'         : movePosRelative.y,
-                            '--moveRelative' : (moveToIndex ?? index) - index,
-                        } as any : undefined}
-                    >
-                        {(prevValue !== undefined) && <><span>{vcdValueToString(prevValue, format)}</span><span>-</span></>}
-                        <span>{vcdValueToString(value, format)}</span>
-                        {(nextValue !== undefined) && <><span>-</span><span>{vcdValueToString(nextValue, format)}</span></>}
-                    </span>
-                )
+            .map(({ format, waves }) => ({
+                format,
+                selectedWave : waves.find(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick)),
+            }))
+            .map(({ format, selectedWave }, index) =>
+                <span
+                    key={index}
+                    className={cn(
+                        styles.labelValue,
+                        (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
+                    )}
+                    style={(moveFromIndex === index) ?{
+                        '--posX'         : movePosRelative.x,
+                        '--posY'         : movePosRelative.y,
+                        '--moveRelative' : (moveToIndex ?? index) - index,
+                    } as any : undefined}
+                >
+                    {!!selectedWave && <>
+                        {(selectedWave.prevValue !== undefined) && <><span>{vcdValueToString(selectedWave.prevValue, format)}</span><span>-</span></>}
+                        <span>{vcdValueToString(selectedWave.value, format)}</span>
+                        {(selectedWave.nextValue !== undefined) && <><span>-</span><span>{vcdValueToString(selectedWave.nextValue, format)}</span></>}
+                    </>}
+                </span>
             )
         )
         : []
