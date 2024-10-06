@@ -1101,7 +1101,6 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                             nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
                         };
                     })
-                    // .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
                 ),
             }))
             .map(({ format, waves }) => ({

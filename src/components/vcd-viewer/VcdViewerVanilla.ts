@@ -1544,7 +1544,7 @@ export class VcdViewerVanilla {
         return hack;
     }
     
-    _reactValueItem(index: number, wave: VcdWaveExtended, format: VcdValueFormat) {
+    _reactValueItem(index: number, wave: VcdWaveExtended|undefined, format: VcdValueFormat) {
         const listItem = document.createElement('span');
         listItem.classList.add(styles.labelValue);
         const classState = ((this._moveFromIndex !== null) ? ((this._moveFromIndex === index) ? 'dragging' : 'dropZone') : null);
@@ -1562,7 +1562,7 @@ export class VcdViewerVanilla {
             style.setProperty('--moveRelative', null);
         } // if
         
-        listItem.appendChild(this._reactValueItemValue(wave, format));
+        if (wave !== undefined) listItem.appendChild(this._reactValueItemValue(wave, format));
         
         return listItem;
     }
@@ -1776,13 +1776,14 @@ export class VcdViewerVanilla {
                                 nextValue : (nextTick  === mainSelection) ? nextWave?.value : undefined,
                             };
                         })
-                        .filter(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick))
                     ),
                 }))
-                .flatMap(({ format, waves }, index) =>
-                    waves.map((wave) =>
-                        this._reactValueItem(index, wave, format)
-                    )
+                .map(({ format, waves }) => ({
+                    format,
+                    selectedWave : waves.find(({ tick, lastTick }) => (mainSelection >= tick) && (mainSelection < lastTick)),
+                }))
+                .map(({ format, selectedWave }, index) =>
+                    this._reactValueItem(index, selectedWave, format)
                 )
             : []
         );
