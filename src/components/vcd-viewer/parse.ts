@@ -25,8 +25,12 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
         const variableMap  = new Map<string, VcdVariable[]>();
         let doReadingVars  = false;
         let currentTick    = 0;
-        for (const lineRaw of content.split(/\r?\n/)) {
+        const lines        = content.split(/\r?\n/);
+        while (lines.length) {
             // conditions:
+            const lineRaw = lines.shift();
+            // console.log(lines.length);
+            if (lineRaw === undefined) break;
             const line = lineRaw.trim();
             if (!line) continue;
             
@@ -46,7 +50,7 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                 } continue;
                 
                 case 'TIMESCALE': {
-                    const parsed = (/(\d+)(\w+)/).exec(line);
+                    const parsed = (/(\d+)(\w+)/i).exec(line);
                     if (parsed) {
                         const { '1': valueStr, '2': unit} = parsed;
                         const value = valueStr ? Number.parseInt(valueStr) : NaN;
@@ -69,104 +73,116 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                 } continue;
             } // switch
             
-            switch (line.trimEnd()) {
-                case '$date'     : prevToken = 'DATE'      ; continue;
-                case '$version'  : prevToken = 'VERSION'   ; continue;
-                case '$timescale': prevToken = 'TIMESCALE' ; continue;
-                case '$dumpvars' :
-                    prevToken = 'DUMPVARS';
-                    doReadingVars = true;
+            if ((/^\$date(?!\w)/i).test(line)) {
+                prevToken = 'DATE';
+                lines.unshift(line.slice('$date'.length));
+                continue;
+            }
+            else if ((/^\$version(?!\w)/i).test(line)) {
+                prevToken = 'VERSION';
+                lines.unshift(line.slice('$version'.length));
+                continue;
+            }
+            else if ((/^\$timescale(?!\w)/i).test(line)) {
+                prevToken = 'TIMESCALE';
+                lines.unshift(line.slice('$timescale'.length));
+                continue;
+            }
+            else if ((/^\$dumpvars(?!\w)/i).test(line)) {
+                prevToken = 'DUMPVARS';
+                lines.unshift(line.slice('$dumpvars'.length));
+                doReadingVars = true;
+                continue;
+            }
+            else if ((/^\$end(?!\w)/i).test(line)) {
+                prevToken = null;
+                lines.unshift(line.slice('$end'.length));
+                if (doReadingVars) doReadingVars = false;
+                continue;
+            }
+            else {
+                const module = (/^\$scope\s+module\s+([^\s]+)(?:\s+\$end)?/i).exec(line);
+                if (module) {
+                    // add a child module:
+                    const moduleName = module[1];
+                    const childModule : VcdModule =(
+                        // find existing module by name (if any):
+                        currentModule.submodules.find(({ name: searchName }) => (searchName === moduleName))
+                        
+                        ??
+                        
+                        // create a new module
+                        (() => {
+                            const newModule : VcdModule = {
+                                name       : moduleName,
+                                submodules : [],
+                                variables  : [],
+                            };
+                            currentModule.submodules.push(newModule);
+                            return newModule;
+                        })()
+                    );
+                    
+                    // move down:
+                    parentModules.push(currentModule);
+                    currentModule = childModule;
+                    
                     continue;
+                } // if
                 
-                case '$end'      :
-                    prevToken = null;
-                    if (doReadingVars) doReadingVars = false;
+                if ((/^\$upscope(?:\s+\$end)?/i).test(line)) {
+                    // move up:
+                    currentModule = parentModules.pop() ?? currentModule;
+                    
                     continue;
+                } // if
                 
-                default          : {
-                    const module = (/^\$scope\s+module\s+([^\s]+)(?:\s+\$end)?/).exec(line);
-                    if (module) {
-                        // add a child module:
-                        const moduleName = module[1];
-                        const childModule : VcdModule =(
-                            // find existing module by name (if any):
-                            currentModule.submodules.find(({ name: searchName }) => (searchName === moduleName))
-                            
-                            ??
-                            
-                            // create a new module
-                            (() => {
-                                const newModule : VcdModule = {
-                                    name       : moduleName,
-                                    submodules : [],
-                                    variables  : [],
-                                };
-                                currentModule.submodules.push(newModule);
-                                return newModule;
-                            })()
-                        );
+                const variable = (/^\$var\s+([^\s]+)\s+(\d+)\s+([^\s])\s+([^\s]+)(?:\s+\[\s*(\d+)\s*:\s*(\d+)\s*\])?(?:\s+\$end)?/i).exec(line);
+                if (variable) {
+                    const {
+                        '1': type,
+                        '2': size,
+                        '3': alias,
+                        '4': name,
+                        '5': msb,
+                        '6': lsb,
+                    } = variable;
+                    const newVariable : VcdVariable = {
+                        name    : name,
+                        alias   : alias,
                         
-                        // move down:
-                        parentModules.push(currentModule);
-                        currentModule = childModule;
+                        type    : type,
+                        size    : Number.parseInt(size),
+                        msb     : nanFallback(Number.parseInt(msb), undefined),
+                        lsb     : nanFallback(Number.parseInt(lsb), undefined),
+                        waves   : [],
                         
-                        continue;
-                    } // if
+                        // extra data:
+                        id      : (++idCounter),
+                        format  : VcdValueFormat.HEXADECIMAL,
+                        color   : null,
+                    };
+                    currentModule.variables.push(newVariable);
                     
-                    if ((/^\$upscope(?:\s+\$end)?/).test(line)) {
-                        // move up:
-                        currentModule = parentModules.pop() ?? currentModule;
-                        
-                        continue;
-                    } // if
+                    const variableCollection = variableMap.get(alias) ?? (() => {
+                        const newVariableCollection : VcdVariable[] = [];
+                        variableMap.set(alias, newVariableCollection);
+                        return newVariableCollection;
+                    })();
+                    variableCollection.push(newVariable);
                     
-                    const variable = (/^\$var\s+([^\s]+)\s+(\d+)\s+([^\s])\s+([^\s]+)(?:\s+\[\s*(\d+)\s*:\s*(\d+)\s*\])?(?:\s+\$end)?/).exec(line);
-                    if (variable) {
-                        const {
-                            '1': type,
-                            '2': size,
-                            '3': alias,
-                            '4': name,
-                            '5': msb,
-                            '6': lsb,
-                        } = variable;
-                        const newVariable : VcdVariable = {
-                            name    : name,
-                            alias   : alias,
-                            
-                            type    : type,
-                            size    : Number.parseInt(size),
-                            msb     : nanFallback(Number.parseInt(msb), undefined),
-                            lsb     : nanFallback(Number.parseInt(lsb), undefined),
-                            waves   : [],
-                            
-                            // extra data:
-                            id      : (++idCounter),
-                            format  : VcdValueFormat.HEXADECIMAL,
-                            color   : null,
-                        };
-                        currentModule.variables.push(newVariable);
-                        
-                        const variableCollection = variableMap.get(alias) ?? (() => {
-                            const newVariableCollection : VcdVariable[] = [];
-                            variableMap.set(alias, newVariableCollection);
-                            return newVariableCollection;
-                        })();
-                        variableCollection.push(newVariable);
-                        
-                        continue;
-                    } // if
+                    continue;
+                } // if
+                
+                if ((/^\$enddefinitions(?:\s+\$end)?/i).test(line)) {
+                    // do nothing
                     
-                    if ((/^\$enddefinitions(?:\s+\$end)?/).test(line)) {
-                        // do nothing
-                        
-                        continue;
-                    } // if
-                }
-            } // switch
+                    continue;
+                } // if
+            } // if
             
             if (doReadingVars || (line[0] !== '#')) {
-                const variableValue = /^(\w[^\s]*)\s+([^\s]+)/.exec(line) ?? /^(\d+)([^\s]+)/.exec(line);
+                const variableValue = /^(\w[^\s]*)\s+([^\s]+)/i.exec(line) ?? /^(\d+)([^\s]+)/i.exec(line);
                 if (variableValue) {
                     const {
                         '1': valueRaw,
@@ -192,7 +208,7 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
                 const tick = Number.parseInt(line.slice(1));
                 if (!isNaN(tick)) currentTick = tick;
             } // if
-        } // for
+        } // while
     });
     if (vcd.timescale === undefined) return null;
     return vcd;
