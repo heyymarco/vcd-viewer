@@ -650,7 +650,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             return Math.round(currentZoom + 1);
         });
     });
-    const handleScrollToPointer = useEvent((prevZoom) => {
+    const handleScrollToPointer = useEvent((prevZoom: number) => {
         // conditions:
         const bodyElm = bodyRef.current;
         if (!bodyElm) return;

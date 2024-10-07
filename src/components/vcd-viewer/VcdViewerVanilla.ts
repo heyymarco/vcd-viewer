@@ -81,6 +81,9 @@ export class VcdViewerVanilla {
     _showMenuList      : { x: number, y: number}|null = null;
     _removedVariables  : VcdVariable[] = [];
     
+    _hoverCursorPosRef : number|null = null;
+    _hoverTickRef      : number|null = null;
+    
     _inputLogs         = {
         isMouseActive       : false,
         isTouchActive       : false,
@@ -681,13 +684,28 @@ export class VcdViewerVanilla {
         const variablesElm = this._variablesRef;
         if (!variablesElm) return;
         
-        if (!this._inputLogs.isMouseActive && !this._inputLogs.isTouchActive) return; // no active pointer => ignore
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const { left, width } = bodyElm.getBoundingClientRect();
+        this._hoverCursorPosRef =
+            Math.min(1, Math.max(0,
+                (event.clientX - left)
+                / width
+            ));
         
         
         
         const { x } = variablesElm.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / this._baseScale;
+        this._hoverTickRef     = valuePosition;
+        
+        
+        
+        if (!this._inputLogs.isMouseActive && !this._inputLogs.isTouchActive) return; // no active pointer => ignore
         
         
         
@@ -750,11 +768,52 @@ export class VcdViewerVanilla {
         } // if
     }
     
+    _handleZoomOutClick() {
+        this._hoverTickRef      = null;
+        this._hoverCursorPosRef = null;
+        this._handleZoomOut();
+    }
     _handleZoomOut() {
+        const currentZoom = this._zoom;
         this._setZoom(Math.round(this._zoom - 1));
+        setTimeout(() => this._handleScrollToPointer(currentZoom), 0); // scroll to current pointer pos
+    }
+    _handleZoomInClick() {
+        this._hoverTickRef      = null;
+        this._hoverCursorPosRef = null;
+        this._handleZoomIn();
     }
     _handleZoomIn() {
+        const currentZoom = this._zoom;
         this._setZoom(Math.round(this._zoom + 1));
+        setTimeout(() => this._handleScrollToPointer(currentZoom), 0); // scroll to current pointer pos
+    }
+    _handleScrollToPointer(prevZoom: number) {
+        // conditions:
+        const bodyElm = this._bodyRef;
+        if (!bodyElm) return;
+        
+        
+        
+        const rangeTick                = this._maxTick - this._minTick;
+        const highlightTick            = this._hoverTickRef ?? ((): number => {
+            const prevBaseScale = 2 ** prevZoom;
+            const tickOnCenterScreen = (
+                (bodyElm.scrollLeft / prevBaseScale)
+                +
+                (bodyElm.clientWidth / 2 / prevBaseScale)
+            );
+            // console.log('tickOnCenterScreen: ', tickOnCenterScreen);
+            return tickOnCenterScreen;
+        })();
+        const centerTick               = rangeTick * (this._hoverCursorPosRef ?? 0.5);
+        const lastWaveMinInlineSize    = 40;
+        
+        // setMainSelection(centerTick); // for visual debugging purpose
+        const maxScroll    = bodyElm.scrollWidth - bodyElm.clientWidth;
+        bodyElm.scrollLeft = Math.min(maxScroll, Math.max(0,
+            (maxScroll * ((centerTick) / rangeTick)) - (lastWaveMinInlineSize / 2) + ((highlightTick - centerTick) * this._baseScale)
+        ));
     }
     
     _handleGotoEdge(gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) {
@@ -1235,8 +1294,8 @@ export class VcdViewerVanilla {
         const toolbar = document.createElement('div');
         toolbar.classList.add(styles.toolbar);
         
-        toolbar.appendChild(this._createButton('zoom-out', { onClick: () => this._handleZoomOut() }));
-        toolbar.appendChild(this._createButton('zoom-in' , { onClick: () => this._handleZoomIn()  }));
+        toolbar.appendChild(this._createButton('zoom-out', { onClick: () => this._handleZoomOutClick() }));
+        toolbar.appendChild(this._createButton('zoom-in' , { onClick: () => this._handleZoomInClick()  }));
         
         this._btnPrevEdgeNeg = toolbar.appendChild(this._createButton('prev-neg-edge', { onClick: () => this._handleGotoPrevEdgeNeg() }));
         this._btnPrevEdgePos = toolbar.appendChild(this._createButton('prev-pos-edge', { onClick: () => this._handleGotoPrevEdgePos() }));
