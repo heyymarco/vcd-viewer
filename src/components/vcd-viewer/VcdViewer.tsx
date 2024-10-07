@@ -131,6 +131,9 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const [showMenuList     , setShowMenuList     ] = useState<{ x: number, y: number}|null>(null);
     const [removedVariables , setRemovedVariables ] = useState<VcdVariable[]>([]);
     
+    const hoverCursorPosRef                         = useRef<number|null>();
+    const hoverTickRef                              = useRef<number|null>();
+    
     const [inputLogs] = useState(() => ({
         isMouseActive       : false,
         isTouchActive       : false,
@@ -541,13 +544,28 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         const variablesElm = variablesRef.current;
         if (!variablesElm) return;
         
-        if (!inputLogs.isMouseActive && !inputLogs.isTouchActive) return; // no active pointer => ignore
+        const bodyElm = bodyRef.current;
+        if (!bodyElm) return;
+        
+        
+        
+        const { left, width } = bodyElm.getBoundingClientRect();
+        hoverCursorPosRef.current =
+            Math.min(1, Math.max(0,
+                (event.clientX - left)
+                / width
+            ));
         
         
         
         const { x } = variablesElm.getBoundingClientRect();
         const relativePosition = event.clientX - x;
         const valuePosition    = relativePosition / baseScale;
+        hoverTickRef.current   = valuePosition;
+        
+        
+        
+        if (!inputLogs.isMouseActive && !inputLogs.isTouchActive) return; // no active pointer => ignore
         
         
         
@@ -625,19 +643,16 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         
-        // // bodyElm.scrollLeft *= zoomRatio;
-        // const targetTick               = 350;
-        // const lastWaveMinInlineSize    = 40;
-        // 
-        // const scrollToTickFraction     = 0.5;
-        // const scrollToTickValue        = scrollToTickFraction * maxTick;
-        // const targetTickToScrollToTick = scrollToTickValue - targetTick;
-        // 
-        // setMainSelection(targetTick); // for visual debugging purpose
-        // const maxScroll    = bodyElm.scrollWidth - bodyElm.clientWidth;
-        // bodyElm.scrollLeft = Math.min(maxScroll, Math.max(0,
-        //     (maxScroll * ((targetTick) / maxTick)) - (lastWaveMinInlineSize / 2) - (targetTickToScrollToTick * ((maxTick + scrollToTickValue + lastWaveMinInlineSize) / scrollToTickValue))
-        // ));
+        const rangeTick                = maxTick - minTick;
+        const highlightTick            = hoverTickRef.current ?? (rangeTick / 2);
+        const centerTick               = rangeTick * (hoverCursorPosRef.current ?? 0.5);
+        const lastWaveMinInlineSize    = 40;
+        
+        // setMainSelection(centerTick); // for visual debugging purpose
+        const maxScroll    = bodyElm.scrollWidth - bodyElm.clientWidth;
+        bodyElm.scrollLeft = Math.min(maxScroll, Math.max(0,
+            (maxScroll * ((centerTick) / rangeTick)) - (lastWaveMinInlineSize / 2) + ((highlightTick - centerTick) * baseScale)
+        ));
     });
     
     const handleGotoEdge          = useEvent((gotoNext: boolean, predicate?: ((wave: VcdWave, variable: VcdVariable) => boolean), allVariables: boolean = false) => {
