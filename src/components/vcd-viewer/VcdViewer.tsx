@@ -628,15 +628,29 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         } // if
     });
     
+    const handleZoomOutClick      = useEvent(() => {
+        hoverTickRef.current      = null;
+        hoverCursorPosRef.current = null;
+        handleZoomOut();
+    });
     const handleZoomOut           = useEvent(() => {
-        setZoom((current) => Math.round(current - 1));
-        setTimeout(handleScrollToPointer, 10); // scroll to current pointer pos
+        setZoom((currentZoom) => {
+            setTimeout(() => handleScrollToPointer(currentZoom), 0); // scroll to current pointer pos
+            return Math.round(currentZoom - 1);
+        });
+    });
+    const handleZoomInClick       = useEvent(() => {
+        hoverTickRef.current      = null;
+        hoverCursorPosRef.current = null;
+        handleZoomIn();
     });
     const handleZoomIn            = useEvent(() => {
-        setZoom((current) => Math.round(current + 1));
-        setTimeout(handleScrollToPointer, 10); // scroll to current pointer pos
+        setZoom((currentZoom) => {
+            setTimeout(() => handleScrollToPointer(currentZoom), 0); // scroll to current pointer pos
+            return Math.round(currentZoom + 1);
+        });
     });
-    const handleScrollToPointer = useEvent(() => {
+    const handleScrollToPointer = useEvent((prevZoom) => {
         // conditions:
         const bodyElm = bodyRef.current;
         if (!bodyElm) return;
@@ -644,7 +658,16 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         
         const rangeTick                = maxTick - minTick;
-        const highlightTick            = hoverTickRef.current ?? (rangeTick / 2);
+        const highlightTick            = hoverTickRef.current ?? ((): number => {
+            const prevBaseScale = 2 ** prevZoom;
+            const tickOnCenterScreen = (
+                (bodyElm.scrollLeft / prevBaseScale)
+                +
+                (bodyElm.clientWidth / 2 / prevBaseScale)
+            );
+            // console.log('tickOnCenterScreen: ', tickOnCenterScreen);
+            return tickOnCenterScreen;
+        })();
         const centerTick               = rangeTick * (hoverCursorPosRef.current ?? 0.5);
         const lastWaveMinInlineSize    = 40;
         
@@ -1272,8 +1295,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             onKeyDown={handleKeyDown}
         >
             <div className={styles.toolbar}>
-                <button type='button' className='zoom-out'  onClick={handleZoomOut} />
-                <button type='button' className='zoom-in' onClick={handleZoomIn} />
+                <button type='button' className='zoom-out'  onClick={handleZoomOutClick} />
+                <button type='button' className='zoom-in' onClick={handleZoomInClick} />
                 
                 <button type='button' className='prev-neg-edge' onClick={handleGotoPrevEdgeNeg} disabled={!isBinarySelection} />
                 <button type='button' className='prev-pos-edge' onClick={handleGotoPrevEdgePos} disabled={!isBinarySelection} />
