@@ -1,0 +1,47 @@
+eature requested:
+* new blank document
+* add/edit the transition points
+* change the duration length
+* change the timescale
+* convert the json back to vcd
+
+* mode-1:
+const templates = {[
+	{
+		name: 'namespace1/signal-1',
+		type: 'BINARY',
+		// size: '1000ms'
+		size : {
+			start: '0ms',
+			end: '1000ms',
+		}
+		color: '#ffaabb',
+	},
+	{
+	},
+	...
+]}
+<VcdEdit>.defineTemplate(templates);
+<VcdEdit
+	canAdd={false}
+	canDelete={false}
+	canResize={false}
+	canSetValue={true}
+/>
+// note: the length of file = max(signal1.size, signal2.size, ...)
+
+* mode-2:
+<VcdEdit>.pasteFrom('c:/file.vcd');
+// note: any signals in file that not defined in templates will be ignored (name comparison, case sensitive).
+// any signals that longer than templates will be truncated.
+
+* mode-3:
+<VcdEdit
+	canAdd={true}
+	canDelete={true}
+	canResize={true}
+	canSetValue={true}
+/>
+
+* toolbar: [set hi] [set low] [set value:...]
+* shortcut H: set hi, L: set low, SPC: toggle hi/now, Tab|E: set value:...
