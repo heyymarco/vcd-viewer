@@ -2,7 +2,7 @@ eature requested:
 [DONE] new blank document
 * add/edit the transition points
 * change the duration length
-[PROG] change the timescale
+[DONE] change the timescale
 * convert the json back to vcd
 
 * mode-1:
