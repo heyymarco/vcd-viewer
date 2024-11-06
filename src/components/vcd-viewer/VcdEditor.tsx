@@ -298,14 +298,25 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         &&
         (focusedVariable !== null)
         &&
-        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (tick === mainSelection))
+        (mainSelection !== null)
+        &&
+        (mainSelection % 1 === 0)
+        &&
+        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (mainSelection === tick))
     );
     const isReadyToInsertTransition : boolean = (
         isReadyOnTimelineTransition
         &&
         (focusedVariable !== null)
         &&
-        !allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (tick === mainSelection))
+        (mainSelection !== null)
+        &&
+        (mainSelection % 1 === 0)
+        &&
+        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}, waveIndex, waves) => (mainSelection > tick)  && ((): boolean => {
+            const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+            return (mainSelection < nextTick);
+        })())
     );
     
     
@@ -1116,10 +1127,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (mainSelection === null) return;
                 const waves = allVcdVariables?.[focusedVariable]?.waves;
                 if (!waves) return;
-                const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
-                    const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
-                    return (mainSelection < nextTick);
-                })());
+                const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection !== null) && (mainSelection % 1 === 0) && (mainSelection === tick));
+                // const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+                //     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+                //     return (mainSelection < nextTick);
+                // })());
                 if (transitionIndex < 0) return;
                 waves.splice(transitionIndex, 1);
             })
@@ -1493,7 +1505,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                         const length = (nextTick - tick) * baseScale;
                         if (length === 0) return null;
                         return (
-                            <span key={waveIndex} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null, ((focusedVariable === variableIndex) && (mainSelection !== null) && (mainSelection >= tick) && (mainSelection < nextTick)) && 'selected')}>
+                            <span key={waveIndex} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null, ((focusedVariable === variableIndex) && (mainSelection !== null) && (((Math.round(mainSelection) >= tick) && (Math.round(mainSelection) < nextTick)) || (Math.round(mainSelection) === nextTick))) && 'selected')}>
                                 {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
@@ -1569,13 +1581,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 <button type='button' className='list' onClick={handleMenuList} />
                 
-                {!!vcd && (mainSelection !== null) && <span className='text'>{Math.floor(mainSelection)}</span>}
+                {!!vcd && (mainSelection !== null) && <span className='text'>{Math.round(mainSelection)}</span>}
                 
-                <button type='button' className='trans-del'    disabled={!isReadyToEditTransition && !isReadyToInsertTransition} onClick={handleTransitionDelete} />
-                <button type='button' className='trans-set-hi' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetHi} />
-                <button type='button' className='trans-set-lo' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetLo} />
-                <button type='button' className='trans-set-tg' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetToggle} />
-                <button type='button' className='trans-set-to' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetTo} />
+                <button type='button' className='trans-del'    disabled={!isReadyToEditTransition  } onClick={handleTransitionDelete} />
+                <button type='button' className='trans-set-hi' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetHi} />
+                <button type='button' className='trans-set-lo' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetLo} />
+                <button type='button' className='trans-set-tg' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetToggle} />
+                <button type='button' className='trans-set-to' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetTo} />
                 <button type='button' className='trans-insert' disabled={!isReadyToInsertTransition} onClick={handleTransitionInsert} />
             </div>
             <div className={styles.bodyOuter}>
