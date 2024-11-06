@@ -76,7 +76,14 @@ export default function Home() {
     });
     
     
-    
+    /*
+        NOTE Using <VcdEditor> in cra/next-js:
+        
+        * Please add icon set support by placing 'font' and 'icons' folder into '/public' directory
+        
+        * Next-JS: Please add <StylesCSR /> and <StylesSSR /> to '/src/app/layout.tsx'
+        * CRA    : Please add <React.StrictMode><StylesCSR /> to '/index.tsx'
+    */
     return (
         <div>
             <div style={{ display: 'grid', height: '70vh' }}>
