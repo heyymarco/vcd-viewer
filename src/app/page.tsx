@@ -81,11 +81,14 @@ export default function Home() {
         <div>
             <div style={{ display: 'grid', height: '70vh' }}>
                 <VcdEditor
+                    // `vcd` and `onVcdChange` are GETTER and SETTER of the editor's in_memory_file:
                     vcd={vcd}
                     onVcdChange={setVcd}
+                    
+                    // tells the editor that the in_memory_file has been MODIFIED externally (outside the editor):
                     vcdVersion={vcdVersion}
                     
-                    // a new document:
+                    // a new blank document definition:
                     vcdBlank={blankSampleVcd}
                 />
             </div>
