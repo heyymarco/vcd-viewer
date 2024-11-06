@@ -1,6 +1,6 @@
 eature requested:
 [DONE] new blank document
-* add/edit the transition points
+[PROG] add/edit the transition points
 * change the duration length
 [DONE] change the timescale
 * convert the json back to vcd

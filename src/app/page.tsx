@@ -79,10 +79,12 @@ export default function Home() {
     /*
         NOTE Using <VcdEditor> in cra/next-js:
         
-        * Please add icon set support by placing 'font' and 'icons' folder into '/public' directory
+        * Please add icon set support by copying 'fonts/**' and 'icons/**' folders into '/public' directory
         
-        * Next-JS: Please add <StylesCSR /> and <StylesSSR /> to '/src/app/layout.tsx'
+        * Next-JS: Please add <html><head><StylesCSR /> and <html><head><StylesSSR /> to '/src/app/layout.tsx'
         * CRA    : Please add <React.StrictMode><StylesCSR /> to '/index.tsx'
+        
+        * Please copy '/src/app/components/**' and '/src/app/models/**' into your app (the location is up to you, then modify the relative path if needed)
     */
     return (
         <div>
