@@ -12,6 +12,7 @@ import {
     // hooks:
     useRef,
     useState,
+    useEffect,
 }                           from 'react'
 import cn                   from 'classnames'
 import * as d3              from 'd3'
@@ -170,8 +171,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
     
-    const [mainSelection    , setMainSelection    ] = useState<number|null>(null);
+    const [mainSelection    , setMainSelectionRaw ] = useState<number|null>(null);
     const [altSelection     , setAltSelection     ] = useState<number|null>(null);
+    const setMainSelection = useEvent((newMainSection: number|null): void => {
+        setMainSelectionRaw(newMainSection);
+        animateSnapSelection(newMainSection);
+    });
     
     const [focusedVariable  , setFocusedVariable  ] = useState<number|null>(null);
     const isBinarySelection = (focusedVariable !== null) && (allVcdVariables?.[focusedVariable]?.size === 1);
@@ -1017,6 +1022,72 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         if (showMenuFile) setShowMenuFile(null);
     });
     
+    const cancelAnimatingRef = useRef<ReturnType<typeof requestAnimationFrame>|undefined>(undefined);
+    const animateSnapSelection = useEvent((newMainSelection: number|null): void => {
+        // cleanups:
+        if (cancelAnimatingRef.current !== undefined) cancelAnimationFrame(cancelAnimatingRef.current);
+        
+        
+        
+        // conditions:
+        if (newMainSelection === null) return;
+        const snappedMainSection = Math.round(newMainSelection);
+        const snappingDistance = snappedMainSection - newMainSelection;
+        if (Math.abs(snappingDistance) <= 0.000000001) return;
+        
+        
+        
+        // animations:
+        const transitionInterval = 300; // ms
+        const transitionSpeed = snappingDistance / transitionInterval;
+        let prevTime : number|undefined = undefined;
+        let updatedMainSelection = newMainSelection;
+        const snapAnimate : FrameRequestCallback = (currentTime) => {
+            // mark for starting time:
+            if (prevTime === undefined) {
+                prevTime = currentTime;
+                cancelAnimatingRef.current = requestAnimationFrame(snapAnimate);
+                return;
+            } // if
+            
+            
+            
+            // calculate delta time:
+            const deltaTime = currentTime - prevTime;
+            prevTime = currentTime;
+            
+            
+            
+            // calculate the snap decay:
+            const snappingDistance = snappedMainSection - updatedMainSelection;
+            const remainingTransition = snappingDistance;
+            let deltaTransition = transitionSpeed * deltaTime;
+            if (remainingTransition >= 0) {
+                deltaTransition = Math.min(Math.max(0, deltaTransition), remainingTransition);
+            }
+            else {
+                deltaTransition = Math.max(Math.min(0, deltaTransition), remainingTransition)
+            } // if
+            updatedMainSelection += deltaTransition;
+            
+            
+            
+            // if the remaining momentum still exist => run the next frame:
+            if (Math.abs(snappedMainSection - updatedMainSelection) <= 0.000000001) {
+                updatedMainSelection = snappedMainSection; // finalize the value
+            }
+            else {
+                cancelAnimatingRef.current = requestAnimationFrame(snapAnimate); // animating the value
+            } // if
+            
+            
+            
+            setMainSelectionRaw(updatedMainSelection);
+        };
+        // start the first animation frame:
+        cancelAnimatingRef.current = requestAnimationFrame(snapAnimate);
+    });
+    
     
     
     // global handlers:
@@ -1444,6 +1515,8 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 <button type='button' className={cn('touch', (enableTouchScroll ? 'active' : null))} onClick={handleToggleTouchScroll} />
                 
                 <button type='button' className='list' onClick={handleMenuList} />
+                
+                {!!vcd && (mainSelection !== null) && <span className='text'>{Math.floor(mainSelection)}</span>}
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
