@@ -105,6 +105,7 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
         setAllVcdVariables(
             newVcd ? flatMapVariables(newVcd.rootModule) : []
         );
+        setRemovedVariables([]); // clear
     });
     const handleControllableVcdChange = useMergeEvents(
         // preserves the original `onChange` from `props`:
@@ -142,6 +143,7 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
         setAllVcdVariables(
             vcd ? flatMapVariables(vcd.rootModule) : []
         );
+        setRemovedVariables([]); // clear
     }, [vcd, vcdVersion]); // resets the `allVcdVariables` when vcd changes
     
     const [zoom, setZoom] = useState<number>(1);
