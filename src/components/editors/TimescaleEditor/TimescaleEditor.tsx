@@ -64,7 +64,7 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
         const value = props.value;
         if ((value === null) || (value === undefined)) return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
         for (const { magnitudo, name } of timescaleOptions.toReversed()) {
-            if (value < ((0.1 ** magnitudo) * 999.999)) return { name, magnitudo, value };
+            if (value < ((0.1 ** magnitudo) * 999)) return { name, magnitudo, value };
         } // for
         return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
     });
