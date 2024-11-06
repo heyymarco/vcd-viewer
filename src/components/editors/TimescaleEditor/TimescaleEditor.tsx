@@ -127,6 +127,14 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
             
             
             
+            // validations:
+            required={true}
+            min={1}
+            max={999}
+            step={1}
+            
+            
+            
             // children:
             childrenAfterButton={<>
                 <DropdownListButton
