@@ -980,9 +980,10 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         
+        const currentTimescale = vcd?.timescale;
         const mockModel = {
             id        : '',
-            timescale : vcd?.timescale ?? 1,
+            timescale : currentTimescale,
         };
         const newTimescale = await showDialog<number>(
             <SimpleEditModelDialog
@@ -994,7 +995,18 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 viewport={mainRef}
             />
         );
-        console.log(newTimescale);
+        if (newTimescale === undefined) return;
+        if (newTimescale === currentTimescale) return;
+        triggerVcdChange({
+            rootModule: {
+                name       : 'root',
+                variables  : [],
+                submodules : [],
+            },
+            
+            ...vcd,
+            timescale : newTimescale,
+        }, { triggerAt: 'immediately' });
     });
     
     const handleHideAllMenus = useEvent(() => {

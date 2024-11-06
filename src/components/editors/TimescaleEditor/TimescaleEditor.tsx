@@ -1,5 +1,8 @@
 'use client'
 
+// styles:
+import styles               from './styles.module.scss'
+
 // react:
 import {
     // react:
@@ -10,6 +13,7 @@ import {
     // hooks:
     useState,
 }                           from 'react'
+import cn                   from 'classnames'
 
 // components:
 import {
@@ -26,7 +30,6 @@ import {
 
 // utilities:
 import {
-    decimalify,
     useEvent,
 }                           from '@reusable-ui/core'
 import {
@@ -35,13 +38,6 @@ import {
 import {
     timescaleOptions,
 }                           from './utilities'
-
-
-
-// styles:
-const style : React.CSSProperties = {
-    textAlign: 'center',
-};
 
 
 
@@ -68,7 +64,7 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
         const value = props.value;
         if ((value === null) || (value === undefined)) return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
         for (const { magnitudo, name } of timescaleOptions.toReversed()) {
-            if (value < ((0.1 ** magnitudo) * 999.999)) return { name, magnitudo, value: decimalify(value) };
+            if (value < ((0.1 ** magnitudo) * 999.999)) return { name, magnitudo, value };
         } // for
         return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
     });
@@ -107,7 +103,7 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
         
         
         const magnitudo = timescaleOptions.find(({name}) => (name === timescaleName))?.magnitudo ?? 3;
-        const newTimescale = decimalify(timescaleValue * (0.1 ** magnitudo));
+        const newTimescale = timescaleValue * (0.1 ** magnitudo);
         triggerTimescaleChange(newTimescale, { event, triggerAt: 'immediately' });
     });
     
@@ -119,8 +115,9 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
             {...props}
             
             
-            // styles:
-            style={style}
+            
+            // classes:
+            className={cn(styles.main, props.className)}
             
             
             
@@ -136,11 +133,12 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
                     theme={props.theme}
                     floatingPlacement='bottom-end'
                     buttonChildren={timescaleName}
-                    className='solid'
+                    className={cn(styles.dropdownButton, 'solid')}
                 >
                     {timescaleOptions.map(({name}, index) =>
                         <ListItem
                             key={index}
+                            active={name === timescaleName}
                             onClick={(event) => handleNameChange(name, event)}
                         >
                             {name}
