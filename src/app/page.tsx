@@ -1,10 +1,64 @@
 'use client'
 
 import { useState } from "react";
-import { parseVcdFromFileContent, VcdViewer } from "@/components/vcd-viewer";
+import { parseVcdFromFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import { useEvent } from "@reusable-ui/core";
-import { type Vcd } from "@/models";
+import { VcdValueFormat, type Vcd } from "@/models";
+import Color from 'color'
+
+
+
+const blankSampleVcd : Vcd|null = {
+    version                    : 'A sample blank vcd',
+    timescale                  : 0.1**9,
+    rootModule                 : {
+        name                   : 'root',
+        variables              : [],
+        submodules             : [
+            {
+                name           : 'sample',
+                variables      : [
+                    {
+                        name   : 'clock',
+                        alias  : 'c',
+                        
+                        type   : 'wire',
+                        size   : 1,
+                        lsb    : 0,
+                        msb    : 1,
+                        waves  : (new Array(100)).fill(null).map((_, index) => ({
+                            tick  : index * 5,
+                            value : index % 2,
+                        })),
+                        
+                        id     : 1,
+                        format : VcdValueFormat.BINARY,
+                        color  : Color('#ff0000'),
+                    },
+                    {
+                        name   : 'random',
+                        alias  : 'r',
+                        
+                        type   : 'reg',
+                        size   : 8,
+                        lsb    : 0,
+                        msb    : 7,
+                        waves  : (new Array(25)).fill(null).map((_, index) => ({
+                            tick  : index * 20,
+                            value : Math.round(Math.random() * 1000) % 8,
+                        })),
+                        
+                        id     : 1,
+                        format : VcdValueFormat.HEXADECIMAL,
+                        color  : Color('purple'),
+                    },
+                ],
+                submodules : [],
+            }
+        ],
+    },
+};
 
 
 
@@ -26,7 +80,14 @@ export default function Home() {
     return (
         <div>
             <div style={{ display: 'grid', height: '70vh' }}>
-                <VcdViewer vcd={vcd} vcdVersion={vcdVersion} />
+                <VcdEditor
+                    vcd={vcd}
+                    onVcdChange={setVcd}
+                    vcdVersion={vcdVersion}
+                    
+                    // a new document:
+                    vcdBlank={blankSampleVcd}
+                />
             </div>
             <hr />
             <p>

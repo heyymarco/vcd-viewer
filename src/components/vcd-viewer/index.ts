@@ -1,5 +1,7 @@
 export *            from './utilities'
 export *            from './parse'
 export *            from './VcdViewer'
-export {default}    from './VcdViewer'
+// export {default}    from './VcdViewer'
 export *            from './VcdViewerVanilla'
+export *            from './VcdEditor'
+export {default}    from './VcdEditor'

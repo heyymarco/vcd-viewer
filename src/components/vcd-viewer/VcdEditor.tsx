@@ -18,6 +18,7 @@ import * as d3              from 'd3'
 import {
     useIsomorphicLayoutEffect,
     useEvent,
+    useMergeEvents,
     usePointerCapturable,
 }                           from '@reusable-ui/core'
 
@@ -50,11 +51,15 @@ import {
 import {
     produce,
 }                           from 'immer'
+import {
+    type ValueChangeEventHandler,
+    useControllableAndUncontrollable,
+}                           from '@heymarco/events'
 
 
 
 // react components:
-export interface VcdViewerProps
+export interface VcdEditorProps
     extends
         // bases:
         Omit<React.HTMLAttributes<HTMLDivElement>,
@@ -62,24 +67,62 @@ export interface VcdViewerProps
         >
 {
     // values:
-    vcd ?: Vcd|null
-    vcdVersion ?: any
+    defaultVcd   ?: Vcd|null
+    vcd          ?: Vcd|null
+    onVcdChange  ?: ValueChangeEventHandler<Vcd|null>
+    
+    vcdVersion   ?: any
+    
+    vcdBlank     ?: Vcd|null
     
     colorOptions ?: Color[]
 }
-const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
+const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     // props:
     const {
         // values:
-        vcd,
-        vcdVersion = vcd,
+        defaultVcd   : defaultUncontrollableVcd = null,
+        vcd          : controllableVcd,
+        onVcdChange  : onControllableVcdChange,
+        
+        vcdVersion   = controllableVcd,
+        
+        vcdBlank     = null,
+        
         colorOptions = defaultColorOptions,
         
         
         
         // other props:
-        ...restVcdViewerProps
+        ...restVcdEditorProps
     } = props;
+    
+    
+    
+    // states:
+    const handleControllableVcdChangeInternal = useEvent<ValueChangeEventHandler<Vcd|null>>((newVcd) => {
+        // actions:
+        setAllVcdVariables(
+            newVcd ? flatMapVariables(newVcd.rootModule) : []
+        );
+    });
+    const handleControllableVcdChange = useMergeEvents(
+        // preserves the original `onChange` from `props`:
+        onControllableVcdChange,
+        
+        
+        
+        // validations:
+        handleControllableVcdChangeInternal,
+    );
+    const {
+        value              : vcd,
+        triggerValueChange : triggerVcdChange,
+    } = useControllableAndUncontrollable<Vcd|null>({
+        defaultValue       : defaultUncontrollableVcd,
+        value              : controllableVcd,
+        onValueChange      : handleControllableVcdChange,
+    });
     
     
     
@@ -130,6 +173,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     
     const [showMenuList     , setShowMenuList     ] = useState<{ x: number, y: number}|null>(null);
     const [removedVariables , setRemovedVariables ] = useState<VcdVariable[]>([]);
+    
+    const [showMenuFile     , setShowMenuFile     ] = useState<{ x: number, y: number}|null>(null);
     
     const hoverCursorPosRef                         = useRef<number|null>();
     const hoverTickRef                              = useRef<number|null>();
@@ -303,6 +348,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     const menuValuesRef = useRef<HTMLUListElement|null>(null);
     const menuColorsRef = useRef<HTMLUListElement|null>(null);
     const menuListRef   = useRef<HTMLUListElement|null>(null);
+    const menuFileRef   = useRef<HTMLUListElement|null>(null);
     
     
     
@@ -406,6 +452,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             if (menuValuesRef.current && menuValuesRef.current.contains(targetElm)) return;
             if (menuColorsRef.current && menuColorsRef.current.contains(targetElm)) return;
             if (menuListRef.current && menuListRef.current.contains(targetElm)) return;
+            if (menuFileRef.current && menuFileRef.current.contains(targetElm)) return;
         } // if
         
         
@@ -886,11 +933,25 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         setRemovedVariables(mutated);
         setAllVcdVariables((current) => [...current, ...restored]);
     });
+    
+    const handleMenuFile = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
+        const { left, bottom } = event.currentTarget.getBoundingClientRect();
+        setShowMenuFile({
+            x : left,
+            y : bottom + (document.scrollingElement?.scrollTop ?? 0),
+        });
+    });
+    const handleMenuFileNewBlank = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
+        triggerVcdChange(vcdBlank, { triggerAt: 'immediately' });
+        handleHideAllMenus();
+    });
+    
     const handleHideAllMenus = useEvent(() => {
         if (showMenu) setShowMenu(null);
         if (showMenuValues) setShowMenuValues(null);
         if (showMenuColors) setShowMenuColors(null);
         if (showMenuList) setShowMenuList(null);
+        if (showMenuFile) setShowMenuFile(null);
     });
     
     
@@ -1111,7 +1172,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
         
         // other props:
         ...restDivProps
-    } = restVcdViewerProps;
+    } = restVcdEditorProps;
     
     
     
@@ -1295,6 +1356,8 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             onKeyDown={handleKeyDown}
         >
             <div className={styles.toolbar}>
+                <button type='button' className='text' onClick={handleMenuFile}>File</button>
+                
                 <button type='button' className='zoom-out'  onClick={handleZoomOutClick} />
                 <button type='button' className='zoom-in' onClick={handleZoomInClick} />
                 
@@ -1437,10 +1500,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                     )}
                 </>}
             </ul>}
+            {!!showMenuFile && <ul ref={menuFileRef} className={cn(styles.menu, styles.menuFile)} style={{ insetInlineStart: `${showMenuFile.x}px`, insetBlockStart: `${showMenuFile.y}px` }}>
+                <li tabIndex={0} onClick={handleMenuFileNewBlank}>New Blank Document</li>
+            </ul>}
         </div>
     );
 };
 export {
-    VcdViewer,            // named export for readibility
-    VcdViewer as default, // default export to support React.lazy
+    VcdEditor,            // named export for readibility
+    VcdEditor as default, // default export to support React.lazy
 }

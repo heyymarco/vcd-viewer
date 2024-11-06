@@ -1,5 +1,5 @@
 eature requested:
-* new blank document
+[DONE] new blank document
 * add/edit the transition points
 * change the duration length
 * change the timescale
