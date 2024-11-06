@@ -3,6 +3,9 @@ import {
     VcdValueFormat,
 }                           from './types'
 import  Color               from 'color'
+import {
+    timescaleOptions,
+} from '@/components/editors/TimescaleEditor';
 
 
 
@@ -13,6 +16,13 @@ export const vcdValueToString = (value: VcdWave['value'], format: VcdValueFormat
         case VcdValueFormat.HEXADECIMAL : return value.toString(16);
         default:                          return value.toString();
     } // switch
+}
+
+export const vcdTimescaleToString = (value: number): string => {
+    for (const { unit, magnitudo } of timescaleOptions.toReversed()) {
+        if (value < ((0.1 ** magnitudo) * 999.999)) return `${(value * (10 ** magnitudo)).toFixed(0)}${unit}`;
+    } // for
+    return `${value.toFixed(0)}s`;
 }
 
 

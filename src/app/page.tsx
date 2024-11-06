@@ -11,7 +11,7 @@ import Color from 'color'
 
 const blankSampleVcd : Vcd|null = {
     version                    : 'A sample blank vcd',
-    timescale                  : 0.1**9,
+    timescale                  : 1 * (0.1 ** 9),
     rootModule                 : {
         name                   : 'root',
         variables              : [],
@@ -63,7 +63,7 @@ const blankSampleVcd : Vcd|null = {
 
 
 export default function Home() {
-    const [vcd, setVcd] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent));
+    const [inMemoryFile, setInMemoryFile] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent));
     const [vcdVersion, setVcdVersion] = useState<any>(() => new Date());
     const handleFileOpen = useEvent<React.ChangeEventHandler<HTMLInputElement>>(async (event) => {
         const file : File|null = event.currentTarget.files?.[0] ?? null;
@@ -71,7 +71,7 @@ export default function Home() {
         
         const fileContent = await file.text();
         const newVcd = parseVcdFromFileContent(fileContent);
-        setVcd(newVcd);
+        setInMemoryFile(newVcd);
         setVcdVersion(new Date(file.lastModified));
     });
     
@@ -82,11 +82,11 @@ export default function Home() {
             <div style={{ display: 'grid', height: '70vh' }}>
                 <VcdEditor
                     // `vcd` and `onVcdChange` are GETTER and SETTER of the editor's in_memory_file:
-                    vcd={vcd}
-                    onVcdChange={setVcd}
+                    vcd={inMemoryFile}
+                    onVcdChange={setInMemoryFile}
                     
-                    // tells the editor that the in_memory_file has been MODIFIED externally (outside the editor):
-                    vcdVersion={vcdVersion}
+                    // not needed anymore, since we're using `vcd` and `onVcdChange` as the temporary in_memory_database:
+                    // vcdVersion={vcdVersion}
                     
                     // a new blank document definition:
                     vcdBlank={blankSampleVcd}
@@ -99,7 +99,7 @@ export default function Home() {
             <input type='file' accept='.vcd' onChange={handleFileOpen} multiple={false} />
             <p>parsed:</p>
             <pre>
-                {JSON.stringify(vcd, undefined, 4)}
+                {JSON.stringify(inMemoryFile, undefined, 4)}
             </pre>
         </div>
     );

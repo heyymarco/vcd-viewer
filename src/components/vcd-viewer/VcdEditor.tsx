@@ -33,6 +33,7 @@ import {
     vcdValueToString,
     
     defaultColorOptions,
+    vcdTimescaleToString,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -56,6 +57,18 @@ import {
     useControllableAndUncontrollable,
 }                           from '@heymarco/events'
 
+// components:
+import {
+    DialogMessageProvider,
+    useDialogMessage,
+}                           from '@reusable-ui/components'
+import {
+    SimpleEditModelDialog,
+}                           from '@/components/dialogs/SimpleEditModelDialog'
+import {
+    TimescaleEditor,
+}                           from '@/components/editors/TimescaleEditor'
+
 
 
 // react components:
@@ -78,6 +91,14 @@ export interface VcdEditorProps
     colorOptions ?: Color[]
 }
 const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
+    // jsx:
+    return (
+        <DialogMessageProvider>
+            <VcdEditorInternal {...props} />
+        </DialogMessageProvider>
+    );
+};
+const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     // props:
     const {
         // values:
@@ -364,6 +385,13 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     const isShiftPressed = useEvent((): boolean => {
         return inputLogs.activeKeys.has('shiftleft') || inputLogs.activeKeys.has('shiftright')
     });
+    
+    
+    
+    // dialogs:
+    const {
+        showDialog,
+    } = useDialogMessage();
     
     
     
@@ -832,15 +860,15 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
         
         
         setShowMenu({
-            x : event.pageX,
-            y : event.pageY,
+            x : event.pageX - (mainRef.current?.offsetLeft ?? 0),
+            y : event.pageY - (mainRef.current?.offsetTop ?? 0),
         });
     });
     const handleMenuSetColor      = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
         setShowMenuColors({
-            x : right - 2,
-            y : top,
+            x : (right - 2) - (mainRef.current?.offsetLeft ?? 0),
+            y : top - (mainRef.current?.offsetTop ?? 0),
         });
     });
     const handleMenuSetColorHideAbortRef = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
@@ -865,8 +893,8 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
         setShowMenuValues({
-            x : right - 2,
-            y : top,
+            x : (right - 2) - (mainRef.current?.offsetLeft ?? 0),
+            y : top - (mainRef.current?.offsetTop ?? 0),
         });
     });
     const handleMenuFormatValuesHideAbortRef = useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
@@ -919,8 +947,8 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     const handleMenuList = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
         const { left, right, bottom } = event.currentTarget.getBoundingClientRect();
         setShowMenuList({
-            x : (left + right) / 2,
-            y : bottom + (document.scrollingElement?.scrollTop ?? 0),
+            x : ((left + right) / 2) - (mainRef.current?.offsetLeft ?? 0),
+            y : bottom + (document.scrollingElement?.scrollTop ?? 0) - (mainRef.current?.offsetTop ?? 0),
         });
     });
     const handleMenuListRemoveOf = useEvent((variableIndex: number) => {
@@ -939,13 +967,34 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     const handleMenuFile = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
         const { left, bottom } = event.currentTarget.getBoundingClientRect();
         setShowMenuFile({
-            x : left,
-            y : bottom + (document.scrollingElement?.scrollTop ?? 0),
+            x : left - (mainRef.current?.offsetLeft ?? 0),
+            y : bottom + (document.scrollingElement?.scrollTop ?? 0) - (mainRef.current?.offsetTop ?? 0),
         });
     });
     const handleMenuFileNewBlank = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
         triggerVcdChange(vcdBlank, { triggerAt: 'immediately' });
         handleHideAllMenus();
+    });
+    const handleMenuFileSetTimescale = useEvent<React.MouseEventHandler<HTMLSpanElement>>(async (event) => {
+        handleHideAllMenus();
+        
+        
+        
+        const mockModel = {
+            id        : '',
+            timescale : vcd?.timescale ?? 1,
+        };
+        const newTimescale = await showDialog<number>(
+            <SimpleEditModelDialog
+                model={mockModel}
+                edit='timescale'
+                editorComponent={
+                    <TimescaleEditor theme='primary' />
+                }
+                viewport={mainRef}
+            />
+        );
+        console.log(newTimescale);
     });
     
     const handleHideAllMenus = useEvent(() => {
@@ -1504,6 +1553,14 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
             </ul>}
             {!!showMenuFile && <ul ref={menuFileRef} className={cn(styles.menu, styles.menuFile)} style={{ insetInlineStart: `${showMenuFile.x}px`, insetBlockStart: `${showMenuFile.y}px` }}>
                 <li tabIndex={0} onClick={handleMenuFileNewBlank}>New Blank Document</li>
+                <li tabIndex={0} onClick={handleMenuFileSetTimescale}>
+                    <span>
+                        Set Timescale
+                    </span>
+                    <span>
+                        ({vcdTimescaleToString(vcd?.timescale ?? 1)})
+                    </span>
+                </li>
             </ul>}
         </div>
     );
