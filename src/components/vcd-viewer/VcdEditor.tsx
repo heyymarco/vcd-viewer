@@ -12,7 +12,6 @@ import {
     // hooks:
     useRef,
     useState,
-    useEffect,
 }                           from 'react'
 import cn                   from 'classnames'
 import * as d3              from 'd3'
@@ -286,6 +285,28 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             // console.log({activeKeys: this.activeKeys});
         },
     }));
+    
+    const isReadyOnTimelineTransition : boolean = (
+        (mainSelection !== null) && ((mainSelection % 1) === 0)
+        &&
+        (focusedVariable !== null)
+        &&
+        !!allVcdVariables?.[focusedVariable]
+    );
+    const isReadyToEditTransition : boolean = (
+        isReadyOnTimelineTransition
+        &&
+        (focusedVariable !== null)
+        &&
+        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (tick === mainSelection))
+    );
+    const isReadyToInsertTransition : boolean = (
+        isReadyOnTimelineTransition
+        &&
+        (focusedVariable !== null)
+        &&
+        !allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (tick === mainSelection))
+    );
     
     
     
@@ -1088,6 +1109,38 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         cancelAnimatingRef.current = requestAnimationFrame(snapAnimate);
     });
     
+    const handleTransitionDelete     = useEvent(() => {
+        setAllVcdVariables(
+            produce(allVcdVariables, (allVcdVariables) => {
+                if (!focusedVariable) return;
+                if (mainSelection === null) return;
+                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                if (!waves) return;
+                const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+                    const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+                    return (mainSelection < nextTick);
+                })());
+                if (transitionIndex < 0) return;
+                waves.splice(transitionIndex, 1);
+            })
+        );
+    });
+    const handleTransitionSetHi      = useEvent(() => {
+        //
+    });
+    const handleTransitionSetLo      = useEvent(() => {
+        //
+    });
+    const handleTransitionSetToggle  = useEvent(() => {
+        //
+    });
+    const handleTransitionSetTo      = useEvent(() => {
+        //
+    });
+    const handleTransitionInsert     = useEvent(() => {
+        //
+    });
+    
     
     
     // global handlers:
@@ -1388,19 +1441,19 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     );
     const moveableVariables : React.ReactNode[] = (
         vcd
-        ? allVcdVariables.map(({ waves, size, format, color }, index) =>
+        ? allVcdVariables.map(({ waves, size, format, color }, variableIndex) =>
             <div
-                key={index}
+                key={variableIndex}
                 className={cn(
                     styles.variable,
-                    ((focusedVariable === index) ? 'focus' : null),
-                    (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
+                    ((focusedVariable === variableIndex) ? 'focus' : null),
+                    (((moveFromIndex !== null) && (moveFromIndex === variableIndex)) ? 'dragging' : null),
                 )}
                 style={{
-                    ...((moveFromIndex === index) ? {
+                    ...((moveFromIndex === variableIndex) ? {
                         '--posX'         : movePosRelative.x,
                         '--posY'         : movePosRelative.y,
-                        '--moveRelative' : (moveToIndex ?? index) - index,
+                        '--moveRelative' : (moveToIndex ?? variableIndex) - variableIndex,
                     } as any : undefined),
                     
                     ...((color !== null) ? {
@@ -1408,7 +1461,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     } as any : undefined),
                 }}
                 tabIndex={0}
-                onFocus={() => setFocusedVariable(index)}
+                onFocus={() => setFocusedVariable(variableIndex)}
                 onContextMenu={handleContextMenu}
             >
                 <div className={styles.waves}>
@@ -1423,13 +1476,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                         const length = waves[0].tick * baseScale;
                         if (length === 0) return null;
                         return (
-                            <span key={index} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                            <span key={variableIndex} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
                                 {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
                     })()}
-                    {waves.map(({tick, value}, index, waves) => {
-                        const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                    {waves.map(({tick, value}, waveIndex, waves) => {
+                        const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
                         // if (nextTick === maxTick) return null;
                         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                         const isBinary = (size === 1);
@@ -1440,7 +1493,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                         const length = (nextTick - tick) * baseScale;
                         if (length === 0) return null;
                         return (
-                            <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                            <span key={waveIndex} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null, ((focusedVariable === variableIndex) && (mainSelection !== null) && (mainSelection >= tick) && (mainSelection < nextTick)) && 'selected')}>
                                 {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
@@ -1460,7 +1513,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     
                     // jsx:
                     return (
-                        <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                        <span key={variableIndex} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
                             {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                         </span>
                     );
@@ -1517,6 +1570,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 <button type='button' className='list' onClick={handleMenuList} />
                 
                 {!!vcd && (mainSelection !== null) && <span className='text'>{Math.floor(mainSelection)}</span>}
+                
+                <button type='button' className='trans-del'    disabled={!isReadyToEditTransition && !isReadyToInsertTransition} onClick={handleTransitionDelete} />
+                <button type='button' className='trans-set-hi' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetHi} />
+                <button type='button' className='trans-set-lo' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetLo} />
+                <button type='button' className='trans-set-tg' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetToggle} />
+                <button type='button' className='trans-set-to' disabled={!isReadyToEditTransition  } onClick={handleTransitionSetTo} />
+                <button type='button' className='trans-insert' disabled={!isReadyToInsertTransition} onClick={handleTransitionInsert} />
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}

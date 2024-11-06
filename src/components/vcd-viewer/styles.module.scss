@@ -95,7 +95,6 @@
         
         // appearances:
         appearance: none;
-        display: grid;
         
         
         
@@ -168,7 +167,8 @@
         // animations:
         transition:
             background-color 300ms,
-            box-shadow       300ms;
+            box-shadow       300ms,
+            opacity          300ms;
         
         
         
@@ -189,6 +189,11 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+    }
+    & >span[class ~= "text"] {
+        // layouts:
+        display: grid;
+        align-items: center;
     }
 }
 .comboInput {
@@ -600,15 +605,17 @@
     
     
     // backgrounds:
-    background-color: var(--color, var(--col-wave-primary));
+    --wave-bg-color: var(--color, var(--col-wave-primary));
     &[class ~= "error"] {
-        background-color: var(--col-wave-error);
+        --wave-bg-color: var(--col-wave-error);
     }
+    background-color: var(--wave-bg-color);
     --hexaCrop: 2px;
     clip-path: polygon(var(--hexaCrop) 0%, calc(100% - var(--hexaCrop)) 0%, 100% 50%, calc(100% - var(--hexaCrop)) 100%, var(--hexaCrop) 100%, 0% 50%);
     &[class ~= "bin"] {
         clip-path: unset;
-        border: solid 1px var(--color, var(--col-wave-primary));
+        --wave-bd-color: var(--color, var(--col-wave-primary));
+        border: solid 1px var(--wave-bd-color);
         // border-inline-width: 0.5px;
         &:not(:is([class ~= "error"], [class ~= "last"], [class ~= "sync"])) {
             background: transparent;
@@ -629,6 +636,18 @@
     color: #1F1F1F;
     text-overflow: ellipsis;
     text-align: center;
+    
+    
+    
+    // states:
+    &[class ~= "selected"] {
+        &:not([class ~= "bin"]) {
+            background-color: hsl(from var(--wave-bg-color) h calc(s * 2) l);
+        }
+        &[class ~= "bin"] {
+            background-color: hsl(from var(--wave-bd-color) h calc(s * 2) l / 20%);
+        }
+    }
 }
 
 .waves {
