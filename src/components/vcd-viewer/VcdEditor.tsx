@@ -1583,12 +1583,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 {!!vcd && (mainSelection !== null) && <span className='text'>{Math.round(mainSelection)}</span>}
                 
-                <button type='button' className='trans-del'    disabled={!isReadyToEditTransition  } onClick={handleTransitionDelete} />
-                <button type='button' className='trans-set-hi' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetHi} />
-                <button type='button' className='trans-set-lo' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetLo} />
-                <button type='button' className='trans-set-tg' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetToggle} />
-                <button type='button' className='trans-set-to' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetTo} />
-                <button type='button' className='trans-insert' disabled={!isReadyToInsertTransition} onClick={handleTransitionInsert} />
+                <button type='button' title='DELETE transition'       className='transition-delete' disabled={!isReadyToEditTransition  } onClick={handleTransitionDelete} />
+                <button type='button' title='set transition to HI'    className='transition-set-hi' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetHi} />
+                <button type='button' title='set transition to LOW'   className='transition-set-lo' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetLo} />
+                <button type='button' title='TOGGLE transition'       className='transition-set-tg' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetToggle} />
+                <button type='button' title='set transition to VALUE' className='transition-set-to' disabled={!isReadyToInsertTransition} onClick={handleTransitionSetTo} />
+                <button type='button' title='INSERT new transition'   className='transition-insert' disabled={!isReadyToInsertTransition} onClick={handleTransitionInsert} />
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
