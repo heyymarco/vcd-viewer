@@ -42,17 +42,17 @@ import {
 
 
 // react components:
-export interface TimescaleEditorProps<out TElement extends Element = HTMLSpanElement>
+export interface TimescaleEditorProps<out TElement extends Element = HTMLSpanElement, in TChangeEvent extends React.SyntheticEvent<unknown, Event> = React.ChangeEvent<HTMLInputElement>, TValue extends number = number>
     extends
         // bases:
-        NumberUpDownEditorProps<TElement, React.SyntheticEvent<unknown, Event>>
+        NumberUpDownEditorProps<TElement, TChangeEvent, TValue>
 {
 }
-const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: TimescaleEditorProps<TElement>): JSX.Element|null => {
+const TimescaleEditor = <TElement extends Element = HTMLSpanElement, TChangeEvent extends React.SyntheticEvent<unknown, Event> = React.ChangeEvent<HTMLInputElement>, TValue extends number = number>(props: TimescaleEditorProps<TElement, TChangeEvent, TValue>): JSX.Element|null => {
     // props:
     const {
         // values:
-        defaultValue : defaultUncontrollableTimescale = 1,
+        defaultValue : defaultUncontrollableTimescale = (1 as TValue),
         value        : controllableTimescale,
         onChange     : onControllableTimescaleChange,
     } = props;
@@ -60,16 +60,16 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
     
     
     // states:
-    const [initialTimescale] = useState<{ name: string, magnitudo: number, value: number|null }>(() => {
+    const [initialTimescale] = useState<{ name: string, magnitudo: number, value: number }>(() => {
         const value = props.value;
-        if ((value === null) || (value === undefined)) return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
+        if ((value === undefined)) return { name: 'milliseconds', magnitudo: 3, value: value ?? 1 };
         for (const { magnitudo, name } of timescaleOptions.toReversed()) {
             if (value < ((0.1 ** magnitudo) * 999)) return { name, magnitudo, value };
         } // for
-        return { name: 'milliseconds', magnitudo: 3, value: value ?? null };
+        return { name: 'milliseconds', magnitudo: 3, value };
     });
     const [timescaleName , setTimescaleName ] = useState<string>(() => initialTimescale.name);
-    const [timescaleValue, setTimescaleValue] = useState<number|null>(() => !initialTimescale.value /* 0 or null */ ? null : (initialTimescale.value * (10 ** initialTimescale.magnitudo)));
+    const [timescaleValue, setTimescaleValue] = useState<TValue>(() => (initialTimescale.value * (10 ** initialTimescale.magnitudo)) as TValue);
     
     
     
@@ -86,17 +86,17 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
     
     
     // handlers:
-    const handleValueChange = useEvent<EditorChangeEventHandler<React.ChangeEvent<HTMLInputElement>, number|null>>((newValue, event) => {
+    const handleValueChange = useEvent<EditorChangeEventHandler<TChangeEvent, TValue>>((newValue, event) => {
         setTimescaleValue(newValue);
         handleChange(newValue, timescaleName, event);
     });
-    const handleNameChange = useEvent((newTimescaleName: string, event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    const handleNameChange = useEvent((newTimescaleName: string, event: TChangeEvent) => {
         setTimescaleName(newTimescaleName);
         handleChange(timescaleValue, newTimescaleName, event);
     });
-    const handleChange = useEvent((timescaleValue: number|null, timescaleName: string, event: React.SyntheticEvent<unknown, Event>) => {
+    const handleChange = useEvent((timescaleValue: TValue, timescaleName: string, event: TChangeEvent) => {
         if (!timescaleValue /* 0 or null */) {
-            triggerTimescaleChange(timescaleValue, { event, triggerAt: 'immediately' });
+            triggerTimescaleChange(timescaleValue as TValue, { event, triggerAt: 'immediately' });
             return;
         } // if
         
@@ -104,14 +104,14 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
         
         const magnitudo = timescaleOptions.find(({name}) => (name === timescaleName))?.magnitudo ?? 3;
         const newTimescale = timescaleValue * (0.1 ** magnitudo);
-        triggerTimescaleChange(newTimescale, { event, triggerAt: 'immediately' });
+        triggerTimescaleChange(newTimescale as TValue, { event, triggerAt: 'immediately' });
     });
     
     
     
     // jsx:
     return (
-        <NumberUpDownEditor
+        <NumberUpDownEditor<TElement, TChangeEvent, TValue>
             {...props}
             
             
@@ -147,7 +147,7 @@ const TimescaleEditor = <TElement extends Element = HTMLSpanElement>(props: Time
                         <ListItem
                             key={index}
                             active={name === timescaleName}
-                            onClick={(event) => handleNameChange(name, event)}
+                            onClick={(event) => handleNameChange(name, event as unknown as TChangeEvent)}
                         >
                             {name}
                         </ListItem>
