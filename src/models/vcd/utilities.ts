@@ -18,11 +18,17 @@ export const vcdValueToString = (value: VcdWave['value'], format: VcdValueFormat
     } // switch
 }
 
-export const vcdTimescaleToString = (value: number): string => {
+export const vcdTimescaleToString = (timescale: number): string => {
     for (const { unit, magnitudo } of timescaleOptions.toReversed()) {
-        if (value < ((0.1 ** magnitudo) * 999.999)) return `${(value * (10 ** magnitudo)).toFixed(0)}${unit}`;
+        if (timescale < ((0.1 ** magnitudo) * 999.999)) return `${(timescale * (10 ** magnitudo)).toFixed(0)}${unit}`;
     } // for
-    return `${value.toFixed(0)}s`;
+    return `${timescale.toFixed(0)}s`;
+}
+export const vcdDurationOfTimescaleToString = (duration: number, timescale: number): string => {
+    for (const { unit, magnitudo } of timescaleOptions.toReversed()) {
+        if (timescale < ((0.1 ** magnitudo) * 999.999)) return `${duration.toFixed(0)}${unit}`;
+    } // for
+    return `${duration.toFixed(0)}s`;
 }
 
 

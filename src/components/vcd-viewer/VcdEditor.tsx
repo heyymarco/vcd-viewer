@@ -34,6 +34,7 @@ import {
     
     defaultColorOptions,
     vcdTimescaleToString,
+    vcdDurationOfTimescaleToString,
     vcdFormatToRadix,
 }                           from '@/models'
 import type Color           from 'color'
@@ -130,7 +131,6 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         setAllVcdVariables(
             newVcd ? flatMapVariables(newVcd.rootModule) : []
         );
-        setRemovedVariables([]); // clear
     });
     const handleControllableVcdChange = useMergeEvents(
         // preserves the original `onChange` from `props`:
@@ -154,7 +154,10 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     
     // states:
     const minTick           = !vcd ? 0 : getVariableMinTick(vcd.rootModule);
-    const maxTick           = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
+    const maxTickAuto       = !vcd ? 0 : getVariableMaxTick(vcd.rootModule);
+    const [maxTickOverride, setMaxTickOverride] = useState<number|undefined>(undefined);
+    const maxTick = maxTickOverride ?? maxTickAuto;
+    
     const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? flatMapVariables(vcd.rootModule) : []);
     const prevVcdVersion = useRef(vcdVersion);
     useIsomorphicLayoutEffect(() => {
@@ -1055,6 +1058,8 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleMenuFileNewBlank = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
         triggerVcdChange(vcdBlank, { triggerAt: 'immediately' });
+        setRemovedVariables([]); // clear
+        setMaxTickOverride(undefined); // clear
         handleHideAllMenus();
     });
     const handleMenuFileSetTimescale = useEvent<React.MouseEventHandler<HTMLSpanElement>>(async (event) => {
@@ -1089,6 +1094,46 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             ...vcd,
             timescale : newTimescale,
         }, { triggerAt: 'immediately' });
+    });
+    const handleMenuFileSetDuration = useEvent<React.MouseEventHandler<HTMLSpanElement>>(async (event) => {
+        handleHideAllMenus();
+        
+        
+        
+        const currentDuration = maxTick;
+        const mockModel = {
+            id               : '',
+            durationAbsolute : currentDuration * (vcd?.timescale ?? 1),
+        };
+        const newDurationAbsolute = await showDialog<number>(
+            <SimpleEditModelDialog
+                model={mockModel}
+                edit='durationAbsolute'
+                editorComponent={
+                    <TimescaleEditor theme='primary' />
+                }
+                viewport={mainRef}
+            />
+        );
+        if (newDurationAbsolute === undefined) return;
+        const newDuration = newDurationAbsolute / (vcd?.timescale ?? 1);
+        // if (newDuration === currentDuration) return; // always override
+        setMaxTickOverride(newDuration);
+        
+        
+        
+        // truncate excess variable waves:
+        if (newDuration < currentDuration) {
+            setAllVcdVariables(
+                produce(allVcdVariables, (allVcdVariables) => {
+                    for (const vcdVariable of allVcdVariables) {
+                        const excessWaveIndex = vcdVariable.waves.findIndex(({tick}) => (tick > newDuration));
+                        if (excessWaveIndex < 0) continue;
+                        vcdVariable.waves.splice(excessWaveIndex);
+                    } // for
+                })
+            );
+        } // if
     });
     
     const handleHideAllMenus = useEvent(() => {
@@ -1943,6 +1988,14 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     </span>
                     <span>
                         ({vcdTimescaleToString(vcd?.timescale ?? 1)})
+                    </span>
+                </li>
+                <li tabIndex={0} onClick={handleMenuFileSetDuration}>
+                    <span>
+                        Set Duration
+                    </span>
+                    <span>
+                        ({vcdDurationOfTimescaleToString(maxTick, vcd?.timescale ?? 1)})
                     </span>
                 </li>
             </ul>}

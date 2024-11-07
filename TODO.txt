@@ -1,7 +1,7 @@
 feature requested:
 [DONE] new blank document
 [DONE] add/edit the transition points
-* change the duration length
+[DONE] change the duration length
 [DONE] change the timescale
 [DONE] convert the json back to vcd
 
