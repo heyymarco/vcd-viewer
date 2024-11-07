@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { decodeVcdFromFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
+import { decodeVcdFromFileContent, encodeVcdToFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import { useEvent } from "@reusable-ui/core";
 import { VcdValueFormat, type Vcd } from "@/models";
@@ -65,6 +65,7 @@ const blankSampleVcd : Vcd|null = {
 export default function Home() {
     const [inMemoryFile, setInMemoryFile] = useState<Vcd|null>(() => decodeVcdFromFileContent(vcdContent));
     const [vcdVersion, setVcdVersion] = useState<any>(() => new Date());
+    
     const handleFileOpen = useEvent<React.ChangeEventHandler<HTMLInputElement>>(async (event) => {
         const file : File|null = event.currentTarget.files?.[0] ?? null;
         if (!file) return;
@@ -73,6 +74,14 @@ export default function Home() {
         const newVcd = decodeVcdFromFileContent(fileContent);
         setInMemoryFile(newVcd);
         setVcdVersion(new Date(file.lastModified));
+    });
+    
+    const handleFileSave = useEvent(() => {
+        const link = document.createElement('a');
+        const file = new Blob([encodeVcdToFileContent(inMemoryFile) ?? ''], { type: 'text/plain' });
+        link.href = URL.createObjectURL(file);
+        link.download = 'test.vcd';
+        link.click();
     });
     
     
@@ -106,10 +115,17 @@ export default function Home() {
                 Open a *.vcd file from your computer:
             </p>
             <input type='file' accept='.vcd' onChange={handleFileOpen} multiple={false} />
-            <p>parsed:</p>
+            <hr />
+            <p>
+                Save a *.vcd file to your computer:
+            </p>
+            <button type='button' onClick={handleFileSave}>
+                Start Download
+            </button>
+            {/* <p>parsed:</p>
             <pre>
                 {JSON.stringify(inMemoryFile, undefined, 4)}
-            </pre>
+            </pre> */}
         </div>
     );
 }

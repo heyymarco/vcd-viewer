@@ -3,7 +3,7 @@ feature requested:
 [DONE] add/edit the transition points
 * change the duration length
 [DONE] change the timescale
-[PROG] convert the json back to vcd
+[DONE] convert the json back to vcd
 
 * mode-1:
 const templates = {[

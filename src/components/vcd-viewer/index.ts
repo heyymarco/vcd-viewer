@@ -1,5 +1,6 @@
 export *            from './utilities'
 export *            from './decode'
+export *            from './encode'
 export *            from './VcdViewer'
 // export {default}    from './VcdViewer'
 export *            from './VcdViewerVanilla'
