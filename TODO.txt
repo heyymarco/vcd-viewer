@@ -1,9 +1,9 @@
-eature requested:
+feature requested:
 [DONE] new blank document
-[PROG] add/edit the transition points
+[DONE] add/edit the transition points
 * change the duration length
 [DONE] change the timescale
-* convert the json back to vcd
+[PROG] convert the json back to vcd
 
 * mode-1:
 const templates = {[
