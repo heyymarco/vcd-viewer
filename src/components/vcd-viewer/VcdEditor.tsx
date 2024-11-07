@@ -34,6 +34,7 @@ import {
     
     defaultColorOptions,
     vcdTimescaleToString,
+    vcdFormatToRadix,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -1250,9 +1251,9 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     <RadixNumberEditor
                         theme='primary'
                         
-                        radix={vcdVariable.size}
-                        min={vcdVariable.lsb}
-                        max={vcdVariable.msb}
+                        radix={vcdFormatToRadix(vcdVariable.format)}
+                        min={(vcdVariable.lsb !== undefined) ? ((2 ** (vcdVariable.lsb + 0)) - 1) : undefined}
+                        max={(vcdVariable.msb !== undefined) ? ((2 ** (vcdVariable.msb + 1)) - 1) : undefined}
                     />
                 }
                 viewport={mainRef}
@@ -1304,9 +1305,9 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     <RadixNumberEditor
                         theme='primary'
                         
-                        radix={vcdVariable.size}
-                        min={vcdVariable.lsb}
-                        max={vcdVariable.msb}
+                        radix={vcdFormatToRadix(vcdVariable.format)}
+                        min={(vcdVariable.lsb !== undefined) ? ((2 ** (vcdVariable.lsb + 0)) - 1) : undefined}
+                        max={(vcdVariable.msb !== undefined) ? ((2 ** (vcdVariable.msb + 1)) - 1) : undefined}
                     />
                 }
                 viewport={mainRef}

@@ -57,6 +57,17 @@ const RadixNumberEditor = <TElement extends Element = HTMLSpanElement, TChangeEv
     
     
     
+    // default props:
+    const {
+        // validations:
+        required = true,
+        min      = 0,
+        max      = (radixOptions.find(({radix: radixSearch}) => (radixSearch === radix))?.radix ?? 10) - 1,
+        step     = 1,
+    } = props;
+    
+    
+    
     // jsx:
     return (
         <NumberUpDownEditor<TElement, TChangeEvent, TValue>
@@ -70,10 +81,10 @@ const RadixNumberEditor = <TElement extends Element = HTMLSpanElement, TChangeEv
             
             
             // validations:
-            required={true}
-            min={0}
-            max={(radixOptions.find(({radix: radixSearch}) => (radixSearch === radix))?.radix ?? 10) - 1}
-            step={1}
+            required={required}
+            min={min}
+            max={max}
+            step={step}
             
             
             

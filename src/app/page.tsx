@@ -41,7 +41,7 @@ const blankSampleVcd : Vcd|null = {
                         alias  : 'r',
                         
                         type   : 'reg',
-                        size   : 16,
+                        size   : 8,
                         lsb    : 0,
                         msb    : 15,
                         waves  : (new Array(25)).fill(null).map((_, index) => ({

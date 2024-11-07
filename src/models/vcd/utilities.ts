@@ -27,6 +27,17 @@ export const vcdTimescaleToString = (value: number): string => {
 
 
 
+export const vcdFormatToRadix = (format: VcdValueFormat): number => {
+    switch (format) {
+        case VcdValueFormat.BINARY      : return 2;
+        case VcdValueFormat.DECIMAL     : return 10;
+        case VcdValueFormat.HEXADECIMAL : return 16;
+        default : throw Error('app error');
+    } // switch
+}
+
+
+
 export const defaultColorOptions : Color[] = [
     Color('#B5CEA8'),
     Color('#FF0101'),

@@ -100,16 +100,26 @@ const HexNumberEditorInternal = <TElement extends Element = HTMLSpanElement, TCh
     
     
     // handlers:
-    const handleChangeAsTextInternal = useEvent<EditorChangeEventHandler<TChangeEvent, string>>((value, event) => {
+    const handleChangeAsTextInternal = useEvent<EditorChangeEventHandler<TChangeEvent, string>>((newValueStr, event) => {
         if (!event.isTrusted) { // if the event is sent by <NumberUpDownEditor>'s button
-            onChange?.((value ? Number.parseFloat(value) : null) as TValue, event);
+            if (newValueStr === 'NaN') {
+                const newValue : TValue = (value !== undefined) ? value : ((defaultValue !== undefined) ? defaultValue : (null as TValue));
+                onChange?.(newValue, event);
+                return;
+            } // if
+            
+            
+            
+            const newValue : TValue = newValueStr ? (Number.parseFloat(newValueStr) as TValue) : (null as TValue);
+            onChange?.(((newValue !== null) && isNaN(newValue)) ? (null as TValue) : newValue, event);
             return;
         } // if
         
         
         
-        value = value.trim();
-        onChange?.((value ? Number.parseInt(value, radix) : null) as TValue, event);
+        newValueStr = newValueStr.trim();
+        const newValue : TValue = newValueStr ? (Number.parseInt(newValueStr, radix) as TValue) : (null as TValue);
+        onChange?.(((newValue !== null) && isNaN(newValue)) ? (null as TValue) : newValue, event);
     });
     const handleChangeAsText         = useMergeEvents(
         // preserves the original `onChangeAsText` from `inputEditorComponent`:
