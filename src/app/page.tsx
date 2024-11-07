@@ -41,17 +41,17 @@ const blankSampleVcd : Vcd|null = {
                         alias  : 'r',
                         
                         type   : 'reg',
-                        size   : 8,
+                        size   : 16,
                         lsb    : 0,
-                        msb    : 7,
+                        msb    : 15,
                         waves  : (new Array(25)).fill(null).map((_, index) => ({
                             tick  : index * 20,
-                            value : Math.round(Math.random() * 1000) % 8,
+                            value : Math.round(Math.random() * 1000) % 16,
                         })),
                         
                         id     : 1,
                         format : VcdValueFormat.HEXADECIMAL,
-                        color  : Color('purple'),
+                        color  : Color('green'),
                     },
                 ],
                 submodules : [],
