@@ -101,6 +101,13 @@ const HexNumberEditorInternal = <TElement extends Element = HTMLSpanElement, TCh
     
     // handlers:
     const handleChangeAsTextInternal = useEvent<EditorChangeEventHandler<TChangeEvent, string>>((value, event) => {
+        if (!event.isTrusted) { // if the event is sent by <NumberUpDownEditor>'s button
+            onChange?.((value ? Number.parseFloat(value) : null) as TValue, event);
+            return;
+        } // if
+        
+        
+        
         value = value.trim();
         onChange?.((value ? Number.parseInt(value, radix) : null) as TValue, event);
     });
