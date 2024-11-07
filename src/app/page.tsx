@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { parseVcdFromFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
+import { decodeVcdFromFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import { useEvent } from "@reusable-ui/core";
 import { VcdValueFormat, type Vcd } from "@/models";
@@ -63,14 +63,14 @@ const blankSampleVcd : Vcd|null = {
 
 
 export default function Home() {
-    const [inMemoryFile, setInMemoryFile] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent));
+    const [inMemoryFile, setInMemoryFile] = useState<Vcd|null>(() => decodeVcdFromFileContent(vcdContent));
     const [vcdVersion, setVcdVersion] = useState<any>(() => new Date());
     const handleFileOpen = useEvent<React.ChangeEventHandler<HTMLInputElement>>(async (event) => {
         const file : File|null = event.currentTarget.files?.[0] ?? null;
         if (!file) return;
         
         const fileContent = await file.text();
-        const newVcd = parseVcdFromFileContent(fileContent);
+        const newVcd = decodeVcdFromFileContent(fileContent);
         setInMemoryFile(newVcd);
         setVcdVersion(new Date(file.lastModified));
     });

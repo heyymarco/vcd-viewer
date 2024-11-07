@@ -1,7 +1,7 @@
 'use client'
 
 import {  useRef, useState } from "react";
-import { parseVcdFromFileContent, VcdViewer, VcdViewerVanilla } from "@/components/vcd-viewer";
+import { decodeVcdFromFileContent, VcdViewer, VcdViewerVanilla } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import {
     useEvent,
@@ -12,14 +12,14 @@ import { type Vcd } from "@/models";
 
 
 export default function Home() {
-    const [vcd, setVcd] = useState<Vcd|null>(() => parseVcdFromFileContent(vcdContent));
+    const [vcd, setVcd] = useState<Vcd|null>(() => decodeVcdFromFileContent(vcdContent));
     const [vcdVersion, setVcdVersion] = useState<any>(() => new Date());
     const handleFileOpen = useEvent<React.ChangeEventHandler<HTMLInputElement>>(async (event) => {
         const file : File|null = event.currentTarget.files?.[0] ?? null;
         if (!file) return;
         
         const fileContent = await file.text();
-        const newVcd = parseVcdFromFileContent(fileContent);
+        const newVcd = decodeVcdFromFileContent(fileContent);
         setVcd(newVcd);
         setVcdVersion(new Date(file.lastModified));
         

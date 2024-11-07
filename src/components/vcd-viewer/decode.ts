@@ -16,7 +16,7 @@ const nanFallback = <TNumber extends number, TFallback>(num: TNumber, fallback: 
     if (isNaN(num)) return fallback;
     return num;
 }
-export const parseVcdFromFileContent = (content: string): Vcd|null => {
+export const decodeVcdFromFileContent = (content: string): Vcd|null => {
     const vcd = produce({ rootModule: { name: 'root', submodules: [], variables: [] } } as unknown as Vcd, (draft) => {
         let idCounter      : number = -1;
         let prevToken      : VcdToken|null = null;
@@ -213,3 +213,8 @@ export const parseVcdFromFileContent = (content: string): Vcd|null => {
     if (vcd.timescale === undefined) return null;
     return vcd;
 }
+
+/**
+ * @deprecated Renamed to `decodeVcdFromFileContent`
+ */
+export const parseVcdFromFileContent = decodeVcdFromFileContent;
