@@ -1277,8 +1277,62 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             })
         );
     });
-    const handleTransitionInsert     = useEvent(() => {
-        //
+    const handleTransitionInsert     = useEvent(async () => {
+        if (focusedVariable === null) return;
+        if (mainSelection === null) return;
+        const vcdVariable = allVcdVariables?.[focusedVariable];
+        
+        const waves = vcdVariable.waves;
+        if (!waves) return;
+        const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+            const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+            return (mainSelection < nextTick);
+        })());
+        if (transitionIndex < 0) return;
+        
+        
+        
+        const mockModel = {
+            id    : '',
+            value : 0,
+        };
+        const newValue = await showDialog<number>(
+            <SimpleEditModelDialog
+                model={mockModel}
+                edit='value'
+                editorComponent={
+                    <RadixNumberEditor
+                        theme='primary'
+                        
+                        radix={vcdVariable.size}
+                        min={vcdVariable.lsb}
+                        max={vcdVariable.msb}
+                    />
+                }
+                viewport={mainRef}
+            />
+        );
+        if (newValue === undefined) return;
+        
+        
+        
+        setAllVcdVariables(
+            produce(allVcdVariables, (allVcdVariables) => {
+                if (focusedVariable === null) return;
+                if (mainSelection === null) return;
+                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                if (!waves) return;
+                const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+                    const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+                    return (mainSelection < nextTick);
+                })());
+                if (transitionIndex < 0) return;
+                waves.splice(transitionIndex + 1, 0, {
+                    tick  : mainSelection,
+                    value : newValue,
+                } satisfies VcdWave);
+            })
+        );
     });
     
     
