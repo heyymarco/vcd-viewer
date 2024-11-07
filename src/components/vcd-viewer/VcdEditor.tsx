@@ -68,6 +68,9 @@ import {
 import {
     TimescaleEditor,
 }                           from '@/components/editors/TimescaleEditor'
+import {
+    HexNumberEditor,
+}                           from '@/components/editors/HexNumberEditor'
 
 
 
@@ -1218,8 +1221,24 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             })
         );
     });
-    const handleTransitionSetTo      = useEvent(() => {
-        //
+    const handleTransitionSetTo      = useEvent(async () => {
+        const currentValue = 10;
+        const mockModel = {
+            id    : '',
+            value : currentValue,
+        };
+        const newValue = await showDialog<number>(
+            <SimpleEditModelDialog
+                model={mockModel}
+                edit='value'
+                editorComponent={
+                    <HexNumberEditor theme='primary' />
+                }
+                viewport={mainRef}
+            />
+        );
+        if (newValue === undefined) return;
+        console.log({newValue});
     });
     const handleTransitionInsert     = useEvent(() => {
         //
