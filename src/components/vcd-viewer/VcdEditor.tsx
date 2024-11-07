@@ -69,8 +69,8 @@ import {
     TimescaleEditor,
 }                           from '@/components/editors/TimescaleEditor'
 import {
-    HexNumberEditor,
-}                           from '@/components/editors/HexNumberEditor'
+    RadixNumberEditor,
+}                           from '@/components/editors/RadixNumberEditor'
 
 
 
@@ -1222,7 +1222,22 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionSetTo      = useEvent(async () => {
-        const currentValue = 10;
+        if (focusedVariable === null) return;
+        if (mainSelection === null) return;
+        const vcdVariable = allVcdVariables?.[focusedVariable];
+        
+        const waves = vcdVariable.waves;
+        if (!waves) return;
+        const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+            const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+            return (mainSelection < nextTick);
+        })());
+        if (transitionIndex < 0) return;
+        const vcdWave = waves[transitionIndex];
+        
+        
+        
+        const currentValue = vcdWave.value;
         const mockModel = {
             id    : '',
             value : currentValue,
@@ -1232,13 +1247,35 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 model={mockModel}
                 edit='value'
                 editorComponent={
-                    <HexNumberEditor theme='primary' />
+                    <RadixNumberEditor
+                        theme='primary'
+                        
+                        radix={vcdVariable.size}
+                        min={vcdVariable.lsb}
+                        max={vcdVariable.msb}
+                    />
                 }
                 viewport={mainRef}
             />
         );
         if (newValue === undefined) return;
-        console.log({newValue});
+        
+        
+        
+        setAllVcdVariables(
+            produce(allVcdVariables, (allVcdVariables) => {
+                if (focusedVariable === null) return;
+                if (mainSelection === null) return;
+                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                if (!waves) return;
+                const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
+                    const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+                    return (mainSelection < nextTick);
+                })());
+                if (transitionIndex < 0) return;
+                waves[transitionIndex].value = newValue;
+            })
+        );
     });
     const handleTransitionInsert     = useEvent(() => {
         //
