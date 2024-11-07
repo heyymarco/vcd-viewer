@@ -503,6 +503,14 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         //     // trigger the onClick event later at `onKeyUp`
         //     inputLogs.performKeyUpActions = true;
         // }
+        // 'KeyH', 'KeyL', 'Space', 'KeyE'
+        // 'keyh', 'keyl', 'space', 'keye'
+        switch (keyCode) {
+            case 'keyh'  : handleTransitionSetHi();     break;
+            case 'keyl'  : handleTransitionSetLo();     break;
+            case 'space' : handleTransitionSetToggle(); break;
+            case 'keye'  : handleTransitionSetTo();     break;
+        } // switch
     });
     
     const globalHandleKeyDown     = useEvent((event: KeyboardEvent) => {
@@ -1158,6 +1166,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     
     const handleTransitionDelete     = useEvent(() => {
+        // conditions:
+        if (!isReadyToEditTransition) return;
+        
+        
+        
+        // actions:
         setAllVcdVariables(
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
@@ -1175,6 +1189,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionSetHi      = useEvent(() => {
+        // conditions:
+        if (!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)) return;
+        
+        
+        
+        // actions:
         setAllVcdVariables(
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
@@ -1191,6 +1211,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionSetLo      = useEvent(() => {
+        // conditions:
+        if (!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)) return;
+        
+        
+        
+        // actions:
         setAllVcdVariables(
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
@@ -1207,6 +1233,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionSetToggle  = useEvent(() => {
+        // conditions:
+        if (!(isReadyToInsertTransition &&  isTransitionBinary)) return;
+        
+        
+        
+        // actions:
         setAllVcdVariables(
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
@@ -1223,6 +1255,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionSetTo      = useEvent(async () => {
+        // conditions:
+        if (!(isReadyToInsertTransition && !isTransitionBinary)) return;
+        
+        
+        
+        // actions:
         if (focusedVariable === null) return;
         if (mainSelection === null) return;
         const vcdVariable = allVcdVariables?.[focusedVariable];
@@ -1279,6 +1317,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         );
     });
     const handleTransitionInsert     = useEvent(async () => {
+        // conditions:
+        if (!(isReadyToInsertTransition)) return;
+        
+        
+        
+        // actions:
         if (focusedVariable === null) return;
         if (mainSelection === null) return;
         const vcdVariable = allVcdVariables?.[focusedVariable];

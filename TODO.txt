@@ -43,5 +43,5 @@ const templates = {[
 	canSetValue={true}
 />
 
-* toolbar: [set hi] [set low] [set value:...]
-* shortcut H: set hi, L: set low, SPC: toggle hi/now, Tab|E: set value:...
+[DONE] * toolbar: [set hi] [set low] [set value:...]
+[DONE] * shortcut H: set hi, L: set low, SPC: toggle hi/now, Tab|E: set value:...
