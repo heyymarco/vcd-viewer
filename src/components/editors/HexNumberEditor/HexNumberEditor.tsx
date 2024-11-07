@@ -127,7 +127,7 @@ const HexNumberEditorInternal = <TElement extends Element = HTMLSpanElement, TCh
             '0123456789abcdefghijklmnopqrstuvwxyz'.slice(0, radix)
         }${
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, Math.max(0, radix - 10))
-        }]\s*$`
+        }]*\s*$`
     , [radix]);
     const {
         // formats:
