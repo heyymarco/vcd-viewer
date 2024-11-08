@@ -7,44 +7,6 @@ import {
 
 
 
-export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
-    return [
-        ...module.variables,
-        ...module.submodules.flatMap(flatMapVariables),
-    ];
-}
-
-export const getVariableMinTick = (module: VcdModule): number => {
-    return Math.min(
-        ...flatMapVariables(module)
-        .map(({ waves }) => waves[0].tick)
-    );
-}
-export const getVariableMaxTick = (module: VcdModule): number => {
-    return Math.max(
-        ...flatMapVariables(module)
-        .map(({ waves }) => waves[waves.length - 1].tick)
-    );
-}
-
-export const getModulesOfVariable = (vcd: Vcd, variable: VcdVariable): VcdModule[]|null => {
-    return getRecursiveModulesOfVariable([], vcd.rootModule, variable);
-}
-const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule: VcdModule, variable: VcdVariable): VcdModule[]|null => {
-    if (currentModule.variables.some((searchVariable): boolean => {
-        if (searchVariable === variable) return true;
-        if (searchVariable.id === variable.id) return true;
-        return false;
-    })) return [...parentModules, currentModule];
-    for (const subModule of currentModule.submodules) {
-        const found = getRecursiveModulesOfVariable([...parentModules, currentModule], subModule, variable);
-        if (found) return found;
-    } // for
-    return null
-}
-
-
-
 export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex: number|null, moveToIndex: number|null): TData[] => {
     // conditions:
     if (moveFromIndex === null       ) return originalData;

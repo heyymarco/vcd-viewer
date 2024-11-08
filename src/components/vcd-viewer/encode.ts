@@ -1,29 +1,16 @@
 // models:
 import {
+    // types:
     type Vcd,
     type VcdModule,
-    type VcdVariable,
-    type VcdToken,
     
-    VcdValueFormat,
-    vcdValueToString,
     
-    defaultColorOptions,
-    vcdTimescaleToString,
-    vcdFormatToRadix,
-}                           from '@/models/vcd'
-// utilities:
-import {
+    
+    // utilities:
     flatMapVariables,
     getVariableMinTick,
-    getVariableMaxTick,
-    getModulesOfVariable,
-    moveVcdVariableData,
-    
-    actionKeys,
-    actionMouses,
-    actionTouches,
-}                           from './utilities'
+    vcdTimescaleToString,
+}                           from '@/models/vcd'
 
 
 

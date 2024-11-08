@@ -4,10 +4,19 @@ import * as d3              from 'd3'
 
 // models:
 import {
+    // types:
     type VcdVariable,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
+    
+    
+    
+    // utilities:
+    flatMapVariables,
+    getVariableMinTick,
+    getVariableMaxTick,
+    getModulesOfVariable,
     
     VcdValueFormat,
     vcdValueToString,
@@ -18,10 +27,6 @@ import type Color           from 'color'
 
 // utilities:
 import {
-    flatMapVariables,
-    getVariableMinTick,
-    getVariableMaxTick,
-    getModulesOfVariable,
     moveVcdVariableData,
     
     actionKeys,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { decodeVcdFromFileContent, encodeVcdToFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import { useEvent } from "@reusable-ui/core";
-import { VcdValueFormat, type Vcd } from "@/models";
+import { VcdMask, VcdValueFormat, type Vcd } from "@/models";
 import Color from 'color'
 
 
@@ -60,6 +60,23 @@ const blankSampleVcd : Vcd|null = {
     },
 };
 
+const sampleMask : VcdMask[] = [
+    {
+        name      : 'tb.clk',
+        color     : Color('#00ff00'),
+        
+        timescale : 1 * (0.1 ** 9), // 1ns
+        maxTime   : 300,
+    },
+    {
+        name      : 'tb.seed',
+        color     : Color('#ff0000'),
+        
+        timescale : 1 * (0.1 ** 9), // 1ns
+        maxTime   : 300,
+    },
+]
+
 
 
 export default function Home() {
@@ -74,6 +91,9 @@ export default function Home() {
         const newVcd = decodeVcdFromFileContent(fileContent);
         setInMemoryFile(newVcd);
         setVcdVersion(new Date(file.lastModified));
+        
+        
+        event.target.value = ''; // reset the value in order to the next onChange can be re-triggered when opened the same file again
     });
     
     const handleFileSave = useEvent(() => {
@@ -108,6 +128,9 @@ export default function Home() {
                     
                     // a new blank document definition:
                     vcdBlank={blankSampleVcd}
+                    
+                    // a masking file:
+                    vcdMask={sampleMask}
                 />
             </div>
             <hr />

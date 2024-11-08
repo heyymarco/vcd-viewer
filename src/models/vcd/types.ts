@@ -51,6 +51,17 @@ export interface VcdWaveExtended extends VcdWave {
 }
 
 
+
+export interface VcdMask {
+    name       : string
+    color     ?: Color|null
+    
+    timescale  : number
+    maxTime   ?: number
+}
+
+
+
 export type VcdToken =
     |'DATE'
     |'VERSION'

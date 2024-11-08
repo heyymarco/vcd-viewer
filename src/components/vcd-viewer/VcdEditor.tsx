@@ -24,10 +24,21 @@ import {
 
 // models:
 import {
+    // types:
     type VcdVariable,
     type Vcd,
     type VcdWave,
     type VcdWaveExtended,
+    type VcdMask,
+    
+    
+    
+    // utilities:
+    flatMapVariables,
+    getVariableMinTick,
+    getVariableMaxTick,
+    
+    getModulesOfVariable,
     
     VcdValueFormat,
     vcdValueToString,
@@ -36,15 +47,12 @@ import {
     vcdTimescaleToString,
     vcdDurationOfTimescaleToString,
     vcdFormatToRadix,
+    vcdApplyMask,
 }                           from '@/models'
 import type Color           from 'color'
 
 // utilities:
 import {
-    flatMapVariables,
-    getVariableMinTick,
-    getVariableMaxTick,
-    getModulesOfVariable,
     moveVcdVariableData,
     
     actionKeys,
@@ -93,6 +101,11 @@ export interface VcdEditorProps
     
     
     
+    // filters:
+    vcdMask             ?: VcdMask[]
+    
+    
+    
     // values:
     defaultVcd          ?: Vcd|null
     vcd                 ?: Vcd|null
@@ -121,6 +134,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         canInsertTransition = true,
         canSetTimescale     = true,
         canSetDuration      = true,
+        
+        
+        
+        // filters:
+        vcdMask,
         
         
         
@@ -163,10 +181,31 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         value              : vcd,
         triggerValueChange : triggerVcdChange,
     } = useControllableAndUncontrollable<Vcd|null>({
-        defaultValue       : defaultUncontrollableVcd,
-        value              : controllableVcd,
+        defaultValue       : vcdApplyMask(vcdMask, defaultUncontrollableVcd),
+        value              : vcdApplyMask(vcdMask, controllableVcd),
         onValueChange      : handleControllableVcdChange,
     });
+    
+    const suppliedVcd = (controllableVcd !== undefined) ? controllableVcd : defaultUncontrollableVcd;
+    const prevSuppliedVcd = useRef<Vcd|null|undefined>(undefined);
+    const prevVcd = useRef<Vcd|null>(vcd);
+    useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (prevSuppliedVcd.current === suppliedVcd) return; // already the same => ignore;
+        prevSuppliedVcd.current = suppliedVcd;               // sync
+        if (suppliedVcd === prevVcd.current) return;
+        if (!vcdMask) return;
+        
+        
+        
+        // actions:
+        triggerVcdChange(vcd, { triggerAt: 'immediately' });
+    }, [suppliedVcd, vcdMask]);
+    useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (prevVcd.current === vcd) return; // already the same => ignore;
+        prevVcd.current = vcd;               // sync
+    }, [vcd]);
     
     
     
@@ -1156,8 +1195,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 produce(allVcdVariables, (allVcdVariables) => {
                     for (const vcdVariable of allVcdVariables) {
                         const excessWaveIndex = vcdVariable.waves.findIndex(({tick}) => (tick > newDuration));
-                        if (excessWaveIndex < 0) continue;
-                        vcdVariable.waves.splice(excessWaveIndex);
+                        if (excessWaveIndex >= 0) vcdVariable.waves.splice(excessWaveIndex);
                     } // for
                 })
             );

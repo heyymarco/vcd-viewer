@@ -6,22 +6,19 @@ feature requested:
 [DONE] convert the json back to vcd
 
 * mode-1:
-const templates = {[
+const mask = {[
 	{
 		name: 'namespace1/signal-1',
-		type: 'BINARY',
-		// size: '1000ms'
-		size : {
-			start: '0ms',
-			end: '1000ms',
-		}
 		color: '#ffaabb',
+		
+		timescale : 0.001,
+		maxTime   : 1000,
 	},
 	{
 	},
 	...
 ]}
-<VcdEdit>.defineTemplate(templates);
+[DONE] <VcdEdit vcdMask={mask}>
 <VcdEdit
 [DONE]	canInsertTransition={false}
 [DONE]	canDeleteTransition={false}
@@ -29,12 +26,10 @@ const templates = {[
 [DONE]	canSetTimescale={false}
 [DONE]	canSetTransition={true}
 />
-// note: the length of file = max(signal1.size, signal2.size, ...)
 
 * mode-2:
-<VcdEdit>.pasteFrom('c:/file.vcd');
-// note: any signals in file that not defined in templates will be ignored (name comparison, case sensitive).
-// any signals that longer than templates will be truncated.
+[DONE] // note: any signals in file that not defined in templates will be ignored (name comparison, case sensitive).
+	   // any signals that longer than templates will be truncated.
 
 * mode-3:
 <VcdEdit

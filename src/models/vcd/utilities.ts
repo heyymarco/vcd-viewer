@@ -1,11 +1,57 @@
 import {
     type VcdWave,
+    Vcd,
+    VcdMask,
+    VcdModule,
+    VcdVariable,
     VcdValueFormat,
 }                           from './types'
 import  Color               from 'color'
 import {
     timescaleOptions,
 } from '@/components/editors/TimescaleEditor';
+import {
+    produce,
+}                           from 'immer'
+
+
+
+export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
+    return [
+        ...module.variables,
+        ...module.submodules.flatMap(flatMapVariables),
+    ];
+}
+export const getVariableMinTick = (module: VcdModule): number => {
+    return Math.min(
+        ...flatMapVariables(module)
+        .map(({ waves }) => waves[0].tick)
+    );
+}
+export const getVariableMaxTick = (module: VcdModule): number => {
+    return Math.max(
+        ...flatMapVariables(module)
+        .map(({ waves }) => waves[waves.length - 1].tick)
+    );
+}
+
+
+
+export const getModulesOfVariable = (vcd: Vcd, variable: VcdVariable): VcdModule[]|null => {
+    return getRecursiveModulesOfVariable([], vcd.rootModule, variable);
+}
+const getRecursiveModulesOfVariable = (parentModules: VcdModule[], currentModule: VcdModule, variable: VcdVariable): VcdModule[]|null => {
+    if (currentModule.variables.some((searchVariable): boolean => {
+        if (searchVariable === variable) return true;
+        if (searchVariable.id === variable.id) return true;
+        return false;
+    })) return [...parentModules, currentModule];
+    for (const subModule of currentModule.submodules) {
+        const found = getRecursiveModulesOfVariable([...parentModules, currentModule], subModule, variable);
+        if (found) return found;
+    } // for
+    return null
+}
 
 
 
@@ -40,6 +86,63 @@ export const vcdFormatToRadix = (format: VcdValueFormat): number => {
         case VcdValueFormat.HEXADECIMAL : return 16;
         default : throw Error('app error');
     } // switch
+}
+
+
+
+const recursiveFilterMask = (masks: VcdMask[], vcd: Vcd, parentModule: VcdModule): VcdModule => {
+    parentModule.variables = (
+        masks
+        .map((mask): VcdVariable|undefined => {
+            return parentModule.variables.find((variable) => {
+                const fullName = `${getModulesOfVariable(vcd, variable)?.slice(1).map(({name}) => name).join('.')}.${variable.name}`;
+                if (fullName !== mask.name) return false;
+                
+                
+                
+                // set color:
+                const color = mask.color;
+                if (color !== undefined) {
+                    variable.color = color;
+                } // if
+                
+                
+                
+                // truncate excess variable waves:
+                const maxTime = mask.maxTime;
+                if (maxTime !== undefined) {
+                    const excessWaveIndex = variable.waves.findIndex(({tick}) => ((tick * vcd.timescale) > (maxTime * mask.timescale)));
+                    if (excessWaveIndex >= 0) variable.waves.splice(excessWaveIndex);
+                } // if
+                
+                
+                
+                return true;
+            })
+        })
+        .filter((variable): variable is Exclude<typeof variable, undefined> => (variable !== undefined))
+        
+    );
+    parentModule.submodules = (
+        parentModule.submodules
+        .map((submodule) => recursiveFilterMask(masks, vcd, submodule))
+        .filter((submodule): submodule is Exclude<typeof submodule, undefined> => (submodule !== undefined))
+    );
+    return parentModule;
+}
+export const vcdApplyMask = <TNull extends undefined|null = never>(masks: VcdMask[]|undefined, vcd: Vcd|TNull): Vcd|TNull => {
+    if (!vcd) return vcd;
+    if (!masks?.length) return vcd;
+    
+    
+    
+    return produce(vcd, (vcd) => {
+        vcd.rootModule.submodules = (
+            vcd.rootModule.submodules
+            .map((submodule) => recursiveFilterMask(masks, vcd, submodule))
+            .filter((submodule): submodule is Exclude<typeof submodule, undefined> => (submodule !== undefined))
+        );
+    });
 }
 
 
