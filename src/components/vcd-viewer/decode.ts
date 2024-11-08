@@ -141,25 +141,26 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
                 if (variable) {
                     const {
                         '1': type,
-                        '2': size,
+                        '2': sizeRaw,
                         '3': alias,
                         '4': name,
                         '5': msb,
                         '6': lsb,
                     } = variable;
+                    const size = Number.parseInt(sizeRaw);
                     const newVariable : VcdVariable = {
                         name    : name,
                         alias   : alias,
                         
                         type    : type,
-                        size    : Number.parseInt(size),
+                        size    : size,
                         msb     : nanFallback(Number.parseInt(msb), undefined),
                         lsb     : nanFallback(Number.parseInt(lsb), undefined),
                         waves   : [],
                         
                         // extra data:
                         id      : (++idCounter),
-                        format  : VcdValueFormat.HEXADECIMAL,
+                        format  : (size === 1) ? VcdValueFormat.BINARY : VcdValueFormat.HEXADECIMAL,
                         color   : null,
                     };
                     currentModule.variables.push(newVariable);
