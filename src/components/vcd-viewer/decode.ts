@@ -29,7 +29,7 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
         while (lines.length) {
             // conditions:
             const lineRaw = lines.shift();
-            console.log(`lines: ${lines.length}, variables: ${variableMap.size}`);
+            // console.log(`lines: ${lines.length}, variables: ${variableMap.size}`);
             if (lineRaw === undefined) break;
             const line = lineRaw.trim();
             if (!line) continue;

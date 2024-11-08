@@ -104,6 +104,11 @@ export default function Home() {
         link.click();
     });
     
+    const [enableMask, setEnableMask] = useState<boolean>(false);
+    const handleMaskChange = useEvent<React.ChangeEventHandler<HTMLInputElement>>(({target: {checked}}) => {
+        setEnableMask(checked);
+    });
+    
     
     /*
         NOTE Using <VcdEditor> in cra/next-js:
@@ -130,7 +135,7 @@ export default function Home() {
                     vcdBlank={blankSampleVcd}
                     
                     // a masking file:
-                    vcdMask={sampleMask}
+                    vcdMask={enableMask ? sampleMask : undefined}
                 />
             </div>
             <hr />
@@ -145,6 +150,11 @@ export default function Home() {
             <button type='button' onClick={handleFileSave}>
                 Start Download
             </button>
+            <hr />
+            <label>
+                <input type='checkbox' onChange={handleMaskChange} checked={enableMask} />
+                <span>Enable mask</span>
+            </label>
             {/* <p>parsed:</p>
             <pre>
                 {JSON.stringify(inMemoryFile, undefined, 4)}

@@ -207,6 +207,19 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         prevVcd.current = vcd;               // sync
     }, [vcd]);
     
+    const maskStr  = vcdMask ? JSON.stringify(vcdMask) : undefined;
+    const prevMask = useRef<string|undefined>(maskStr);
+    useIsomorphicLayoutEffect(() => {
+        // conditions:
+        if (prevMask.current === maskStr) return; // already the same => ignore;
+        prevMask.current = maskStr;               // sync
+        
+        
+        
+        // actions:
+        triggerVcdChange(vcdMask ? vcdApplyMask(vcdMask, vcd) : vcd, { triggerAt: 'immediately' });
+    }, [maskStr, vcdMask]);
+    
     
     
     // states:
