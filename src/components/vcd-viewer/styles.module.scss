@@ -635,6 +635,27 @@
         &[class ~= "lo"] {
             border-top-width: 0;
         }
+        
+        
+        
+        // merges the next wave if both current wave and next wave are HI:
+        &[class ~= "hi"] {
+            &:has(+ [class ~= "bin"][class ~= "hi"]) {
+                border-inline-end-color: transparent;
+            }
+            & + [class ~= "bin"][class ~= "hi"] {
+                border-inline-start-color: transparent;
+            }
+        }
+        // merges the next wave if both current wave and next wave are LO:
+        &[class ~= "lo"] {
+            &:has(+ [class ~= "bin"][class ~= "lo"]) {
+                border-inline-end-color: transparent;
+            }
+            & + [class ~= "bin"][class ~= "lo"] {
+                border-inline-start-color: transparent;
+            }
+        }
     }
     
     
