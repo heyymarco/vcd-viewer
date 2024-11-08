@@ -84,16 +84,25 @@ export interface VcdEditorProps
             |'children' // no nested children
         >
 {
+    // accessibilities:
+    canDeleteTransition ?: boolean
+    canSetTransition    ?: boolean
+    canInsertTransition ?: boolean
+    canSetTimescale     ?: boolean
+    canSetDuration      ?: boolean
+    
+    
+    
     // values:
-    defaultVcd   ?: Vcd|null
-    vcd          ?: Vcd|null
-    onVcdChange  ?: ValueChangeEventHandler<Vcd|null>
+    defaultVcd          ?: Vcd|null
+    vcd                 ?: Vcd|null
+    onVcdChange         ?: ValueChangeEventHandler<Vcd|null>
     
-    vcdVersion   ?: any
+    vcdVersion          ?: any
     
-    vcdBlank     ?: Vcd|null
+    vcdBlank            ?: Vcd|null
     
-    colorOptions ?: Color[]
+    colorOptions        ?: Color[]
 }
 const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
     // jsx:
@@ -106,6 +115,15 @@ const VcdEditor = (props: VcdEditorProps): JSX.Element|null => {
 const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     // props:
     const {
+        // accessibilities:
+        canDeleteTransition = true,
+        canSetTransition    = true,
+        canInsertTransition = true,
+        canSetTimescale     = true,
+        canSetDuration      = true,
+        
+        
+        
         // values:
         defaultVcd   : defaultUncontrollableVcd = null,
         vcd          : controllableVcd,
@@ -1067,6 +1085,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         
+        // conditions:
+        if (!canSetTimescale) return;
+        
+        
+        
         const currentTimescale = vcd?.timescale;
         const mockModel = {
             id        : '',
@@ -1097,6 +1120,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleMenuFileSetDuration = useEvent<React.MouseEventHandler<HTMLSpanElement>>(async (event) => {
         handleHideAllMenus();
+        
+        
+        
+        // conditions:
+        if (!canSetDuration) return;
         
         
         
@@ -1212,6 +1240,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     
     const handleTransitionDelete     = useEvent(() => {
         // conditions:
+        if (!canDeleteTransition) return;
         if (!isReadyToEditTransition) return;
         
         
@@ -1235,6 +1264,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleTransitionSetHi      = useEvent(() => {
         // conditions:
+        if (!canSetTransition) return;
         if (!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)) return;
         
         
@@ -1257,6 +1287,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleTransitionSetLo      = useEvent(() => {
         // conditions:
+        if (!canSetTransition) return;
         if (!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)) return;
         
         
@@ -1279,6 +1310,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleTransitionSetToggle  = useEvent(() => {
         // conditions:
+        if (!canSetTransition) return;
         if (!(isReadyToInsertTransition &&  isTransitionBinary)) return;
         
         
@@ -1301,6 +1333,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleTransitionSetTo      = useEvent(async () => {
         // conditions:
+        if (!canSetTransition) return;
         if (!(isReadyToInsertTransition && !isTransitionBinary)) return;
         
         
@@ -1363,6 +1396,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     const handleTransitionInsert     = useEvent(async () => {
         // conditions:
+        if (!canInsertTransition) return;
         if (!(isReadyToInsertTransition)) return;
         
         
@@ -1855,12 +1889,12 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 {!!vcd && (mainSelection !== null) && <span className='text'>{Math.round(mainSelection)}</span>}
                 
-                <button type='button' title='DELETE transition'       className='transition-delete' disabled={!(isReadyToEditTransition                                                  )} onClick={handleTransitionDelete} />
-                <button type='button' title='set transition to HI'    className='transition-set-hi' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />
-                <button type='button' title='set transition to LOW'   className='transition-set-lo' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />
-                <button type='button' title='TOGGLE transition'       className='transition-set-tg' disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />
-                <button type='button' title='set transition to VALUE' className='transition-set-to' disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />
-                <button type='button' title='INSERT new transition'   className='transition-insert' disabled={!(isReadyToInsertTransition                                                )} onClick={handleTransitionInsert} />
+                {canDeleteTransition && <button type='button' title='DELETE transition'       className='transition-delete' disabled={!(isReadyToEditTransition                                                  )} onClick={handleTransitionDelete} />}
+                {canSetTransition    && <button type='button' title='set transition to HI'    className='transition-set-hi' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />}
+                {canSetTransition    && <button type='button' title='set transition to LOW'   className='transition-set-lo' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />}
+                {canSetTransition    && <button type='button' title='TOGGLE transition'       className='transition-set-tg' disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />}
+                {canSetTransition    && <button type='button' title='set transition to VALUE' className='transition-set-to' disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />}
+                {canInsertTransition && <button type='button' title='INSERT new transition'   className='transition-insert' disabled={!(isReadyToInsertTransition                                                )} onClick={handleTransitionInsert} />}
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
@@ -1982,22 +2016,22 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             </ul>}
             {!!showMenuFile && <ul ref={menuFileRef} className={cn(styles.menu, styles.menuFile)} style={{ insetInlineStart: `${showMenuFile.x}px`, insetBlockStart: `${showMenuFile.y}px` }}>
                 <li tabIndex={0} onClick={handleMenuFileNewBlank}>New Blank Document</li>
-                <li tabIndex={0} onClick={handleMenuFileSetTimescale}>
+                {canSetTimescale && <li tabIndex={0} onClick={handleMenuFileSetTimescale}>
                     <span>
                         Set Timescale
                     </span>
                     <span>
                         ({vcdTimescaleToString(vcd?.timescale ?? 1)})
                     </span>
-                </li>
-                <li tabIndex={0} onClick={handleMenuFileSetDuration}>
+                </li>}
+                {canSetDuration  && <li tabIndex={0} onClick={handleMenuFileSetDuration}>
                     <span>
                         Set Duration
                     </span>
                     <span>
                         ({vcdDurationOfTimescaleToString(maxTick, vcd?.timescale ?? 1)})
                     </span>
-                </li>
+                </li>}
             </ul>}
         </div>
     );

@@ -23,10 +23,11 @@ const templates = {[
 ]}
 <VcdEdit>.defineTemplate(templates);
 <VcdEdit
-	canAdd={false}
-	canDelete={false}
-	canResize={false}
-	canSetValue={true}
+[DONE]	canInsertTransition={false}
+[DONE]	canDeleteTransition={false}
+[DONE]	canSetDuration={false}
+[DONE]	canSetTimescale={false}
+[DONE]	canSetTransition={true}
 />
 // note: the length of file = max(signal1.size, signal2.size, ...)
 
@@ -37,10 +38,11 @@ const templates = {[
 
 * mode-3:
 <VcdEdit
-	canAdd={true}
-	canDelete={true}
-	canResize={true}
-	canSetValue={true}
+[DONE]	canInsertTransition={true}
+[DONE]	canDeleteTransition={true}
+[DONE]	canSetDuration={true}
+[DONE]	canSetTimescale={TRUE}
+[DONE]	canSetTransition={true}
 />
 
 [DONE] * toolbar: [set hi] [set low] [set value:...]
