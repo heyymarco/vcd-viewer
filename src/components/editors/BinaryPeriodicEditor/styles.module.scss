@@ -17,3 +17,21 @@
     display: grid;
     gap: 0.5em;
 }
+.startingValue.startingValue {
+    display: grid;
+    justify-content: stretch;
+}
+.flips.flips {
+    display: grid;
+    justify-content: stretch;
+    grid-auto-flow: row;
+    text-align: center;
+    gap: 0.25rem;
+    & > p {
+        margin: 0;
+    }
+}
+.duration.duration {
+    display: grid;
+    justify-content: stretch;
+}

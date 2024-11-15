@@ -69,6 +69,7 @@ import {
     FormProps,
     List,
     ListItem,
+    Generic,
 }                           from '@reusable-ui/components'  // a set of official Reusable-UI components
 
 // internals components:
@@ -267,12 +268,9 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                 readOnly        = {readOnly       }
                 inheritReadOnly = {inheritReadOnly}
             >
-                <DataTable expanded={true}>
+                <DataTable size={props.size} expanded={true}>
                     <DataTableBody>
-                        <DataTableItem label='Timescale'>
-                            <TimescaleEditor size={props.size} theme='primary' value={timescale} onChange={handleTimescaleChange} />
-                        </DataTableItem>
-                        <DataTableItem label='Starting value'>
+                        <DataTableItem label='Starting value' tableDataComponent={<Generic className={styles.startingValue} />}>
                             <List size={props.size} orientation='inline' actionCtrl={true}>
                                 <ListItem className={styles.selection} active={!startingValue} onClick={() => handleStartingValueChange({ active: false })}>
                                     <RadioDecorator size={props.size} />
@@ -288,10 +286,14 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                 </ListItem>
                             </List>
                         </DataTableItem>
-                        <DataTableItem label='Flip interval'>
+                        <DataTableItem label='Flips every' tableDataComponent={<Generic className={styles.flips} />}>
                             <NumberUpDownEditor size={props.size} theme='primary' min={0} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
+                            <p>
+                                × of unit time
+                            </p>
+                            <TimescaleEditor size={props.size} theme='primary' value={timescale} onChange={handleTimescaleChange} />
                         </DataTableItem>
-                        <DataTableItem label='Duration'>
+                        <DataTableItem label='Duration' tableDataComponent={<Generic className={styles.duration} />}>
                             <List size={props.size} orientation='block' actionCtrl={true}>
                                 <ListItem className={styles.selection} active={intervalMode === IntervalMode.Fill} onClick={() => setIntervalMode(IntervalMode.Fill)}>
                                     <RadioDecorator size={props.size} />
@@ -309,12 +311,12 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                     <RadioDecorator size={props.size} />
                                     <div className={styles.cursorToNPeriods}>
                                         <span>
-                                            From current cursor to N periods
+                                            From current cursor to N times
                                         </span>
                                         <Group size={props.size} onMouseDown={handleCursorToNPeriodsMouseDown}>
                                             <NumberUpDownEditor />
                                             <Label>
-                                                periods
+                                                times
                                             </Label>
                                         </Group>
                                     </div>
