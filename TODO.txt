@@ -63,13 +63,13 @@ cursor - endOfFile
 cursor - n*periods
 
 
-timescale is a "unit scale"
-imagine 2m of car, it's a real car.
-imagine 2cm of car, it's a toy car.
+[????] timescale is a "unit scale"
+[????] imagine 2m of car, it's a real car.
+[????] imagine 2cm of car, it's a toy car.
 
-the graphic/view is the __same__, so __nothing_hapenned__ to the plotter when you change the timescale.
-only affected to the __json_file__ if you save (download) the *.json and of course your generator
-should aware to the timescale __unit__
+[????] the graphic/view is the __same__, so __nothing_hapenned__ to the plotter when you change the timescale.
+[????] only affected to the __json_file__ if you save (download) the *.json and of course your generator
+[????] should aware to the timescale __unit__
 
 [DONE] modify feature hide signal to draft
 [DONE] modify feature delete signal forever
