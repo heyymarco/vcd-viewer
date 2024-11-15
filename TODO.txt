@@ -52,8 +52,8 @@ const mask = {[
 
 [DONE] the guideClock also applied to file => new document
 
-add new signal for file => new document
-add feature canAddSignal
+[DONE] add new signal for file => new document
+[DONE] add feature canAddSignal
 add feature canDeleteSignal
 [DONE] add feature canNewDocument
 

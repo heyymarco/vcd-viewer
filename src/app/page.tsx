@@ -27,7 +27,7 @@ const blankSampleVcd : Vcd|null = {
                         size   : 1,
                         lsb    : 0,
                         msb    : 1,
-                        waves  : (new Array(100)).fill(null).map((_, index) => ({
+                        waves  : (new Array(101)).fill(null).map((_, index) => ({
                             tick  : index * 5,
                             value : index % 2,
                         })),
@@ -152,6 +152,7 @@ export default function Home() {
                     // canSetTimescale     = {false}
                     // canSetDuration      = {false}
                     // canNewDocument      = {false}
+                    // canAddSignal        = {false}
                     
                     // `vcd` and `onVcdChange` are GETTER and SETTER of the editor's in_memory_file:
                     vcd={inMemoryFile}

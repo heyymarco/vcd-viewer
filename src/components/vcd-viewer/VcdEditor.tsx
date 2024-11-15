@@ -50,6 +50,7 @@ import {
     vcdFormatToRadix,
     vcdApplyMask,
     vcdEnumerateWaves,
+    VcdModule,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -101,6 +102,7 @@ export interface VcdEditorProps
     canSetTimescale     ?: boolean
     canSetDuration      ?: boolean
     canNewDocument      ?: boolean
+    canAddSignal        ?: boolean
     
     
     
@@ -139,6 +141,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         canSetTimescale     = true,
         canSetDuration      = true,
         canNewDocument      = true,
+        canAddSignal        = true,
         
         
         
@@ -1641,6 +1644,60 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         handleTransitionInsertOf(0);
     });
     
+    const handleAddSignal            = useEvent(() => {
+        const rootModule = vcd?.rootModule;
+        if (!rootModule) return;
+        const lastVariable    = allVcdVariables.findLast((variable) => !!getModulesOfVariable(vcd, variable));
+        const selectedParents = (vcd && lastVariable) ? getModulesOfVariable(vcd, lastVariable) : [rootModule];
+        if (!selectedParents) return;
+        
+        triggerVcdChange(produce(vcd, (vcd) => {
+            let currentParents : VcdModule[] = [vcd.rootModule];
+            let delegatedParent : VcdModule|undefined = undefined;
+            for (const selectedParent of selectedParents) {
+                const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                if (!foundParent) return;
+                delegatedParent = foundParent;
+                currentParents = foundParent.submodules;
+            } // for
+            if (!delegatedParent) return;
+            
+            
+            
+            const registeredAliases = new Set<string>(allVcdVariables.map(({alias}) => alias));
+            let char : string|undefined = undefined;
+            for (let num = 0; num < 255; num++) {
+                if (num === 255) return;
+                char = String.fromCharCode(num);
+                if ((/(\w)/gi).test(char)) continue; // skips word character
+                if ((/(\d)/gi).test(char)) continue; // skips number character
+                if ((/(\s)/gi).test(char)) continue; // skips space character
+                if (registeredAliases.has(char)) continue;
+            } // for
+            if (!char) return;
+            
+            
+            
+            delegatedParent.variables.push({
+                name   : 'new',
+                alias  : char,
+                
+                type   : 'wire',
+                size   : 1,
+                msb    : 0,
+                lsb    : 1,
+                waves  : [{
+                    tick  : minTick,
+                    value : 0,
+                }],
+                
+                id     : 123,
+                format : VcdValueFormat.BINARY,
+                color  : null,
+            });
+        }), { triggerAt: 'immediately' });
+    });
+    
     
     
     // global handlers:
@@ -2100,6 +2157,9 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                             {movedLabel}
                         </li>
                     )}
+                    {canAddSignal && <li className={cn(styles.labelWrapper, styles.labelWrapperAdd)} onClick={handleAddSignal}>
+                        <span className={cn(styles.label, styles.labelItemAdd)} />
+                    </li>}
                     <li className={styles.scrollbarHack} />
                 </ul>
                 <ul className={styles.labels}>

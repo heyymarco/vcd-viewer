@@ -25,13 +25,15 @@ export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
 export const getVariableMinTick = (module: VcdModule): number => {
     return Math.min(
         ...flatMapVariables(module)
-        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[0].tick)
+        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[0]?.tick ?? undefined)
+        .filter((tick): tick is Exclude<typeof tick, undefined> => (tick !== undefined))
     );
 }
 export const getVariableMaxTick = (module: VcdModule): number => {
     return Math.max(
         ...flatMapVariables(module)
-        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[waves.length - 1].tick)
+        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[waves.length - 1]?.tick)
+        .filter((tick): tick is Exclude<typeof tick, undefined> => (tick !== undefined))
     );
 }
 

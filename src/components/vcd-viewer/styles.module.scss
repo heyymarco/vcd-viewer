@@ -22,6 +22,7 @@
     --variable-height: 22px;
     --variable-gap   : 6px;
     --ruler-height: 30px;
+    --handler-size: 16px;
     
     
     
@@ -121,8 +122,10 @@
             background-color: var(--col-ctrl-forg);
             -webkit-mask-repeat: no-repeat;
             -webkit-mask-size: contain;
+            -webkit-mask-position: center;
             mask-repeat: no-repeat;
             mask-size: contain;
+            mask-position: center;
         }
         &[class ~= "zoom-out"            ]::before { -webkit-mask-image: url(./assets/zoom-out.svg);             mask-image: url(./assets/zoom-out.svg);             }
         &[class ~= "zoom-in"             ]::before { -webkit-mask-image: url(./assets/zoom-in.svg);              mask-image: url(./assets/zoom-in.svg);              }
@@ -136,7 +139,7 @@
         &[class ~= "next"                ]::before { -webkit-mask-image: url(./assets/next.svg);                 mask-image: url(./assets/next.svg);                 }
         &[class ~= "touch"               ]::before { -webkit-mask-image: url(./assets/touch.svg);                mask-image: url(./assets/touch.svg);                }
         &[class ~= "list"                ]::before { -webkit-mask-image: url(./assets/list.svg);                 mask-image: url(./assets/list.svg);                 }
-
+        
         &[class ~= "transition-delete"   ]::before { -webkit-mask-image: url(./assets/transition-delete.svg);    mask-image: url(./assets/transition-delete.svg);    }
         &[class ~= "transition-set-hi"   ]::before { -webkit-mask-image: url(./assets/transition-set-hi.svg);    mask-image: url(./assets/transition-set-hi.svg);    }
         &[class ~= "transition-set-lo"   ]::before { -webkit-mask-image: url(./assets/transition-set-lo.svg);    mask-image: url(./assets/transition-set-lo.svg);    }
@@ -377,7 +380,7 @@
     
     
     // sizes:
-    min-inline-size: 16px;
+    inline-size: var(--handler-size);
     
     
     
@@ -412,6 +415,59 @@
         &::before, &::after {
             border-top-color: var(--col-handler-active);
         }
+    }
+}
+.labelWrapperAdd {
+    // accessibilites:
+    cursor: pointer;
+    
+    
+    
+    // backgrounds:
+    &:hover:not(:disabled) {
+        background-color: var(--col-ctrl-hover);
+    }
+}
+.labelItemAdd {
+    // positions:
+    justify-self: center;
+    
+    
+    
+    // layouts:
+    display: grid;
+    
+    
+    
+    // sizes:
+    inline-size: var(--handler-size);
+    block-size: var(--handler-size);
+    
+    
+    
+    &::before {
+        content: "";
+        display: block;
+        
+        
+        
+        // appearances:
+        background-color: var(--col-ctrl-forg);
+        -webkit-mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        -webkit-mask-position: center;
+        mask-repeat: no-repeat;
+        mask-size: contain;
+        mask-position: center;
+        
+        -webkit-mask-image : url(./assets/plus.svg);
+        mask-image         : url(./assets/plus.svg);
+        
+        
+        
+        // sizes:
+        inline-size: var(--handler-size);
+        block-size: var(--handler-size);
     }
 }
 .labelValue {
@@ -860,8 +916,10 @@
             background-color: var(--col-ctrl-forg);
             -webkit-mask-repeat: no-repeat;
             -webkit-mask-size: contain;
+            -webkit-mask-position: center;
             mask-repeat: no-repeat;
             mask-size: contain;
+            mask-position: center;
             -webkit-mask-image: url(./assets/drop-right.svg);
             mask-image: url(./assets/drop-right.svg);
         }
