@@ -267,18 +267,18 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                 <DataTable expanded={true}>
                     <DataTableBody>
                         <DataTableItem label='Timescale'>
-                            <TimescaleEditor theme='primary' value={timescale} onChange={handleTimescaleChange} />
+                            <TimescaleEditor size={props.size} theme='primary' value={timescale} onChange={handleTimescaleChange} />
                         </DataTableItem>
                         <DataTableItem label='Starting value'>
-                            <List orientation='inline' actionCtrl={true}>
+                            <List size={props.size} orientation='inline' actionCtrl={true}>
                                 <ListItem className={styles.selection} active={!startingValue} onClick={() => handleStartingValueChange({ active: false })}>
-                                    <RadioDecorator />
+                                    <RadioDecorator size={props.size} />
                                     <span>
                                         LOW
                                     </span>
                                 </ListItem>
                                 <ListItem className={styles.selection} active={startingValue} onClick={() => handleStartingValueChange({ active: true })}>
-                                    <RadioDecorator />
+                                    <RadioDecorator size={props.size} />
                                     <span>
                                         HI
                                     </span>
@@ -286,29 +286,29 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                             </List>
                         </DataTableItem>
                         <DataTableItem label='Flip interval'>
-                            <NumberUpDownEditor theme='primary' min={0} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
+                            <NumberUpDownEditor size={props.size} theme='primary' min={0} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
                         </DataTableItem>
                         <DataTableItem label='Duration'>
-                            <List orientation='block' actionCtrl={true}>
+                            <List size={props.size} orientation='block' actionCtrl={true}>
                                 <ListItem className={styles.selection} active={intervalMode === IntervalMode.Fill} onClick={() => setIntervalMode(IntervalMode.Fill)}>
-                                    <RadioDecorator />
+                                    <RadioDecorator size={props.size} />
                                     <div>
                                         From beginning to end
                                     </div>
                                 </ListItem>
                                 <ListItem className={styles.selection} active={intervalMode === IntervalMode.CursorToEnd} onClick={() => setIntervalMode(IntervalMode.CursorToEnd)}>
-                                    <RadioDecorator />
+                                    <RadioDecorator size={props.size} />
                                     <div>
                                         From current cursor to end
                                     </div>
                                 </ListItem>
                                 <ListItem className={styles.selection} active={intervalMode === IntervalMode.CursorToNPeriods} onClick={() => setIntervalMode(IntervalMode.CursorToNPeriods)}>
-                                    <RadioDecorator />
+                                    <RadioDecorator size={props.size} />
                                     <div className={styles.cursorToNPeriods}>
                                         <span>
                                             From current cursor to N periods
                                         </span>
-                                        <Group>
+                                        <Group size={props.size}>
                                             <NumberUpDownEditor />
                                             <Label>
                                                 periods
