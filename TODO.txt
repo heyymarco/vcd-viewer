@@ -42,3 +42,34 @@ const mask = {[
 
 [DONE] * toolbar: [set hi] [set low] [set value:...]
 [DONE] * shortcut H: set hi, L: set low, SPC: toggle hi/now, Tab|E: set value:...
+
+-----------------------------------------------------------------------
+
+for binary_variable => the insert button should have insert_hi & insert_low, no need to popup a new value
+
+add a reference clock as the guide
+guideClock: { name: 'clock', color: '#ff0000', interval: '2ns', snapHi: true, snapLo: true }
+
+the guideClock also applied to file => new document
+
+add new signal for file => new document
+add feature canAddSignal
+add feature canDeleteSignal
+add feature canNewDocument
+
+insert periodic binary signals between:
+beginningOfFile - endOfFile
+cursor - endOfFile
+cursor - n*periods
+
+
+timescale is a "unit scale"
+imagine 2m of car, it's a real car.
+imagine 2cm of car, it's a toy car.
+
+the graphic/view is the __same__, so __nothing_hapenned__ to the plotter when you change the timescale.
+only affected to the __json_file__ if you save (download) the *.json and of course your generator
+should aware to the timescale __unit__
+
+modify feature hide signal to draft
+modify feature delete signal forever
