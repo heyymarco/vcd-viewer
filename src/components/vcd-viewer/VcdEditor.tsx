@@ -103,6 +103,8 @@ export interface VcdEditorProps
     canSetDuration      ?: boolean
     canNewDocument      ?: boolean
     canAddSignal        ?: boolean
+    canHideSignal       ?: boolean
+    canDeleteSignal     ?: boolean
     
     
     
@@ -142,6 +144,8 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         canSetDuration      = true,
         canNewDocument      = true,
         canAddSignal        = true,
+        canHideSignal       = true,
+        canDeleteSignal     = true,
         
         
         
@@ -497,6 +501,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
             return (mainSelection < nextTick);
         })())?.value === 0)
+    );
+    const isClockGuide : boolean = (
+        (focusedVariable !== null)
+        &&
+        (typeof(allVcdVariables?.[focusedVariable]?.waves) === 'function')
     );
     
     
@@ -1108,12 +1117,33 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             if (showMenuColors) setShowMenuColors(null);
         }, 100);
     });
-    const handleMenuRemove        = useEvent(() => {
+    const handleMenuHide          = useEvent(() => {
+        handleHideAllMenus();
+        
+        
+        
+        // conditions:
+        if (!canHideSignal || isClockGuide) return;
+        
+        
+        
         if (focusedVariable === null) return;
         
         handleMenuListRemoveOf(focusedVariable);
-        
+    });
+    const handleMenuDelete        = useEvent(() => {
         handleHideAllMenus();
+        
+        
+        
+        // conditions:
+        if (!canDeleteSignal || isClockGuide) return;
+        
+        
+        
+        if (focusedVariable === null) return;
+        
+        handleMenuListRemoveOf(focusedVariable, true);
     });
     const handleMenuFormatValues  = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         const { top, right } = event.currentTarget.getBoundingClientRect();
@@ -1176,11 +1206,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             y : bottom + (document.scrollingElement?.scrollTop ?? 0) - (mainRef.current?.offsetTop ?? 0),
         });
     });
-    const handleMenuListRemoveOf = useEvent((variableIndex: number) => {
+    const handleMenuListRemoveOf = useEvent((variableIndex: number, permanentDelete = false) => {
         const mutated = allVcdVariables.slice(0);
         const removed = mutated.splice(variableIndex, 1);
         setAllVcdVariables(mutated);
-        setRemovedVariables((current) => [...current, ...removed]);
+        if (!permanentDelete) setRemovedVariables((current) => [...current, ...removed]);
     });
     const handleMenuListRestoreOf = useEvent((variableIndex: number) => {
         const mutated = removedVariables.slice(0);
@@ -2226,7 +2256,8 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             {!!showMenu && <ul ref={menuRef} className={styles.menu} style={{ insetInlineStart: `${showMenu.x}px`, insetBlockStart: `${showMenu.y}px` }}>
                 {(focusedVariable !== null) && (allVcdVariables[focusedVariable]?.size > 1) && <li tabIndex={0} onClick={handleMenuFormatValues} onMouseEnter={handleMenuFormatValues} onMouseLeave={handleMenuFormatValuesHide}>Format Values<span className='drop-right' /></li>}
                 <li tabIndex={0} onClick={handleMenuSetColor} onMouseEnter={handleMenuSetColor} onMouseLeave={handleMenuSetColorHide}>Change Color<span className='drop-right' /></li>
-                <li tabIndex={0} onClick={handleMenuRemove}>Remove Signal</li>
+                {canHideSignal   && !isClockGuide && <li tabIndex={0} onClick={handleMenuHide}>Hide Signal</li>}
+                {canDeleteSignal && !isClockGuide && <li tabIndex={0} onClick={handleMenuDelete}>Delete Signal</li>}
             </ul>}
             {!!showMenuValues && <ul ref={menuValuesRef} className={styles.menu} style={{ insetInlineStart: `${showMenuValues.x}px`, insetBlockStart: `${showMenuValues.y}px` }}>
                 <li tabIndex={0} onClick={handleMenuFormatBinary}>Binary</li>
@@ -2238,10 +2269,10 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     <li key={index} tabIndex={0} style={{ color: color.hexa() }} onClick={() => handleMenuColorOf(color)} />
                 )}
             </ul>}
-            {!!showMenuList && !!vcd && <ul ref={menuListRef} className={cn(styles.menu, styles.menuList)} style={{ insetInlineStart: `${showMenuList.x}px`, insetBlockStart: `${showMenuList.y}px` }}>
+            {canHideSignal && !!showMenuList && !!vcd && <ul ref={menuListRef} className={cn(styles.menu, styles.menuList)} style={{ insetInlineStart: `${showMenuList.x}px`, insetBlockStart: `${showMenuList.y}px` }}>
                 {!!allVcdVariables.length && <>
-                    <li className={styles.menuLabelGroup}>Shown Items:</li>
-                    {moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex).map((variable, index) =>
+                    <li className={styles.menuLabelGroup}>Shown Signals:</li>
+                    {moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex).filter(({waves}) => (typeof(waves) !== 'function')).map((variable, index) =>
                         <li key={index} tabIndex={0}>
                             <input type='checkbox' checked={true} onChange={() => handleMenuListRemoveOf(index)} />
                             <span>
@@ -2251,7 +2282,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     )}
                 </>}
                 {!!removedVariables.length && <>
-                    <li className={styles.menuLabelGroup}>Removed Items:</li>
+                    <li className={styles.menuLabelGroup}>Hidden Signals:</li>
                     {removedVariables.map((variable, index) =>
                         <li key={index} tabIndex={0}>
                             <input type='checkbox' checked={false} onChange={() => handleMenuListRestoreOf(index)} />

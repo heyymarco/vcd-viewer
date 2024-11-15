@@ -153,6 +153,8 @@ export default function Home() {
                     // canSetDuration      = {false}
                     // canNewDocument      = {false}
                     // canAddSignal        = {false}
+                    // canHideSignal       = {false}
+                    // canDeleteSignal     = {false}
                     
                     // `vcd` and `onVcdChange` are GETTER and SETTER of the editor's in_memory_file:
                     vcd={inMemoryFile}

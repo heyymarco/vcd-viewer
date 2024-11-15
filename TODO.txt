@@ -54,7 +54,7 @@ const mask = {[
 
 [DONE] add new signal for file => new document
 [DONE] add feature canAddSignal
-add feature canDeleteSignal
+[DONE] add feature canDeleteSignal
 [DONE] add feature canNewDocument
 
 insert periodic binary signals between:
@@ -71,5 +71,5 @@ the graphic/view is the __same__, so __nothing_hapenned__ to the plotter when yo
 only affected to the __json_file__ if you save (download) the *.json and of course your generator
 should aware to the timescale __unit__
 
-modify feature hide signal to draft
-modify feature delete signal forever
+[DONE] modify feature hide signal to draft
+[DONE] modify feature delete signal forever
