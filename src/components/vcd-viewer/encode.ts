@@ -9,6 +9,7 @@ import {
     // utilities:
     flatMapVariables,
     getVariableMinTick,
+    vcdEnumerateWaves,
     vcdTimescaleToString,
 }                           from '@/models/vcd'
 
@@ -77,7 +78,8 @@ export const encodeVcdToFileContent = (vcd: Vcd|null): string|null => {
     
     
     
-    const variables = flatMapVariables(vcd.rootModule);
+    const variablesDynamic = flatMapVariables(vcd.rootModule);
+    const variables = variablesDynamic.map(({waves, ...restVcdVariable}) => ({ waves: vcdEnumerateWaves<never>(waves), ...restVcdVariable}));
     lines.push('$dumpvars');
     
     const values = new Set<string>();

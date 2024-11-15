@@ -2,9 +2,10 @@
 import {
     type Vcd,
     type VcdModule,
-    type VcdVariable,
+    type VcdVariableStatic,
     type VcdToken,
     VcdValueFormat,
+    VcdWave,
 }                           from '@/models/vcd'
 import {
     produce,
@@ -22,7 +23,7 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
         let prevToken      : VcdToken|null = null;
         let parentModules  : VcdModule[]   = [];
         let currentModule  : VcdModule     = draft.rootModule;
-        const variableMap  = new Map<string, VcdVariable[]>();
+        const variableMap  = new Map<string, VcdVariableStatic[]>();
         let doReadingVars  = false;
         let currentTick    = 0;
         const lines        = content.split(/\r?\n/);
@@ -148,7 +149,7 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
                         '6': lsb,
                     } = variable;
                     const size = Number.parseInt(sizeRaw);
-                    const newVariable : VcdVariable = {
+                    const newVariable : VcdVariableStatic = {
                         name    : name,
                         alias   : alias,
                         
@@ -166,7 +167,7 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
                     currentModule.variables.push(newVariable);
                     
                     const variableCollection = variableMap.get(alias) ?? (() => {
-                        const newVariableCollection : VcdVariable[] = [];
+                        const newVariableCollection : VcdVariableStatic[] = [];
                         variableMap.set(alias, newVariableCollection);
                         return newVariableCollection;
                     })();
@@ -193,7 +194,7 @@ export const decodeVcdFromFileContent = (content: string): Vcd|null => {
                     const value    = nanFallback(valueNum, valueRaw);
                     
                     const variableCollection = variableMap.get(alias) ?? (() => {
-                        const newVariableCollection : VcdVariable[] = [];
+                        const newVariableCollection : VcdVariableStatic[] = [];
                         variableMap.set(alias, newVariableCollection);
                         return newVariableCollection;
                     })();

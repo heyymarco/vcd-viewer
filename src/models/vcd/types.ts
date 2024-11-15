@@ -32,6 +32,12 @@ export interface VcdVariable {
     format     : VcdValueFormat
     color      : Color|null
 }
+export interface VcdVariableStatic
+    extends
+        VcdVariable
+{
+    waves      : VcdWave[]
+}
 
 export enum VcdValueFormat {
     BINARY,

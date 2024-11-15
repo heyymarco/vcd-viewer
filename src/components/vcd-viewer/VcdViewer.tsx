@@ -41,6 +41,7 @@ import {
     vcdValueToString,
     
     defaultColorOptions,
+    vcdEnumerateWaves,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -690,13 +691,13 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
                 ? (
                     allVcdVariables
                     .flatMap((variable) =>
-                        variable.waves.map((wave) => ({ variable, wave }))
+                        vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                     )
                 )
                 : (() => {
                     if (focusedVariable === null) return []
                     const variable = allVcdVariables[focusedVariable];
-                    return variable.waves.map((wave) => ({ variable, wave }))
+                    return  vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                 })()
             )
             .toSorted((a, b) => a.wave.tick - b.wave.tick)
@@ -1151,7 +1152,7 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
             .map(({ waves, format }) => ({
                 format,
                 waves: (
-                    waves
+                    vcdEnumerateWaves<never>(waves)
                     .map((wave, index, waves): VcdWaveExtended => {
                         const prevIndex = index - 1;
                         const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
@@ -1198,85 +1199,89 @@ const VcdViewer = (props: VcdViewerProps): JSX.Element|null => {
     );
     const moveableVariables : React.ReactNode[] = (
         vcd
-        ? allVcdVariables.map(({ waves, size, format, color }, index) =>
-            <div
-                key={index}
-                className={cn(
-                    styles.variable,
-                    ((focusedVariable === index) ? 'focus' : null),
-                    (((moveFromIndex !== null) && (moveFromIndex === index)) ? 'dragging' : null),
-                )}
-                style={{
-                    ...((moveFromIndex === index) ? {
-                        '--posX'         : movePosRelative.x,
-                        '--posY'         : movePosRelative.y,
-                        '--moveRelative' : (moveToIndex ?? index) - index,
-                    } as any : undefined),
-                    
-                    ...((color !== null) ? {
-                        '--color': color.hexa(),
-                    } as any : undefined),
-                }}
-                tabIndex={0}
-                onFocus={() => setFocusedVariable(index)}
-                onContextMenu={handleContextMenu}
-            >
-                <div className={styles.waves}>
-                    {!!waves.length && (waves[0].tick > minTick) && (() => {
-                        const value    = waves[0].value;
+        ? allVcdVariables.map(({ waves: wavesRaw, size, format, color }, variableIndex) => {
+            const waves = vcdEnumerateWaves<never>(wavesRaw);
+            // jsx:
+            return (
+                <div
+                    key={variableIndex}
+                    className={cn(
+                        styles.variable,
+                        ((focusedVariable === variableIndex) ? 'focus' : null),
+                        (((moveFromIndex !== null) && (moveFromIndex === variableIndex)) ? 'dragging' : null),
+                    )}
+                    style={{
+                        ...((moveFromIndex === variableIndex) ? {
+                            '--posX'         : movePosRelative.x,
+                            '--posY'         : movePosRelative.y,
+                            '--moveRelative' : (moveToIndex ?? variableIndex) - variableIndex,
+                        } as any : undefined),
+                        
+                        ...((color !== null) ? {
+                            '--color': color.hexa(),
+                        } as any : undefined),
+                    }}
+                    tabIndex={0}
+                    onFocus={() => setFocusedVariable(variableIndex)}
+                    onContextMenu={handleContextMenu}
+                >
+                    <div className={styles.waves}>
+                        {!!waves.length && (waves[0].tick > minTick) && (() => {
+                            const value    = waves[0].value;
+                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const isBinary = (size === 1);
+                            
+                            
+                            
+                            // jsx:
+                            const length = waves[0].tick * baseScale;
+                            if (length === 0) return null;
+                            return (
+                                <span key={variableIndex} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                                    {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                                </span>
+                            );
+                        })()}
+                        {waves.map(({tick, value}, index, waves) => {
+                            const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
+                            // if (nextTick === maxTick) return null;
+                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const isBinary = (size === 1);
+                            
+                            
+                            
+                            // jsx:
+                            const length = (nextTick - tick) * baseScale;
+                            if (length === 0) return null;
+                            return (
+                                <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                                    {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    {(() => {
+                        const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+                        if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                        const {
+                            value,
+                        } = lastWave;
+                        
                         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                         const isBinary = (size === 1);
                         
                         
                         
                         // jsx:
-                        const length = waves[0].tick * baseScale;
-                        if (length === 0) return null;
                         return (
-                            <span key={index} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                            <span key={variableIndex} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
                                 {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
                     })()}
-                    {waves.map(({tick, value}, index, waves) => {
-                        const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : maxTick;
-                        // if (nextTick === maxTick) return null;
-                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                        const isBinary = (size === 1);
-                        
-                        
-                        
-                        // jsx:
-                        const length = (nextTick - tick) * baseScale;
-                        if (length === 0) return null;
-                        return (
-                            <span key={index} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                                {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
-                            </span>
-                        );
-                    })}
                 </div>
-                {(() => {
-                    const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-                    if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-                    const {
-                        value,
-                    } = lastWave;
-                    
-                    const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                    const isBinary = (size === 1);
-                    
-                    
-                    
-                    // jsx:
-                    return (
-                        <span key={index} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                            {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
-                        </span>
-                    );
-                })()}
-            </div>
-        )
+            );
+        })
         : []
     );
     return (

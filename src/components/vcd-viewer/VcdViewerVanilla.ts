@@ -22,6 +22,7 @@ import {
     vcdValueToString,
     
     defaultColorOptions,
+    vcdEnumerateWaves,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -828,13 +829,13 @@ export class VcdViewerVanilla {
                 ? (
                     this._allVcdVariables
                     .flatMap((variable) =>
-                        variable.waves.map((wave) => ({ variable, wave }))
+                        vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                     )
                 )
                 : (() => {
                     if (this._focusedVariable === null) return []
                     const variable = this._allVcdVariables[this._focusedVariable];
-                    return variable.waves.map((wave) => ({ variable, wave }))
+                    return vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                 })()
             )
             .toSorted((a, b) => a.wave.tick - b.wave.tick)
@@ -1715,16 +1716,17 @@ export class VcdViewerVanilla {
         const wavesElm = document.createElement('div');
         wavesElm.classList.add(styles.waves);
         
-        if (!!variable.waves.length && (variable.waves[0].tick > this._minTick)) {
+        const waves = vcdEnumerateWaves<never>(variable.waves);
+        if (!!waves.length && (waves[0].tick > this._minTick)) {
             const size     = variable.size;
             const format   = variable.format;
-            const value    = variable.waves[0].value;
+            const value    = waves[0].value;
             const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
             const isBinary = (size === 1);
             
             
             
-            const length = variable.waves[0].tick * this._baseScale;
+            const length = waves[0].tick * this._baseScale;
             if (length === 0) return null;
             
             const wave = document.createElement('span');
@@ -1747,7 +1749,7 @@ export class VcdViewerVanilla {
         
         wavesElm.append(
             ...
-            variable.waves.map((wave, index) =>
+            waves.map((wave, index) =>
                 this._reactVariableWave(index, variable, wave)
             )
             .filter((wave): wave is Exclude<typeof wave, null> => (wave !== null))
@@ -1755,7 +1757,8 @@ export class VcdViewerVanilla {
         
         return wavesElm;
     }
-    _reactVariableWave(index: number, {waves, size, format}: VcdVariable, {tick, value}: VcdWave) {
+    _reactVariableWave(index: number, {waves: wavesRaw, size, format}: VcdVariable, {tick, value}: VcdWave) {
+        const waves = vcdEnumerateWaves<never>(wavesRaw);
         const nextTick : number = (waves.length && ((index + 1) < waves.length)) ? waves[index + 1].tick : this._maxTick;
         // if (nextTick === maxTick) return null;
         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
@@ -1781,7 +1784,8 @@ export class VcdViewerVanilla {
         
         return wave;
     }
-    _reactVariableWaveLast({waves, size, format}: VcdVariable) {
+    _reactVariableWaveLast({waves: wavesRaw, size, format}: VcdVariable) {
+        const waves = vcdEnumerateWaves<never>(wavesRaw);
         const lastWave = waves.length ? waves[waves.length - 1] : undefined;
         if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
         const {
@@ -1854,7 +1858,7 @@ export class VcdViewerVanilla {
                 .map(({ waves, format }) => ({
                     format,
                     waves : (
-                        waves
+                        vcdEnumerateWaves<never>(waves)
                         .map((wave, index, waves): VcdWaveExtended => {
                             const prevIndex = index - 1;
                             const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
