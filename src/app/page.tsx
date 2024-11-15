@@ -4,7 +4,7 @@ import { useState } from "react";
 import { decodeVcdFromFileContent, encodeVcdToFileContent, VcdViewer, VcdEditor } from "@/components/vcd-viewer";
 import vcdContent from '@/data/vcd'
 import { useEvent } from "@reusable-ui/core";
-import { VcdMask, VcdValueFormat, type Vcd } from "@/models";
+import { VcdClockGuide, VcdMask, VcdValueFormat, type Vcd } from "@/models";
 import Color from 'color'
 
 
@@ -75,7 +75,23 @@ const sampleMask : VcdMask[] = [
         timescale : 1 * (0.1 ** 9), // 1ns
         maxTime   : 300,
     },
-]
+];
+
+const sampleClockGuide : VcdClockGuide = {
+    name          : 'sync',
+    alias         : '~', // the alias character when saved back to *.vcd file
+    type          : 'wire',
+    color         : Color('#00ff00'),
+    
+    timescale     : undefined, // undefined = >inherits vcd_file's timescale
+    // timescale     : 1 * (0.1 ** 9), // 1ns
+    
+    minTime       : 0,
+    maxTime       : undefined, // undefined => defaults to vcd_file's duration.
+    
+    startingValue : true, // true => starts with 'HI', false => starts with 'LOW'
+    flipInterval  : 5, // every (5 * timescale) the value flips to opposite value
+}
 
 
 
@@ -109,6 +125,11 @@ export default function Home() {
         setEnableMask(checked);
     });
     
+    const [enableClockGuide, setEnableClockGuide] = useState<boolean>(true);
+    const handleEnableClockChange = useEvent<React.ChangeEventHandler<HTMLInputElement>>(({target: {checked}}) => {
+        setEnableClockGuide(checked);
+    });
+    
     
     /*
         NOTE Using <VcdEditor> in cra/next-js:
@@ -136,6 +157,9 @@ export default function Home() {
                     
                     // a masking file:
                     vcdMask={enableMask ? sampleMask : undefined}
+                    
+                    // a clock guide:
+                    vcdClockGuide={enableClockGuide ? sampleClockGuide : undefined}
                 />
             </div>
             <hr />
@@ -154,6 +178,11 @@ export default function Home() {
             <label>
                 <input type='checkbox' onChange={handleMaskChange} checked={enableMask} />
                 <span>Enable mask</span>
+            </label>
+            <br />
+            <label>
+                <input type='checkbox' onChange={handleEnableClockChange} checked={enableClockGuide} />
+                <span>Enable clock guide</span>
             </label>
             {/* <p>parsed:</p>
             <pre>

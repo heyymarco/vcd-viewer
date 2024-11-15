@@ -25,7 +25,7 @@ export interface VcdVariable {
     size       : number
     msb        : number|undefined
     lsb        : number|undefined
-    waves      : VcdWave[]
+    waves      : VcdWave[] | (() => VcdWave[])
     
     // extra data:
     id         : number
@@ -56,8 +56,50 @@ export interface VcdMask {
     name       : string
     color     ?: Color|null
     
-    timescale  : number
+    /**
+     * The timescale of the `maxTime`.  
+     * If ommited (`undefined`), the timescale of the vcd file will be used.
+     */
+    timescale ?: number
     maxTime   ?: number
+}
+
+
+
+export interface VcdClockGuide
+    extends
+        Pick<VcdVariable,
+            |'name'
+            |'alias'
+        >,
+        Partial<Pick<VcdVariable,
+            |'type'
+        >>
+{
+    name           : string
+    alias          : string
+    color         ?: Color|null
+    
+    /**
+     * The timescale of the `maxTime`.  
+     * If ommited (`undefined`), the timescale of the vcd_file will be used.
+     */
+    timescale     ?: number
+    
+    /**
+     * The starting time of the clock.  
+     * If ommited (`undefined`), defaults to `0`.
+     */
+    minTime       ?: number
+    
+    /**
+     * The starting time of the clock.  
+     * If ommited (`undefined`), defaults to vcd_file's duration.
+     */
+    maxTime       ?: number
+    
+    startingValue  : boolean
+    flipInterval   : number
 }
 
 

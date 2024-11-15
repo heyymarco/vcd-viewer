@@ -25,13 +25,13 @@ export const flatMapVariables = (module: VcdModule): VcdVariable[] => {
 export const getVariableMinTick = (module: VcdModule): number => {
     return Math.min(
         ...flatMapVariables(module)
-        .map(({ waves }) => waves[0].tick)
+        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[0].tick)
     );
 }
 export const getVariableMaxTick = (module: VcdModule): number => {
     return Math.max(
         ...flatMapVariables(module)
-        .map(({ waves }) => waves[waves.length - 1].tick)
+        .map(({ waves }) => vcdEnumerateWaves<never>(waves)[waves.length - 1].tick)
     );
 }
 
@@ -111,8 +111,9 @@ const recursiveFilterMask = (masks: VcdMask[], vcd: Vcd, parentModule: VcdModule
                 // truncate excess variable waves:
                 const maxTime = mask.maxTime;
                 if (maxTime !== undefined) {
-                    const excessWaveIndex = variable.waves.findIndex(({tick}) => ((tick * vcd.timescale) > (maxTime * mask.timescale)));
-                    if (excessWaveIndex >= 0) variable.waves.splice(excessWaveIndex);
+                    const waves = vcdEnumerateWaves<never>(variable.waves);
+                    const excessWaveIndex = waves.findIndex(({tick}) => ((tick * vcd.timescale) > (maxTime * (mask.timescale ?? vcd.timescale))));
+                    if (excessWaveIndex >= 0) waves.splice(excessWaveIndex);
                 } // if
                 
                 
@@ -143,6 +144,13 @@ export const vcdApplyMask = <TNull extends undefined|null = never>(masks: VcdMas
             .filter((submodule): submodule is Exclude<typeof submodule, undefined> => (submodule !== undefined))
         );
     });
+}
+
+
+export const vcdEnumerateWaves = <TNull extends undefined|null = never>(waves: VcdWave[]|(() => VcdWave[])|TNull): VcdWave[]|TNull => {
+    if (!waves) return waves;
+    if (typeof(waves) === 'function') return waves();
+    return waves;
 }
 
 

@@ -30,6 +30,7 @@ import {
     type VcdWave,
     type VcdWaveExtended,
     type VcdMask,
+    type VcdClockGuide,
     
     
     
@@ -48,6 +49,7 @@ import {
     vcdDurationOfTimescaleToString,
     vcdFormatToRadix,
     vcdApplyMask,
+    vcdEnumerateWaves,
 }                           from '@/models'
 import type Color           from 'color'
 
@@ -103,6 +105,7 @@ export interface VcdEditorProps
     
     // filters:
     vcdMask             ?: VcdMask[]
+    vcdClockGuide       ?: VcdClockGuide|null
     
     
     
@@ -139,6 +142,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         // filters:
         vcdMask,
+        vcdClockGuide = null,
         
         
         
@@ -228,21 +232,80 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     const [maxTickOverride, setMaxTickOverride] = useState<number|undefined>(undefined);
     const maxTick = maxTickOverride ?? maxTickAuto;
     
-    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? flatMapVariables(vcd.rootModule) : []);
+    const appendGuideVariableIfNeeded = useEvent((variables: VcdVariable[]): VcdVariable[] => {
+        // conditions:
+        if (!vcdClockGuide) return variables;
+        
+        
+        
+        // appends:
+        const {
+            name,
+            alias,
+            
+            type          = 'reg',
+            timescale     = vcd?.timescale ?? 1,
+            minTime       = minTick,
+            maxTime       = maxTick,
+            flipInterval,
+            startingValue,
+            
+            color         = null,
+        } = vcdClockGuide;
+        
+        return [
+            ...variables,
+            {
+                name   : name,
+                alias  : alias,
+                
+                type   : type,
+                size   : 1,
+                msb    : 1,
+                lsb    : 0,
+                waves  : () : VcdWave[] => {
+                    const result : VcdWave[] = [];
+                    for (let tick = minTime, currentValue = startingValue; tick <= maxTime; tick += flipInterval, currentValue = !currentValue) {
+                        result.push({
+                            tick,
+                            value : currentValue ? 1 : 0,
+                        });
+                    } // for
+                    return result;
+                },
+                
+                id     : 9999,
+                format : VcdValueFormat.BINARY,
+                color  : color,
+            } satisfies VcdVariable,
+        ];
+    });
+    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []);
     const prevVcdVersion = useRef(vcdVersion);
+    const vcdClockGuideStr = JSON.stringify(vcdClockGuide);
+    const prevVcdClockGuide = useRef(vcdClockGuideStr);
+    const prevMaxTickOverride = useRef(maxTickOverride);
     useIsomorphicLayoutEffect(() => {
         // conditions:
-        if (prevVcdVersion.current === vcdVersion) return; // no changes detected => ignore
-        prevVcdVersion.current = vcdVersion; // sync
+        if (
+            (prevVcdVersion.current === vcdVersion)
+            &&
+            (prevVcdClockGuide.current === vcdClockGuideStr)
+            &&
+            (prevMaxTickOverride.current === maxTickOverride)
+        ) return; // no changes detected => ignore
+        prevVcdVersion.current      = vcdVersion;       // sync
+        prevVcdClockGuide.current   = vcdClockGuideStr; // sync
+        prevMaxTickOverride.current = maxTickOverride;  // sync
         
         
         
         // actions:
         setAllVcdVariables(
-            vcd ? flatMapVariables(vcd.rootModule) : []
+            vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []
         );
         setRemovedVariables([]); // clear
-    }, [vcd, vcdVersion]); // resets the `allVcdVariables` when vcd changes
+    }, [vcd, vcdVersion, vcdClockGuideStr, maxTickOverride]); // resets the `allVcdVariables` when vcd changes
     
     const [zoom, setZoom] = useState<number>(1);
     const baseScale = 2 ** zoom;
@@ -369,6 +432,8 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         (focusedVariable !== null)
         &&
         !!allVcdVariables?.[focusedVariable]
+        &&
+        (typeof(allVcdVariables?.[focusedVariable].waves) !== 'function')
     );
     const isReadyToEditTransition : boolean = (
         isReadyOnTimelineTransition
@@ -379,7 +444,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         &&
         (mainSelection % 1 === 0)
         &&
-        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}) => (mainSelection === tick))
+        !!vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves)?.find(({tick}) => (mainSelection === tick))
     );
     const isReadyToInsertTransition : boolean = (
         isReadyOnTimelineTransition
@@ -390,7 +455,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         &&
         (mainSelection % 1 === 0)
         &&
-        !!allVcdVariables?.[focusedVariable]?.waves.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
+        !!vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves)?.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
             return (mainSelection < nextTick);
         })())
@@ -409,7 +474,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         &&
         (mainSelection % 1 === 0)
         &&
-        (allVcdVariables?.[focusedVariable]?.waves.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
+        (vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves)?.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
             return (mainSelection < nextTick);
         })())?.value === 1)
@@ -423,7 +488,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         &&
         (mainSelection % 1 === 0)
         &&
-        (allVcdVariables?.[focusedVariable]?.waves.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
+        (vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves)?.find(({tick}, waveIndex, waves) => (mainSelection > tick) && ((): boolean => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
             return (mainSelection < nextTick);
         })())?.value === 0)
@@ -917,13 +982,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 ? (
                     allVcdVariables
                     .flatMap((variable) =>
-                        variable.waves.map((wave) => ({ variable, wave }))
+                        vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                     )
                 )
                 : (() => {
                     if (focusedVariable === null) return []
                     const variable = allVcdVariables[focusedVariable];
-                    return variable.waves.map((wave) => ({ variable, wave }))
+                    return vcdEnumerateWaves<never>(variable.waves).map((wave) => ({ variable, wave }))
                 })()
             )
             .toSorted((a, b) => a.wave.tick - b.wave.tick)
@@ -1207,8 +1272,9 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             setAllVcdVariables(
                 produce(allVcdVariables, (allVcdVariables) => {
                     for (const vcdVariable of allVcdVariables) {
-                        const excessWaveIndex = vcdVariable.waves.findIndex(({tick}) => (tick > newDuration));
-                        if (excessWaveIndex >= 0) vcdVariable.waves.splice(excessWaveIndex);
+                        const waves = vcdEnumerateWaves<never>(vcdVariable.waves);
+                        const excessWaveIndex = waves.findIndex(({tick}) => (tick > newDuration));
+                        if (excessWaveIndex >= 0) waves.splice(excessWaveIndex);
                     } // for
                 })
             );
@@ -1232,7 +1298,32 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         // conditions:
         if (newMainSelection === null) return;
-        const snappedMainSection = Math.round(newMainSelection);
+        const snappedMainSection = (
+            ((): number|undefined => {
+                // conditions:
+                if (!vcdClockGuide) return undefined;
+                const globalTimescale = vcd?.timescale ?? 1;
+                const {
+                    timescale    : localTimescale = globalTimescale,
+                    minTime      : minTimeRaw     = minTick,
+                    maxTime      : maxTimeRaw     = maxTick,
+                    flipInterval : flipIntervalRaw,
+                } = vcdClockGuide;
+                const minTime      = (minTimeRaw      * localTimescale) / globalTimescale;
+                const maxTime      = (maxTimeRaw      * localTimescale) / globalTimescale;
+                const flipInterval = (flipIntervalRaw * localTimescale) / globalTimescale;
+                if (newMainSelection < minTime) return undefined;
+                if (newMainSelection > maxTime) return undefined;
+                
+                
+                
+                // snaps:
+                const periods = Math.round((newMainSelection - minTime) / flipInterval);
+                return minTime + (periods * flipInterval);
+            })()
+            ??
+            Math.round(newMainSelection)
+        );
         const snappingDistance = snappedMainSection - newMainSelection;
         if (Math.abs(snappingDistance) <= 0.000000001) return;
         
@@ -1301,7 +1392,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection !== null) && (mainSelection % 1 === 0) && (mainSelection === tick));
                 // const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
@@ -1325,7 +1416,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
                     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1348,7 +1439,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
                     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1371,7 +1462,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
                     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1394,7 +1485,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         if (mainSelection === null) return;
         const vcdVariable = allVcdVariables?.[focusedVariable];
         
-        const waves = vcdVariable.waves;
+        const waves = vcdEnumerateWaves(vcdVariable.waves);
         if (!waves) return;
         const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1434,7 +1525,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
                     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1457,7 +1548,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         if (mainSelection === null) return;
         const vcdVariable = allVcdVariables?.[focusedVariable];
         
-        const waves = vcdVariable.waves;
+        const waves = vcdEnumerateWaves(vcdVariable.waves);
         if (!waves) return;
         const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
             const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1495,7 +1586,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             produce(allVcdVariables, (allVcdVariables) => {
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
-                const waves = allVcdVariables?.[focusedVariable]?.waves;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
                 if (!waves) return;
                 const transitionIndex = waves.findIndex(({tick}, waveIndex) => (mainSelection >= tick) && ((): boolean => {
                     const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
@@ -1793,7 +1884,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             .map(({ waves, format }) => ({
                 format,
                 waves: (
-                    waves
+                    vcdEnumerateWaves<never>(waves)
                     .map((wave, index, waves): VcdWaveExtended => {
                         const prevIndex = index - 1;
                         const prevWave  = (prevIndex >= 0) ? waves[prevIndex] : undefined;
@@ -1840,85 +1931,89 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     );
     const moveableVariables : React.ReactNode[] = (
         vcd
-        ? allVcdVariables.map(({ waves, size, format, color }, variableIndex) =>
-            <div
-                key={variableIndex}
-                className={cn(
-                    styles.variable,
-                    ((focusedVariable === variableIndex) ? 'focus' : null),
-                    (((moveFromIndex !== null) && (moveFromIndex === variableIndex)) ? 'dragging' : null),
-                )}
-                style={{
-                    ...((moveFromIndex === variableIndex) ? {
-                        '--posX'         : movePosRelative.x,
-                        '--posY'         : movePosRelative.y,
-                        '--moveRelative' : (moveToIndex ?? variableIndex) - variableIndex,
-                    } as any : undefined),
-                    
-                    ...((color !== null) ? {
-                        '--color': color.hexa(),
-                    } as any : undefined),
-                }}
-                tabIndex={0}
-                onFocus={() => setFocusedVariable(variableIndex)}
-                onContextMenu={handleContextMenu}
-            >
-                <div className={styles.waves}>
-                    {!!waves.length && (waves[0].tick > minTick) && (() => {
-                        const value    = waves[0].value;
+        ? allVcdVariables.map(({ waves: wavesRaw, size, format, color }, variableIndex) => {
+            const waves = vcdEnumerateWaves<never>(wavesRaw);
+            // jsx:
+            return (
+                <div
+                    key={variableIndex}
+                    className={cn(
+                        styles.variable,
+                        ((focusedVariable === variableIndex) ? 'focus' : null),
+                        (((moveFromIndex !== null) && (moveFromIndex === variableIndex)) ? 'dragging' : null),
+                    )}
+                    style={{
+                        ...((moveFromIndex === variableIndex) ? {
+                            '--posX'         : movePosRelative.x,
+                            '--posY'         : movePosRelative.y,
+                            '--moveRelative' : (moveToIndex ?? variableIndex) - variableIndex,
+                        } as any : undefined),
+                        
+                        ...((color !== null) ? {
+                            '--color': color.hexa(),
+                        } as any : undefined),
+                    }}
+                    tabIndex={0}
+                    onFocus={() => setFocusedVariable(variableIndex)}
+                    onContextMenu={handleContextMenu}
+                >
+                    <div className={styles.waves}>
+                        {!!waves.length && (waves[0].tick > minTick) && (() => {
+                            const value    = waves[0].value;
+                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const isBinary = (size === 1);
+                            
+                            
+                            
+                            // jsx:
+                            const length = waves[0].tick * baseScale;
+                            if (length === 0) return null;
+                            return (
+                                <span key={variableIndex} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                                    {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                                </span>
+                            );
+                        })()}
+                        {waves.map(({tick, value}, waveIndex, waves) => {
+                            const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
+                            // if (nextTick === maxTick) return null;
+                            const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
+                            const isBinary = (size === 1);
+                            
+                            
+                            
+                            // jsx:
+                            const length = (nextTick - tick) * baseScale;
+                            if (length === 0) return null;
+                            return (
+                                <span key={waveIndex} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null, ((focusedVariable === variableIndex) && (mainSelection !== null) && (((Math.round(mainSelection) >= tick) && (Math.round(mainSelection) < nextTick)) || (Math.round(mainSelection) === nextTick))) && 'selected')}>
+                                    {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    {(() => {
+                        const lastWave = waves.length ? waves[waves.length - 1] : undefined;
+                        if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
+                        const {
+                            value,
+                        } = lastWave;
+                        
                         const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
                         const isBinary = (size === 1);
                         
                         
                         
                         // jsx:
-                        const length = waves[0].tick * baseScale;
-                        if (length === 0) return null;
                         return (
-                            <span key={variableIndex} style={{ '--length': length } as any} className={cn('sync', styles.syncWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
+                            <span key={variableIndex} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
                                 {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
                             </span>
                         );
                     })()}
-                    {waves.map(({tick, value}, waveIndex, waves) => {
-                        const nextTick : number = (waves.length && ((waveIndex + 1) < waves.length)) ? waves[waveIndex + 1].tick : maxTick;
-                        // if (nextTick === maxTick) return null;
-                        const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                        const isBinary = (size === 1);
-                        
-                        
-                        
-                        // jsx:
-                        const length = (nextTick - tick) * baseScale;
-                        if (length === 0) return null;
-                        return (
-                            <span key={waveIndex} style={{ '--length': length } as any} className={cn(isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null, ((focusedVariable === variableIndex) && (mainSelection !== null) && (((Math.round(mainSelection) >= tick) && (Math.round(mainSelection) < nextTick)) || (Math.round(mainSelection) === nextTick))) && 'selected')}>
-                                {!isBinary && ((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
-                            </span>
-                        );
-                    })}
                 </div>
-                {(() => {
-                    const lastWave = waves.length ? waves[waves.length - 1] : undefined;
-                    if (lastWave === undefined) return null; // if the last wave doesn't exist => do not render
-                    const {
-                        value,
-                    } = lastWave;
-                    
-                    const isError  = (typeof(value) === 'string') /* || ((lsb !== undefined) && (value < lsb)) || ((msb !== undefined) && (value > msb)) */;
-                    const isBinary = (size === 1);
-                    
-                    
-                    
-                    // jsx:
-                    return (
-                        <span key={variableIndex} className={cn('last', styles.lastWave, isError ? 'error' : null, isBinary ? `bin ${value ? 'hi':'lo'}` : null)}>
-                            {((typeof(value) === 'string') ? value : vcdValueToString(value, format))}
-                        </span>
-                    );
-                })()}
-            </div>
-        )
+            );
+        })
         : []
     );
     return (
