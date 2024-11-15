@@ -229,6 +229,9 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
             flipInterval : value,
         } as TValue, undefined as unknown as TChangeEvent);
     });
+    const handleCursorToNPeriodsMouseDown = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
+        if (intervalMode === IntervalMode.CursorToNPeriods) event.stopPropagation();
+    });
     
     
     
@@ -308,7 +311,7 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                         <span>
                                             From current cursor to N periods
                                         </span>
-                                        <Group size={props.size}>
+                                        <Group size={props.size} onMouseDown={handleCursorToNPeriodsMouseDown}>
                                             <NumberUpDownEditor />
                                             <Label>
                                                 periods
