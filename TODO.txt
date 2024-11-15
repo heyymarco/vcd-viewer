@@ -57,10 +57,10 @@ const mask = {[
 [DONE] add feature canDeleteSignal
 [DONE] add feature canNewDocument
 
-insert periodic binary signals between:
-beginningOfFile - endOfFile
-cursor - endOfFile
-cursor - n*periods
+[DONE] insert periodic binary signals between:
+[DONE] beginningOfFile - endOfFile
+[DONE] cursor - endOfFile
+[DONE] cursor - n*periods
 
 
 [????] timescale is a "unit scale"

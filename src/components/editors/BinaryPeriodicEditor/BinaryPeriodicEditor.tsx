@@ -193,8 +193,15 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
     
     const {
         timescale,
+        
         startingValue,
         flipInterval,
+        
+        minTime,
+        currentTime,
+        maxTime,
+        beginTime,
+        endTime,
     } = value;
     console.log({
         defaultUncontrollableValue,
@@ -208,8 +215,8 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
         CursorToEnd = 1,
         CursorToNPeriods = 2,
     }
-    const [intervalMode , setIntervalMode ] = useState<IntervalMode>(IntervalMode.CursorToEnd);
-    const [intervalTimes, setIntervalTimes] = useState<number>(1);
+    const [intervalMode , setIntervalModeRaw ] = useState<IntervalMode>(IntervalMode.CursorToEnd);
+    const [intervalTimes, setIntervalTimesRaw] = useState<number>(1);
     
     
     
@@ -238,6 +245,44 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
         setValue({
             flipInterval : value,
         } as TValue, undefined as unknown as TChangeEvent);
+    });
+    const setIntervalMode  = useEvent((intervalMode: IntervalMode) => {
+        setIntervalModeRaw(intervalMode);
+        
+        
+        
+        switch (intervalMode) {
+            case IntervalMode.Fill:
+                setValue({
+                    beginTime    : minTime,
+                    endTime      : maxTime,
+                } as TValue, undefined as unknown as TChangeEvent);
+                break;
+            case IntervalMode.CursorToEnd:
+                setValue({
+                    beginTime    : currentTime,
+                    endTime      : maxTime,
+                } as TValue, undefined as unknown as TChangeEvent);
+                break;
+            case IntervalMode.CursorToNPeriods:
+                setValue({
+                    beginTime    : currentTime,
+                    endTime      : currentTime + (intervalTimes * flipInterval),
+                } as TValue, undefined as unknown as TChangeEvent);
+                break;
+        } // switch
+    });
+    const setIntervalTimes = useEvent((intervalTimes: number) => {
+        setIntervalTimesRaw(intervalTimes);
+        
+        
+        
+        if (intervalMode === IntervalMode.CursorToNPeriods) {
+            setValue({
+                beginTime    : currentTime,
+                endTime      : currentTime + (intervalTimes * flipInterval),
+            } as TValue, undefined as unknown as TChangeEvent);
+        } // if
     });
     
     const handleCursorToNPeriodsMouseDown = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
@@ -322,9 +367,12 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                     <RadioDecorator size={props.size} />
                                     <div className={styles.cursorToNPeriods}>
                                         <span>
-                                            From current cursor to N times
+                                            From current cursor to flips N times
                                         </span>
                                         <Group size={props.size} onMouseDown={handleCursorToNPeriodsMouseDown}>
+                                            <Label className='solid'>
+                                                flips
+                                            </Label>
                                             <NumberUpDownEditor min={0} max={999} value={intervalTimes} onChange={setIntervalTimes} />
                                             <Label className='solid'>
                                                 times

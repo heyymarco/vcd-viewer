@@ -181,7 +181,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     // states:
     const handleControllableVcdChangeInternal = useEvent<ValueChangeEventHandler<Vcd|null>>((newVcd) => {
         // actions:
-        setAllVcdVariables(
+        setAllVcdVariables( // refresh all variables:
             newVcd ? flatMapVariables(newVcd.rootModule) : []
         );
     });
@@ -314,7 +314,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         // actions:
-        setAllVcdVariables(
+        setAllVcdVariables( // refresh all variables:
             vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []
         );
         setRemovedVariables([]); // clear
@@ -1427,6 +1427,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         cancelAnimatingRef.current = requestAnimationFrame(snapAnimate);
     });
     
+    //#region transition mutations
     const handleTransitionDelete         = useEvent(() => {
         // conditions:
         if (!canDeleteTransition) return;
@@ -1435,8 +1436,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         // actions:
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1449,7 +1455,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (transitionIndex < 0) return;
                 waves.splice(transitionIndex, 1);
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionSetHi          = useEvent(() => {
         // conditions:
@@ -1459,8 +1465,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         // actions:
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1472,7 +1483,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (transitionIndex < 0) return;
                 waves[transitionIndex].value = 1;
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionSetLo          = useEvent(() => {
         // conditions:
@@ -1482,8 +1493,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         // actions:
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1495,7 +1511,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (transitionIndex < 0) return;
                 waves[transitionIndex].value = 0;
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionSetToggle      = useEvent(() => {
         // conditions:
@@ -1505,8 +1521,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         // actions:
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1518,7 +1539,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (transitionIndex < 0) return;
                 waves[transitionIndex].value =  waves[transitionIndex].value ? 0 : 1;
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionSetTo          = useEvent(async () => {
         // conditions:
@@ -1568,8 +1589,14 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        // actions:
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1581,7 +1608,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 if (transitionIndex < 0) return;
                 waves[transitionIndex].value = newValue;
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionInsertOf       = useEvent(async (newValue ?: number) => {
         // conditions:
@@ -1629,8 +1656,14 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         
         
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
+        // actions:
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
                 if (focusedVariable === null) return;
                 if (mainSelection === null) return;
                 const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
@@ -1645,7 +1678,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     value : newValue,
                 } satisfies VcdWave);
             })
-        );
+        , { triggerAt: 'immediately' });
     });
     const handleTransitionInsert         = useEvent(async () => {
         // conditions:
@@ -1710,11 +1743,11 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 minTime       : minTick,
                 maxTime       : maxTick,
                 currentTime   : mainSelection,
-                beginTime     : minTick,
+                beginTime     : mainSelection,
                 endTime       : maxTick,
             } satisfies  BinaryPeriodicValue,
         };
-        const periodicDef = await showDialog<number>(
+        const periodicDef = await showDialog<BinaryPeriodicValue>(
             <SimpleEditModelDialog
                 model={mockModel}
                 edit='value'
@@ -1727,7 +1760,49 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             />
         );
         if (periodicDef === undefined) return;
+        
+        
+        
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                if (!vcd) return;
+                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                
+                
+                
+                if (focusedVariable === null) return;
+                const waves = vcdEnumerateWaves(allVcdVariables?.[focusedVariable]?.waves);
+                if (!waves) return;
+                const {
+                    startingValue,
+                    flipInterval,
+                    
+                    beginTime,
+                    endTime,
+                } = periodicDef;
+                const replaceIndexStart = waves.findIndex(({tick}, waveIndex) => (tick >= beginTime));
+                const replaceIndexEnd   = waves.findLastIndex(({tick}, waveIndex) => (tick <= endTime));
+                waves.splice(
+                    ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? replaceIndexStart : waves.length,
+                    ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? (replaceIndexStart - replaceIndexEnd + 1) : 0,
+                    ...((): VcdWave[] => {
+                        const nPeriods = Math.floor((endTime - beginTime) / flipInterval);
+                        let currentValue = startingValue;
+                        const waves : VcdWave[] = [];
+                        for (let period = 0; period < nPeriods; period++) {
+                            waves.push({
+                                tick  : (beginTime + (period * flipInterval)),
+                                value : currentValue ? 1 : 0,
+                            });
+                            currentValue = !currentValue;
+                        } // for
+                        return waves;
+                    })()
+                );
+            })
+        , { triggerAt: 'immediately' });
     });
+    //#endregion transition mutations
     
     const handleAddSignal            = useEvent(() => {
         const rootModule = vcd?.rootModule;
@@ -1736,51 +1811,65 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         const selectedParents = (vcd && lastVariable) ? getModulesOfVariable(vcd, lastVariable) : [rootModule];
         if (!selectedParents) return;
         
-        triggerVcdChange(produce(vcd, (vcd) => {
-            let currentParents : VcdModule[] = [vcd.rootModule];
-            let delegatedParent : VcdModule|undefined = undefined;
-            for (const selectedParent of selectedParents) {
-                const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
-                if (!foundParent) return;
-                delegatedParent = foundParent;
-                currentParents = foundParent.submodules;
-            } // for
-            if (!delegatedParent) return;
-            
-            
-            
-            const registeredAliases = new Set<string>(allVcdVariables.map(({alias}) => alias));
-            let char : string|undefined = undefined;
-            for (let num = 0; num < 255; num++) {
-                if (num === 255) return;
-                char = String.fromCharCode(num);
-                if ((/(\w)/gi).test(char)) continue; // skips word character
-                if ((/(\d)/gi).test(char)) continue; // skips number character
-                if ((/(\s)/gi).test(char)) continue; // skips space character
-                if (registeredAliases.has(char)) continue;
-            } // for
-            if (!char) return;
-            
-            
-            
-            delegatedParent.variables.push({
-                name   : 'new',
-                alias  : char,
+        
+        
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                let currentParents : VcdModule[] = [vcd.rootModule];
+                let delegatedParent : VcdModule|undefined = undefined;
+                for (const selectedParent of selectedParents) {
+                    const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                    if (!foundParent) return;
+                    delegatedParent = foundParent;
+                    currentParents = foundParent.submodules;
+                } // for
+                if (!delegatedParent) return;
                 
-                type   : 'wire',
-                size   : 1,
-                msb    : 0,
-                lsb    : 1,
-                waves  : [{
-                    tick  : minTick,
-                    value : 0,
-                }],
                 
-                id     : 123,
-                format : VcdValueFormat.BINARY,
-                color  : null,
-            });
-        }), { triggerAt: 'immediately' });
+                
+                const registeredAliases = new Set<string>(allVcdVariables.map(({alias}) => alias));
+                let uniqueAlias : string|undefined = undefined;
+                for (let num = 0; num < 255; num++) {
+                    if (num === 255) return;
+                    uniqueAlias = String.fromCharCode(num);
+                    if ((/(\w)/gi).test(uniqueAlias)) continue; // skips word character
+                    if ((/(\d)/gi).test(uniqueAlias)) continue; // skips number character
+                    if ((/(\s)/gi).test(uniqueAlias)) continue; // skips space character
+                    if (registeredAliases.has(uniqueAlias)) continue;
+                } // for
+                if (!uniqueAlias) return;
+                
+                const registeredIds = new Set<number>(allVcdVariables.map(({id}) => id));
+                let uniquieId : number = 0;
+                for (uniquieId = 0; registeredIds.has(uniquieId); uniquieId++);
+                
+                let uniqueName : string = '';
+                for (let nameSuffix = 1; nameSuffix < 1000; nameSuffix++) {
+                    uniqueName = (nameSuffix >= 2) ? `new${nameSuffix}` : 'new';
+                    if (!delegatedParent.variables.find(({name}) => (name === uniqueName))) break;
+                }
+                
+                
+                const newVariable : VcdVariable = {
+                    name   : uniqueName,
+                    alias  : uniqueAlias,
+                    
+                    type   : 'wire',
+                    size   : 1,
+                    msb    : 0,
+                    lsb    : 1,
+                    waves  : [{
+                        tick  : minTick,
+                        value : 0,
+                    }],
+                    
+                    id     : uniquieId,
+                    format : VcdValueFormat.BINARY,
+                    color  : null,
+                };
+                delegatedParent.variables.push(newVariable);
+            })
+        , { triggerAt: 'immediately' });
     });
     
     
