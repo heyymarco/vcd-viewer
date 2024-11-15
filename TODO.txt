@@ -55,7 +55,7 @@ const mask = {[
 add new signal for file => new document
 add feature canAddSignal
 add feature canDeleteSignal
-add feature canNewDocument
+[DONE] add feature canNewDocument
 
 insert periodic binary signals between:
 beginningOfFile - endOfFile

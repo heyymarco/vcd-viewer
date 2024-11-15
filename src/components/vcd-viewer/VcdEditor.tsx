@@ -100,6 +100,7 @@ export interface VcdEditorProps
     canInsertTransition ?: boolean
     canSetTimescale     ?: boolean
     canSetDuration      ?: boolean
+    canNewDocument      ?: boolean
     
     
     
@@ -137,6 +138,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         canInsertTransition = true,
         canSetTimescale     = true,
         canSetDuration      = true,
+        canNewDocument      = true,
         
         
         
@@ -1192,10 +1194,18 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         });
     });
     const handleMenuFileNewBlank = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
+        handleHideAllMenus();
+        
+        
+        
+        // conditions:
+        if (!canNewDocument) return;
+        
+        
+        
         triggerVcdChange(vcdBlank, { triggerAt: 'immediately' });
         setRemovedVariables([]); // clear
         setMaxTickOverride(undefined); // clear
-        handleHideAllMenus();
     });
     const handleMenuFileSetTimescale = useEvent<React.MouseEventHandler<HTMLSpanElement>>(async (event) => {
         handleHideAllMenus();
@@ -2193,7 +2203,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 </>}
             </ul>}
             {!!showMenuFile && <ul ref={menuFileRef} className={cn(styles.menu, styles.menuFile)} style={{ insetInlineStart: `${showMenuFile.x}px`, insetBlockStart: `${showMenuFile.y}px` }}>
-                <li tabIndex={0} onClick={handleMenuFileNewBlank}>New Blank Document</li>
+                {canNewDocument  && <li tabIndex={0} onClick={handleMenuFileNewBlank}>New Blank Document</li>}
                 {canSetTimescale && <li tabIndex={0} onClick={handleMenuFileSetTimescale}>
                     <span>
                         Set Timescale

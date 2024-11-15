@@ -145,6 +145,14 @@ export default function Home() {
         <div>
             <div style={{ display: 'grid', height: '70vh' }}>
                 <VcdEditor
+                    // accessibilities: (default is true)
+                    // canDeleteTransition = {false}
+                    // canSetTransition    = {false}
+                    // canInsertTransition = {false}
+                    // canSetTimescale     = {false}
+                    // canSetDuration      = {false}
+                    // canNewDocument      = {false}
+                    
                     // `vcd` and `onVcdChange` are GETTER and SETTER of the editor's in_memory_file:
                     vcd={inMemoryFile}
                     onVcdChange={setInMemoryFile}
