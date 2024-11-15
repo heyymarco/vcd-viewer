@@ -281,7 +281,7 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                 <ListItem className={styles.selection} active={startingValue} onClick={() => handleStartingValueChange({ active: true })}>
                                     <RadioDecorator size={props.size} />
                                     <span>
-                                        HI
+                                        HIGH
                                     </span>
                                 </ListItem>
                             </List>
@@ -289,7 +289,7 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                         <DataTableItem label='Flips every' tableDataComponent={<Generic className={styles.flips} />}>
                             <NumberUpDownEditor size={props.size} theme='primary' min={0} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
                             <p>
-                                × of unit time
+                                × of unit time:
                             </p>
                             <TimescaleEditor size={props.size} theme='primary' value={timescale} onChange={handleTimescaleChange} />
                         </DataTableItem>
