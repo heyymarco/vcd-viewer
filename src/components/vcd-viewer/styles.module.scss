@@ -124,25 +124,27 @@
             mask-repeat: no-repeat;
             mask-size: contain;
         }
-        &[class ~= "zoom-out"         ]::before { -webkit-mask-image: url(./assets/zoom-out.svg);          mask-image: url(./assets/zoom-out.svg);          }
-        &[class ~= "zoom-in"          ]::before { -webkit-mask-image: url(./assets/zoom-in.svg);           mask-image: url(./assets/zoom-in.svg);           }
-        &[class ~= "prev-neg-edge"    ]::before { -webkit-mask-image: url(./assets/prev-neg-edge.svg);     mask-image: url(./assets/prev-neg-edge.svg);     }
-        &[class ~= "prev-pos-edge"    ]::before { -webkit-mask-image: url(./assets/prev-pos-edge.svg);     mask-image: url(./assets/prev-pos-edge.svg);     }
-        &[class ~= "prev-transition"  ]::before { -webkit-mask-image: url(./assets/prev-transition.svg);   mask-image: url(./assets/prev-transition.svg);   }
-        &[class ~= "next-transition"  ]::before { -webkit-mask-image: url(./assets/next-transition.svg);   mask-image: url(./assets/next-transition.svg);   }
-        &[class ~= "next-neg-edge"    ]::before { -webkit-mask-image: url(./assets/next-neg-edge.svg);     mask-image: url(./assets/next-neg-edge.svg);     }
-        &[class ~= "next-pos-edge"    ]::before { -webkit-mask-image: url(./assets/next-pos-edge.svg);     mask-image: url(./assets/next-pos-edge.svg);     }
-        &[class ~= "prev"             ]::before { -webkit-mask-image: url(./assets/prev.svg);              mask-image: url(./assets/prev.svg);              }
-        &[class ~= "next"             ]::before { -webkit-mask-image: url(./assets/next.svg);              mask-image: url(./assets/next.svg);              }
-        &[class ~= "touch"            ]::before { -webkit-mask-image: url(./assets/touch.svg);             mask-image: url(./assets/touch.svg);             }
-        &[class ~= "list"             ]::before { -webkit-mask-image: url(./assets/list.svg);              mask-image: url(./assets/list.svg);              }
+        &[class ~= "zoom-out"            ]::before { -webkit-mask-image: url(./assets/zoom-out.svg);             mask-image: url(./assets/zoom-out.svg);             }
+        &[class ~= "zoom-in"             ]::before { -webkit-mask-image: url(./assets/zoom-in.svg);              mask-image: url(./assets/zoom-in.svg);              }
+        &[class ~= "prev-neg-edge"       ]::before { -webkit-mask-image: url(./assets/prev-neg-edge.svg);        mask-image: url(./assets/prev-neg-edge.svg);        }
+        &[class ~= "prev-pos-edge"       ]::before { -webkit-mask-image: url(./assets/prev-pos-edge.svg);        mask-image: url(./assets/prev-pos-edge.svg);        }
+        &[class ~= "prev-transition"     ]::before { -webkit-mask-image: url(./assets/prev-transition.svg);      mask-image: url(./assets/prev-transition.svg);      }
+        &[class ~= "next-transition"     ]::before { -webkit-mask-image: url(./assets/next-transition.svg);      mask-image: url(./assets/next-transition.svg);      }
+        &[class ~= "next-neg-edge"       ]::before { -webkit-mask-image: url(./assets/next-neg-edge.svg);        mask-image: url(./assets/next-neg-edge.svg);        }
+        &[class ~= "next-pos-edge"       ]::before { -webkit-mask-image: url(./assets/next-pos-edge.svg);        mask-image: url(./assets/next-pos-edge.svg);        }
+        &[class ~= "prev"                ]::before { -webkit-mask-image: url(./assets/prev.svg);                 mask-image: url(./assets/prev.svg);                 }
+        &[class ~= "next"                ]::before { -webkit-mask-image: url(./assets/next.svg);                 mask-image: url(./assets/next.svg);                 }
+        &[class ~= "touch"               ]::before { -webkit-mask-image: url(./assets/touch.svg);                mask-image: url(./assets/touch.svg);                }
+        &[class ~= "list"                ]::before { -webkit-mask-image: url(./assets/list.svg);                 mask-image: url(./assets/list.svg);                 }
 
-        &[class ~= "transition-delete"]::before { -webkit-mask-image: url(./assets/transition-delete.svg); mask-image: url(./assets/transition-delete.svg); }
-        &[class ~= "transition-set-hi"]::before { -webkit-mask-image: url(./assets/transition-set-hi.svg); mask-image: url(./assets/transition-set-hi.svg); }
-        &[class ~= "transition-set-lo"]::before { -webkit-mask-image: url(./assets/transition-set-lo.svg); mask-image: url(./assets/transition-set-lo.svg); }
-        &[class ~= "transition-set-tg"]::before { -webkit-mask-image: url(./assets/transition-set-tg.svg); mask-image: url(./assets/transition-set-tg.svg); }
-        &[class ~= "transition-set-to"]::before { -webkit-mask-image: url(./assets/transition-set-to.svg); mask-image: url(./assets/transition-set-to.svg); }
-        &[class ~= "transition-insert"]::before { -webkit-mask-image: url(./assets/transition-insert.svg); mask-image: url(./assets/transition-insert.svg); }
+        &[class ~= "transition-delete"   ]::before { -webkit-mask-image: url(./assets/transition-delete.svg);    mask-image: url(./assets/transition-delete.svg);    }
+        &[class ~= "transition-set-hi"   ]::before { -webkit-mask-image: url(./assets/transition-set-hi.svg);    mask-image: url(./assets/transition-set-hi.svg);    }
+        &[class ~= "transition-set-lo"   ]::before { -webkit-mask-image: url(./assets/transition-set-lo.svg);    mask-image: url(./assets/transition-set-lo.svg);    }
+        &[class ~= "transition-set-tg"   ]::before { -webkit-mask-image: url(./assets/transition-set-tg.svg);    mask-image: url(./assets/transition-set-tg.svg);    }
+        &[class ~= "transition-set-to"   ]::before { -webkit-mask-image: url(./assets/transition-set-to.svg);    mask-image: url(./assets/transition-set-to.svg);    }
+        &[class ~= "transition-insert"   ]::before { -webkit-mask-image: url(./assets/transition-insert.svg);    mask-image: url(./assets/transition-insert.svg);    }
+        &[class ~= "transition-insert-hi"]::before { -webkit-mask-image: url(./assets/transition-insert-hi.svg); mask-image: url(./assets/transition-insert-hi.svg); }
+        &[class ~= "transition-insert-lo"]::before { -webkit-mask-image: url(./assets/transition-insert-lo.svg); mask-image: url(./assets/transition-insert-lo.svg); }
         
         
         

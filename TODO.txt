@@ -45,7 +45,7 @@ const mask = {[
 
 -----------------------------------------------------------------------
 
-for binary_variable => the insert button should have insert_hi & insert_low, no need to popup a new value
+[DONE] for binary_variable => the insert button should have insert_hi & insert_low, no need to popup a new value
 
 add a reference clock as the guide
 guideClock: { name: 'clock', color: '#ff0000', interval: '2ns', snapHi: true, snapLo: true }

@@ -1445,7 +1445,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             })
         );
     });
-    const handleTransitionInsert     = useEvent(async () => {
+    const handleTransitionInsertOf   = useEvent(async (newValue ?: number) => {
         // conditions:
         if (!canInsertTransition) return;
         if (!(isReadyToInsertTransition)) return;
@@ -1471,7 +1471,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             id    : '',
             value : 0,
         };
-        const newValue = await showDialog<number>(
+        newValue ??= await showDialog<number>(
             <SimpleEditModelDialog
                 model={mockModel}
                 edit='value'
@@ -1508,6 +1508,36 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 } satisfies VcdWave);
             })
         );
+    });
+    const handleTransitionInsert     = useEvent(async () => {
+        // conditions:
+        if (!canInsertTransition) return;
+        if (!(isReadyToInsertTransition)) return;
+        
+        
+        
+        // actions:
+        handleTransitionInsertOf();
+    });
+    const handleTransitionInsertHi   = useEvent(() => {
+        // conditions:
+        if (!canSetTransition) return;
+        if (!(isReadyToInsertTransition &&  isTransitionBinary && isTransitionBinaryLo)) return;
+        
+        
+        
+        // actions:
+        handleTransitionInsertOf(1);
+    });
+    const handleTransitionInsertLo   = useEvent(() => {
+        // conditions:
+        if (!canSetTransition) return;
+        if (!(isReadyToInsertTransition &&  isTransitionBinary && isTransitionBinaryHi)) return;
+        
+        
+        
+        // actions:
+        handleTransitionInsertOf(0);
     });
     
     
@@ -1940,12 +1970,14 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 {!!vcd && (mainSelection !== null) && <span className='text'>{Math.round(mainSelection)}</span>}
                 
-                {canDeleteTransition && <button type='button' title='DELETE transition'       className='transition-delete' disabled={!(isReadyToEditTransition                                                  )} onClick={handleTransitionDelete} />}
-                {canSetTransition    && <button type='button' title='set transition to HI'    className='transition-set-hi' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />}
-                {canSetTransition    && <button type='button' title='set transition to LOW'   className='transition-set-lo' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />}
-                {canSetTransition    && <button type='button' title='TOGGLE transition'       className='transition-set-tg' disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />}
-                {canSetTransition    && <button type='button' title='set transition to VALUE' className='transition-set-to' disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />}
-                {canInsertTransition && <button type='button' title='INSERT new transition'   className='transition-insert' disabled={!(isReadyToInsertTransition                                                )} onClick={handleTransitionInsert} />}
+                {canDeleteTransition && <button type='button' title='DELETE transition'         className='transition-delete'    disabled={!(isReadyToEditTransition                                                  )} onClick={handleTransitionDelete} />}
+                {canSetTransition    && <button type='button' title='set transition to HI'      className='transition-set-hi'    disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />}
+                {canSetTransition    && <button type='button' title='set transition to LOW'     className='transition-set-lo'    disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />}
+                {canSetTransition    && <button type='button' title='TOGGLE transition'         className='transition-set-tg'    disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />}
+                {canSetTransition    && <button type='button' title='set transition to VALUE'   className='transition-set-to'    disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />}
+                {canInsertTransition && <button type='button' title='INSERT new transition'     className='transition-insert'    disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionInsert} />}
+                {canInsertTransition && <button type='button' title='INSERT new HI transition'  className='transition-insert-hi' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionInsertHi} />}
+                {canInsertTransition && <button type='button' title='INSERT new LOW transition' className='transition-insert-lo' disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionInsertLo} />}
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
