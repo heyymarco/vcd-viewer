@@ -1703,10 +1703,15 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             id    : '',
             value : {
                 timescale     : vcd?.timescale ?? 1,
-                minTime       : minTick,
-                maxTime       : maxTick,
+                
                 startingValue : false,
                 flipInterval  : 1,
+                
+                minTime       : minTick,
+                maxTime       : maxTick,
+                currentTime   : mainSelection,
+                beginTime     : minTick,
+                endTime       : maxTick,
             } satisfies  BinaryPeriodicValue,
         };
         const periodicDef = await showDialog<number>(

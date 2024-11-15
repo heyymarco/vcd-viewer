@@ -77,16 +77,25 @@ import {
     TimescaleEditor,
 }                           from '@/components/editors/TimescaleEditor'
 
+// models:
+import {
+    vcdTimescaleToString,
+}                           from '@/models'
+
 
 
 // utilities:
 const emptyBinaryPeriodicValue : Required<BinaryPeriodicValue> = {
     timescale     : 1,
-    minTime       : 0,
-    maxTime       : 0,
     
     startingValue : false,
     flipInterval  : 1,
+    
+    minTime       : 0,
+    currentTime   : 0,
+    maxTime       : 0,
+    beginTime     : 0,
+    endTime       : 0,
 };
 Object.freeze(emptyBinaryPeriodicValue);
 
@@ -95,11 +104,15 @@ Object.freeze(emptyBinaryPeriodicValue);
 // react components:
 export type BinaryPeriodicValue = {
     timescale     : number
-    minTime       : number
-    maxTime       : number
     
     startingValue : boolean
     flipInterval  : number
+    
+    minTime       : number
+    currentTime   : number
+    maxTime       : number
+    beginTime     : number
+    endTime       : number
 }
 export interface BinaryPeriodicEditorProps<out TElement extends Element = HTMLSpanElement, in TChangeEvent extends React.SyntheticEvent<unknown, Event> = React.ChangeEvent<HTMLInputElement>, TValue extends BinaryPeriodicValue = BinaryPeriodicValue>
     extends
@@ -195,7 +208,8 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
         CursorToEnd = 1,
         CursorToNPeriods = 2,
     }
-    const [intervalMode, setIntervalMode] = useState<IntervalMode>(IntervalMode.CursorToEnd);
+    const [intervalMode , setIntervalMode ] = useState<IntervalMode>(IntervalMode.CursorToEnd);
+    const [intervalTimes, setIntervalTimes] = useState<number>(1);
     
     
     
@@ -220,16 +234,12 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
             startingValue : newStartingValue,
         } as TValue, undefined as unknown as TChangeEvent);
     });
-    const handleTimescaleChange  = useEvent<EditorChangeEventHandler<React.ChangeEvent<HTMLInputElement>, number>>((value) => {
-        setValue({
-            timescale : value,
-        } as TValue, undefined as unknown as TChangeEvent);
-    });
     const handleFlipIntervalChange  = useEvent<EditorChangeEventHandler<React.ChangeEvent<HTMLInputElement>, number>>((value) => {
         setValue({
             flipInterval : value,
         } as TValue, undefined as unknown as TChangeEvent);
     });
+    
     const handleCursorToNPeriodsMouseDown = useEvent<React.MouseEventHandler<HTMLElement>>((event) => {
         if (intervalMode === IntervalMode.CursorToNPeriods) event.stopPropagation();
     });
@@ -287,11 +297,12 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                             </List>
                         </DataTableItem>
                         <DataTableItem label='Flips every' tableDataComponent={<Generic className={styles.flips} />}>
-                            <NumberUpDownEditor size={props.size} theme='primary' min={0} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
-                            <p>
-                                × of unit time:
-                            </p>
-                            <TimescaleEditor size={props.size} theme='primary' value={timescale} onChange={handleTimescaleChange} />
+                            <Group>
+                                <NumberUpDownEditor size={props.size} theme='primary' min={1} max={999} value={flipInterval} onChange={handleFlipIntervalChange} />
+                                <Label className='solid'>
+                                    × {vcdTimescaleToString(timescale)}
+                                </Label>
+                            </Group>
                         </DataTableItem>
                         <DataTableItem label='Duration' tableDataComponent={<Generic className={styles.duration} />}>
                             <List size={props.size} orientation='block' actionCtrl={true}>
@@ -314,8 +325,8 @@ const BinaryPeriodicEditor = <TElement extends Element = HTMLSpanElement, TChang
                                             From current cursor to N times
                                         </span>
                                         <Group size={props.size} onMouseDown={handleCursorToNPeriodsMouseDown}>
-                                            <NumberUpDownEditor />
-                                            <Label>
+                                            <NumberUpDownEditor min={0} max={999} value={intervalTimes} onChange={setIntervalTimes} />
+                                            <Label className='solid'>
                                                 times
                                             </Label>
                                         </Group>
