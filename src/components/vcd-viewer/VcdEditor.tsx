@@ -1170,16 +1170,39 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     });
     
     const handleMenuFormatOf = useEvent((format: VcdValueFormat) => {
-        if (focusedVariable === null) return;
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
-                const variable = allVcdVariables[focusedVariable];
-                if (variable === undefined) return;
-                variable.format = format;
-            })
-        );
-        
         handleHideAllMenus();
+        
+        
+        
+        if (focusedVariable === null) return;
+        if (!vcd) return;
+        const mirrorTargetVariable = allVcdVariables.at(focusedVariable);
+        if (!mirrorTargetVariable) return;
+        const selectedParents = getModulesOfVariable(vcd, mirrorTargetVariable);
+        if (!selectedParents) return;
+        
+        
+        
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                let currentParents : VcdModule[] = [vcd.rootModule];
+                let delegatedParent : VcdModule|undefined = undefined;
+                for (const selectedParent of selectedParents) {
+                    const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                    if (!foundParent) return;
+                    delegatedParent = foundParent;
+                    currentParents = foundParent.submodules;
+                } // for
+                if (!delegatedParent) return;
+                
+                
+                
+                // delete the real targetVariable:
+                const targetVariable = delegatedParent.variables.find(({name}) => (name === mirrorTargetVariable.name));
+                if (!targetVariable) return;
+                targetVariable.format = format;
+            })
+        , { triggerAt: 'immediately' });
     });
     const handleMenuFormatBinary = useEvent(() => {
         handleMenuFormatOf(VcdValueFormat.BINARY);
@@ -1191,16 +1214,39 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         handleMenuFormatOf(VcdValueFormat.HEXADECIMAL);
     });
     const handleMenuColorOf = useEvent((color: Color) => {
-        if (focusedVariable === null) return;
-        setAllVcdVariables(
-            produce(allVcdVariables, (allVcdVariables) => {
-                const variable = allVcdVariables[focusedVariable];
-                if (variable === undefined) return;
-                variable.color = color;
-            })
-        );
-        
         handleHideAllMenus();
+        
+        
+        
+        if (focusedVariable === null) return;
+        if (!vcd) return;
+        const mirrorTargetVariable = allVcdVariables.at(focusedVariable);
+        if (!mirrorTargetVariable) return;
+        const selectedParents = getModulesOfVariable(vcd, mirrorTargetVariable);
+        if (!selectedParents) return;
+        
+        
+        
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                let currentParents : VcdModule[] = [vcd.rootModule];
+                let delegatedParent : VcdModule|undefined = undefined;
+                for (const selectedParent of selectedParents) {
+                    const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                    if (!foundParent) return;
+                    delegatedParent = foundParent;
+                    currentParents = foundParent.submodules;
+                } // for
+                if (!delegatedParent) return;
+                
+                
+                
+                // delete the real targetVariable:
+                const targetVariable = delegatedParent.variables.find(({name}) => (name === mirrorTargetVariable.name));
+                if (!targetVariable) return;
+                targetVariable.color = color;
+            })
+        , { triggerAt: 'immediately' });
     });
     
     const handleMenuList = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
