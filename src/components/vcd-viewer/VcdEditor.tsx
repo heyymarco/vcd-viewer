@@ -1996,6 +1996,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     id     : uniquieId,
                     format : VcdValueFormat.BINARY,
                     color  : null,
+                    sort   : (lastVariable?.sort !== undefined) ? (lastVariable.sort + 1) : undefined,
                 };
                 delegatedParent.variables.push(newVariable);
             })
