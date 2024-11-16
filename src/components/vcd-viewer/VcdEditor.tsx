@@ -38,6 +38,7 @@ import {
     flatMapVariables,
     getVariableMinTick,
     getVariableMaxTick,
+    compareVcdVariables,
     
     getModulesOfVariable,
     
@@ -179,21 +180,23 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     
     
     // states:
-    const handleControllableVcdChangeInternal = useEvent<ValueChangeEventHandler<Vcd|null>>((newVcd) => {
-        // actions:
-        setAllVcdVariables( // refresh all variables:
-            newVcd ? flatMapVariables(newVcd.rootModule) : []
-        );
-    });
-    const handleControllableVcdChange = useMergeEvents(
-        // preserves the original `onChange` from `props`:
-        onControllableVcdChange,
-        
-        
-        
-        // validations:
-        handleControllableVcdChangeInternal,
-    );
+    // const handleControllableVcdChangeInternal = useEvent<ValueChangeEventHandler<Vcd|null>>((newVcd) => {
+    //     // actions:
+    //     setAllVcdVariables( // refresh all variables:
+    //         newVcd ? flatMapVariables(newVcd.rootModule) : []
+    //     );
+    // });
+    // const handleControllableVcdChange = useMergeEvents(
+    //     // preserves the original `onChange` from `props`:
+    //     onControllableVcdChange,
+    //     
+    //     
+    //     
+    //     // validations:
+    //     handleControllableVcdChangeInternal,
+    // );
+    const handleControllableVcdChange = onControllableVcdChange;
+    
     const {
         value              : vcd,
         triggerValueChange : triggerVcdChange,
@@ -315,7 +318,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         // actions:
         setAllVcdVariables( // refresh all variables:
-            vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []
+            vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables)) : []
         );
         // setRemovedVariables([]); // clear
     }, [vcd, vcdVersion, vcdClockGuideStr, maxTickOverride]); // resets the `allVcdVariables` when vcd changes
@@ -572,9 +575,19 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     const handleApplyDrop   = useEvent(() => {
         // apply changes:
         if ((moveFromIndex !== null) && (moveToIndex !== null)) {
-            setAllVcdVariables(
-                moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex)
-            );
+            triggerVcdChange(
+                produce(vcd, (vcd) => {
+                    if (!vcd) return;
+                    const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables); // preserves the prev sort before performing accumuative sort
+                    
+                    
+                    
+                    let sortCounter = 0;
+                    for (const allVcdVariable of moveVcdVariableData(allVcdVariables, moveFromIndex, moveToIndex, /* clone: */ false)) {
+                        allVcdVariable.sort = (sortCounter++);
+                    } // for
+                })
+            , { triggerAt: 'immediately' });
         } // if
         
         

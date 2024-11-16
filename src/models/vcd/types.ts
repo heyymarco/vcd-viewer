@@ -31,6 +31,7 @@ export interface VcdVariable {
     id         : number
     format     : VcdValueFormat
     color      : Color|null
+    sort      ?: number
 }
 export interface VcdVariableStatic
     extends

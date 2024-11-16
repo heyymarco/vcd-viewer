@@ -7,7 +7,7 @@ import {
 
 
 
-export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex: number|null, moveToIndex: number|null): TData[] => {
+export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex: number|null, moveToIndex: number|null, clone : boolean = true): TData[] => {
     // conditions:
     if (moveFromIndex === null       ) return originalData;
     if (moveToIndex   === null       ) return originalData;
@@ -15,7 +15,7 @@ export const moveVcdVariableData = <TData>(originalData: TData[], moveFromIndex:
     
     
     
-    const clonedItems = originalData.slice(0);
+    const clonedItems = clone ? originalData.slice(0) : originalData;
     const movedItems  = clonedItems.splice(moveFromIndex, 1 /* delete one item */); // cut one, then
     clonedItems.splice(moveToIndex, 0 /* nothing to delete */, ...movedItems);      // insert cutted one
     return clonedItems;

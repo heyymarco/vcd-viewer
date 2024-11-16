@@ -36,6 +36,14 @@ export const getVariableMaxTick = (module: VcdModule): number => {
         .filter((tick): tick is Exclude<typeof tick, undefined> => (tick !== undefined))
     );
 }
+export const compareVcdVariables = (a: VcdVariable, b: VcdVariable): number => {
+    const { sort: sortA } = a;
+    const { sort: sortB } = b;
+    if ((sortA === undefined) && (sortB === undefined)) return 0;
+    if (sortA === undefined) return -1; // a is nothing => b wins
+    if (sortB === undefined) return +1; // b is nothing => a wins
+    return sortA - sortB;
+}
 
 
 
