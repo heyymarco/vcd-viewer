@@ -296,7 +296,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             } satisfies VcdVariable,
         ];
     });
-    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []);
+    const [allVcdVariables, setAllVcdVariables] = useState<VcdVariable[]>(() => vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables)) : []);
     const prevVcdVersion = useRef(vcdVersion);
     const vcdClockGuideStr = JSON.stringify(vcdClockGuide);
     const prevVcdClockGuide = useRef(vcdClockGuideStr);
@@ -1444,7 +1444,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
             triggerVcdChange(
                 produce(vcd, (vcd) => {
                     if (!vcd) return;
-                    const allVcdVariables = flatMapVariables(vcd.rootModule);
+                    const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                     
                     
                     
@@ -1569,7 +1569,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1598,7 +1598,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1626,7 +1626,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1654,7 +1654,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1723,7 +1723,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1790,7 +1790,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
@@ -1896,7 +1896,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         triggerVcdChange(
             produce(vcd, (vcd) => {
                 if (!vcd) return;
-                const allVcdVariables = flatMapVariables(vcd.rootModule);
+                const allVcdVariables = flatMapVariables(vcd.rootModule).toSorted(compareVcdVariables);
                 
                 
                 
