@@ -1843,7 +1843,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     const handleTransitionInsertPeriodic = useEvent(async () => {
         // conditions:
         if (!canSetTransition) return;
-        if (!(isReadyToInsertTransition &&  isTransitionBinary)) return;
+        if (!(isReadyOnTimelineTransition &&  isTransitionBinary)) return;
         
         
         
@@ -1910,11 +1910,13 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                     beginTime,
                     endTime,
                 } = periodicDef;
-                const replaceIndexStart = waves.findIndex(({tick}, waveIndex) => (tick >= beginTime));
-                const replaceIndexEnd   = waves.findLastIndex(({tick}, waveIndex) => (tick <= endTime));
+                const replaceIndexStart = waves.findIndex(({tick})     => (tick >= beginTime) && (tick <= endTime));
+                const replaceIndexEnd   = waves.findLastIndex(({tick}) => (tick >= beginTime) && (tick <= endTime));
+                const deleteIndex       = ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? replaceIndexStart                         : (waves.findLastIndex(({tick}) => (tick <= beginTime)) + 1 /* insert after the last */);
+                const deleteCount       = ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? (replaceIndexEnd - replaceIndexStart + 1) : 0;
                 waves.splice(
-                    ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? replaceIndexStart : waves.length,
-                    ((replaceIndexStart >= 0) && (replaceIndexStart <= replaceIndexEnd)) ? (replaceIndexStart - replaceIndexEnd + 1) : 0,
+                    deleteIndex,
+                    deleteCount,
                     ...((): VcdWave[] => {
                         const nPeriods = Math.floor((endTime - beginTime) / flipInterval);
                         let currentValue = startingValue;
@@ -2437,15 +2439,15 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 {!!vcd && (mainSelection !== null) && <span className='text'>{Math.round(mainSelection)}</span>}
                 
-                {canDeleteTransition && <button type='button' title='DELETE transition'              className='transition-delete'          disabled={!(isReadyToEditTransition                                                  )} onClick={handleTransitionDelete} />}
-                {canSetTransition    && <button type='button' title='set transition to HI'           className='transition-set-hi'          disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />}
-                {canSetTransition    && <button type='button' title='set transition to LOW'          className='transition-set-lo'          disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />}
-                {canSetTransition    && <button type='button' title='TOGGLE transition'              className='transition-set-tg'          disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />}
-                {canSetTransition    && <button type='button' title='set transition to VALUE'        className='transition-set-to'          disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />}
-                {canInsertTransition && <button type='button' title='INSERT new transition'          className='transition-insert'          disabled={!(isReadyToInsertTransition && !isTransitionBinary                         )} onClick={handleTransitionInsert} />}
-                {canInsertTransition && <button type='button' title='INSERT new HI transition'       className='transition-insert-hi'       disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionInsertHi} />}
-                {canInsertTransition && <button type='button' title='INSERT new LOW transition'      className='transition-insert-lo'       disabled={!(isReadyToInsertTransition &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionInsertLo} />}
-                {canInsertTransition && <button type='button' title='INSERT new PERIODIC transition' className='transition-insert-periodic' disabled={!(isReadyToInsertTransition &&  isTransitionBinary                         )} onClick={handleTransitionInsertPeriodic} />}
+                {canDeleteTransition && <button type='button' title='DELETE transition'              className='transition-delete'          disabled={!(isReadyToEditTransition                                                    )} onClick={handleTransitionDelete} />}
+                {canSetTransition    && <button type='button' title='set transition to HI'           className='transition-set-hi'          disabled={!(isReadyToInsertTransition   &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionSetHi} />}
+                {canSetTransition    && <button type='button' title='set transition to LOW'          className='transition-set-lo'          disabled={!(isReadyToInsertTransition   &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionSetLo} />}
+                {canSetTransition    && <button type='button' title='TOGGLE transition'              className='transition-set-tg'          disabled={!(isReadyToInsertTransition   &&  isTransitionBinary                         )} onClick={handleTransitionSetToggle} />}
+                {canSetTransition    && <button type='button' title='set transition to VALUE'        className='transition-set-to'          disabled={!(isReadyToInsertTransition   && !isTransitionBinary                         )} onClick={handleTransitionSetTo} />}
+                {canInsertTransition && <button type='button' title='INSERT new transition'          className='transition-insert'          disabled={!(isReadyToInsertTransition   && !isTransitionBinary                         )} onClick={handleTransitionInsert} />}
+                {canInsertTransition && <button type='button' title='INSERT new HI transition'       className='transition-insert-hi'       disabled={!(isReadyToInsertTransition   &&  isTransitionBinary && !isTransitionBinaryHi)} onClick={handleTransitionInsertHi} />}
+                {canInsertTransition && <button type='button' title='INSERT new LOW transition'      className='transition-insert-lo'       disabled={!(isReadyToInsertTransition   &&  isTransitionBinary && !isTransitionBinaryLo)} onClick={handleTransitionInsertLo} />}
+                {canInsertTransition && <button type='button' title='INSERT new PERIODIC transition' className='transition-insert-periodic' disabled={!(isReadyOnTimelineTransition &&  isTransitionBinary                         )} onClick={handleTransitionInsertPeriodic} />}
             </div>
             <div className={styles.bodyOuter}>
                 <ul className={styles.labels}
