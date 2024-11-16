@@ -1211,10 +1211,37 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         });
     });
     const handleMenuListRemoveOf = useEvent((variableIndex: number, permanentDelete = false) => {
-        const mutated = allVcdVariables.slice(0);
-        const removed = mutated.splice(variableIndex, 1);
-        setAllVcdVariables(mutated);
-        if (!permanentDelete) setRemovedVariables((current) => [...current, ...removed]);
+        if (!vcd) return;
+        const mirrorTargetVariable = allVcdVariables.at(variableIndex);
+        if (!mirrorTargetVariable) return;
+        const selectedParents = getModulesOfVariable(vcd, mirrorTargetVariable);
+        if (!selectedParents) return;
+        
+        
+        
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                let currentParents : VcdModule[] = [vcd.rootModule];
+                let delegatedParent : VcdModule|undefined = undefined;
+                for (const selectedParent of selectedParents) {
+                    const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                    if (!foundParent) return;
+                    delegatedParent = foundParent;
+                    currentParents = foundParent.submodules;
+                } // for
+                if (!delegatedParent) return;
+                
+                
+                
+                // delete the real targetVariable:
+                const targetVariableIndex = delegatedParent.variables.findIndex(({name}) => (name === mirrorTargetVariable.name));
+                if (targetVariableIndex < 0) return;
+                const deletedVariables = delegatedParent.variables.splice(targetVariableIndex, 1);
+                
+                // backup the deleted variable, so we can restore it later:
+                if (!permanentDelete) setRemovedVariables((current) => [...current, ...deletedVariables]);
+            })
+        , { triggerAt: 'immediately' });
     });
     const handleMenuListRestoreOf = useEvent((variableIndex: number) => {
         const mutated = removedVariables.slice(0);
@@ -1316,15 +1343,20 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         
         // truncate excess variable waves:
         if (newDuration < currentDuration) {
-            setAllVcdVariables(
-                produce(allVcdVariables, (allVcdVariables) => {
+            triggerVcdChange(
+                produce(vcd, (vcd) => {
+                    if (!vcd) return;
+                    const allVcdVariables = flatMapVariables(vcd.rootModule);
+                    
+                    
+                    
                     for (const vcdVariable of allVcdVariables) {
                         const waves = vcdEnumerateWaves<never>(vcdVariable.waves);
                         const excessWaveIndex = waves.findIndex(({tick}) => (tick > newDuration));
                         if (excessWaveIndex >= 0) waves.splice(excessWaveIndex);
                     } // for
                 })
-            );
+            , { triggerAt: 'immediately' });
         } // if
     });
     
