@@ -80,12 +80,9 @@ export interface VcdClockGuide
         >,
         Partial<Pick<VcdVariable,
             |'type'
+            |'color'
         >>
 {
-    name           : string
-    alias          : string
-    color         ?: Color|null
-    
     /**
      * The timescale of the `maxTime`.  
      * If ommited (`undefined`), the timescale of the vcd_file will be used.

@@ -1198,7 +1198,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 
                 // delete the real targetVariable:
-                const targetVariable = delegatedParent.variables.find(({name}) => (name === mirrorTargetVariable.name));
+                const targetVariable = delegatedParent.variables.find(({id}) => (id === mirrorTargetVariable.id));
                 if (!targetVariable) return;
                 targetVariable.format = format;
             })
@@ -1242,7 +1242,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 
                 // delete the real targetVariable:
-                const targetVariable = delegatedParent.variables.find(({name}) => (name === mirrorTargetVariable.name));
+                const targetVariable = delegatedParent.variables.find(({id}) => (id === mirrorTargetVariable.id));
                 if (!targetVariable) return;
                 targetVariable.color = color;
             })
@@ -1280,7 +1280,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 
                 
                 // delete the real targetVariable:
-                const targetVariableIndex = delegatedParent.variables.findIndex(({name}) => (name === mirrorTargetVariable.name));
+                const targetVariableIndex = delegatedParent.variables.findIndex(({id}) => (id === mirrorTargetVariable.id));
                 if (targetVariableIndex < 0) return;
                 delegatedParent.variables.splice(targetVariableIndex, 1);
                 

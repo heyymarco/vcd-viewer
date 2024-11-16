@@ -49,7 +49,7 @@ const blankSampleVcd : Vcd|null = {
                             value : Math.round(Math.random() * 1000) % 16,
                         })),
                         
-                        id     : 1,
+                        id     : 2,
                         format : VcdValueFormat.HEXADECIMAL,
                         color  : Color('green'),
                     },
