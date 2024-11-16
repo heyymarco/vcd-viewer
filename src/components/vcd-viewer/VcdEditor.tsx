@@ -317,7 +317,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
         setAllVcdVariables( // refresh all variables:
             vcd ? appendGuideVariableIfNeeded(flatMapVariables(vcd.rootModule)) : []
         );
-        setRemovedVariables([]); // clear
+        // setRemovedVariables([]); // clear
     }, [vcd, vcdVersion, vcdClockGuideStr, maxTickOverride]); // resets the `allVcdVariables` when vcd changes
     
     const [zoom, setZoom] = useState<number>(1);
@@ -352,7 +352,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
     const [showMenuColors   , setShowMenuColors   ] = useState<{ x: number, y: number}|null>(null);
     
     const [showMenuList     , setShowMenuList     ] = useState<{ x: number, y: number}|null>(null);
-    const [removedVariables , setRemovedVariables ] = useState<VcdVariable[]>([]);
+    const [removedVariables , setRemovedVariables ] = useState<{ variable: VcdVariable, modules: VcdModule[] }[]>([]);
     
     const [showMenuFile     , setShowMenuFile     ] = useState<{ x: number, y: number}|null>(null);
     
@@ -1236,18 +1236,57 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 // delete the real targetVariable:
                 const targetVariableIndex = delegatedParent.variables.findIndex(({name}) => (name === mirrorTargetVariable.name));
                 if (targetVariableIndex < 0) return;
-                const deletedVariables = delegatedParent.variables.splice(targetVariableIndex, 1);
+                delegatedParent.variables.splice(targetVariableIndex, 1);
                 
                 // backup the deleted variable, so we can restore it later:
-                if (!permanentDelete) setRemovedVariables((current) => [...current, ...deletedVariables]);
+                if (!permanentDelete) {
+                    setRemovedVariables((current) => [
+                        ...current,
+                        {
+                            variable : mirrorTargetVariable,
+                            modules  : selectedParents,
+                        },
+                    ]);
+                } // if
             })
         , { triggerAt: 'immediately' });
     });
     const handleMenuListRestoreOf = useEvent((variableIndex: number) => {
         const mutated = removedVariables.slice(0);
-        const restored = mutated.splice(variableIndex, 1);
+        const restoredItems = mutated.splice(variableIndex, 1);
         setRemovedVariables(mutated);
-        setAllVcdVariables((current) => [...current, ...restored]);
+        
+        
+        
+        if (!vcd) return;
+        triggerVcdChange(
+            produce(vcd, (vcd) => {
+                for (const restoredItem of restoredItems) {
+                    const {
+                        variable : mirrorTargetVariable,
+                        modules  : selectedParents,
+                    } = restoredItem;
+                    
+                    
+                    
+                    let currentParents : VcdModule[] = [vcd.rootModule];
+                    let delegatedParent : VcdModule|undefined = undefined;
+                    for (const selectedParent of selectedParents) {
+                        const foundParent = currentParents.find(({name}) => (name === selectedParent.name));
+                        if (!foundParent) return;
+                        delegatedParent = foundParent;
+                        currentParents = foundParent.submodules;
+                    } // for
+                    if (!delegatedParent) return;
+                    
+                    
+                    
+                    // restore the real targetVariable:
+                    // TODO: move the restored variable to the end of plotter
+                    delegatedParent.variables.push(mirrorTargetVariable);
+                } // for
+            })
+        , { triggerAt: 'immediately' });
     });
     
     const handleMenuFile = useEvent<React.MouseEventHandler<HTMLSpanElement>>((event) => {
@@ -2460,7 +2499,7 @@ const VcdEditorInternal = (props: VcdEditorProps): JSX.Element|null => {
                 </>}
                 {!!removedVariables.length && <>
                     <li className={styles.menuLabelGroup}>Hidden Signals:</li>
-                    {removedVariables.map((variable, index) =>
+                    {removedVariables.map(({variable}, index) =>
                         <li key={index} tabIndex={0}>
                             <input type='checkbox' checked={false} onChange={() => handleMenuListRestoreOf(index)} />
                             <span>
